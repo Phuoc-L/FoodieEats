@@ -1,10 +1,9 @@
 const express = require("express");
 const app = express();
 const mongoose = require("mongoose");
+require("dotenv").config({ path: "./Backend/secrets.ini" });
 
-const mongoUrl = "mongodb+srv://manidhar:manidharpassword@cluster.yuogk.mongodb.net/?retryWrites=true&w=majority&appName=cluster";
-
-mongoose.connect(mongoUrl).then(() => {
+mongoose.connect(process.env.MONGO_URL).then(() => {
     console.log("Connected to MongoDB");
   })
   .catch((err) => {
