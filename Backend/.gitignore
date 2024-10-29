@@ -19,3 +19,6 @@ yarn-error.*
 
 # vscode
 .vscode/
+
+# credentials
+secrets.ini
