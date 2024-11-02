@@ -1,20 +1,30 @@
 const express = require("express");
 const app = express();
 const mongoose = require("mongoose");
+const userRoutes = require("./routes/userRoutes");
+require("dotenv").config({ path: "secrets.ini" });
 
-const mongoUrl = "mongodb+srv://manidhar:manidharpassword@cluster.yuogk.mongodb.net/?retryWrites=true&w=majority&appName=cluster";
+app.use(express.json());
 
-mongoose.connect(mongoUrl).then(() => {
+// Database connection
+mongoose
+  .connect(process.env.MONGO_URL, { dbName: "FoodieEatsDB" })
+  .then(() => {
     console.log("Connected to MongoDB");
   })
   .catch((err) => {
     console.log("Error connecting to MongoDB", err);
   });
 
+// Start the server
 app.listen(3000, () => {
   console.log("Server is running on port 3000");
 });
 
+// Basic route
 app.get("/", (req, res) => {
   res.send({ status: "Foodie Eats API is running" });
 });
+
+// routes
+app.use("/api/users", userRoutes);
