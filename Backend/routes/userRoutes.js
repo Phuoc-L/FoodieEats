@@ -1,5 +1,6 @@
 const express = require("express");
 const mongoose = require("mongoose");
+const bcrypt = require("bcrypt");
 const User = require("../data_schemas/users");
 const router = express.Router();
 
@@ -11,6 +12,7 @@ const router = express.Router();
 router.post("/", async (req, res) => {
   try {
     const newUser = new User(req.body);
+    newUser.password = await hashPassword(newUser.password);
     await newUser.save();
     res.status(201).json(newUser);
   } catch (error) {
@@ -114,5 +116,14 @@ router.delete("/:id/followers", async (req, res) => {
   }
 });
 
+// -----------------------------------------
+// Helper Functions
+// -----------------------------------------
+
+// function to hash password
+async function hashPassword(password) {
+  const saltRounds = 10;
+  return await bcrypt.hash(password, saltRounds);
+}
 
 module.exports = router;
