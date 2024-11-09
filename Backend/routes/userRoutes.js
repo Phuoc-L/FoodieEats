@@ -85,7 +85,7 @@ router.post("/:id/followers", async (req, res) => {
     follower.following.push(req.params.id);
     await follower.save();
 
-    res.json({user, follower});
+    res.json({ user, follower });
   } catch (error) {
     res.status(400).json({ error: "Error adding follower to user" });
   }
@@ -110,7 +110,7 @@ router.delete("/:id/followers", async (req, res) => {
     );
     await follower.save();
 
-    res.json({user, follower});
+    res.json({ user, follower });
   } catch (error) {
     res.status(400).json({ error: "Error removing follower from user" });
   }

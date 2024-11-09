@@ -28,8 +28,8 @@ const restaurantSchema = new mongoose.Schema({
     {
       name: { type: String, required: true },
       description: { type: String, required: true },
-      average_rating: { type: Number, default: 0 },
       price: { type: Number, required: true },
+      average_rating: { type: Number, default: 0 },
       num_ratings: { type: Number, default: 0 },
     },
   ],

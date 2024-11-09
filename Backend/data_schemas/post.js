@@ -1,8 +1,6 @@
 const mongoose = require("mongoose");
-const restaurant = require("./restaurant");
 
 const postSchema = new mongoose.Schema({
-
     user_id: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
     restaurant_id: { type: mongoose.Schema.Types.ObjectId, ref: "Restaurant", required: true },
     dish_id: { type: mongoose.Schema.Types.ObjectId, required: true },
