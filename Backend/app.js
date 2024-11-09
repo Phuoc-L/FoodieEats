@@ -3,6 +3,7 @@ const app = express();
 const mongoose = require("mongoose");
 const userRoutes = require("./routes/userRoutes");
 require("dotenv").config({ path: "secrets.ini" });
+const cors = require('cors');
 
 app.use(express.json());
 
@@ -29,3 +30,4 @@ app.get("/", (req, res) => {
 // routes
 const jwt = require("jsonwebtoken");
 app.use("/api/users", userRoutes);
+app.use(cors());
