@@ -27,4 +27,5 @@ app.get("/", (req, res) => {
 });
 
 // routes
+const jwt = require("jsonwebtoken");
 app.use("/api/users", userRoutes);
