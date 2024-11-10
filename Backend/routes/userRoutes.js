@@ -1,9 +1,13 @@
 const express = require("express");
 const mongoose = require("mongoose");
 const bcrypt = require("bcrypt");
-const User = require("../data_schemas/users");
-const router = express.Router();
 const jwt = require("jsonwebtoken");
+const router = express.Router();
+const User = require("../data_schemas/users");
+
+// -----------------------------------------
+// User Authentication
+// -----------------------------------------
 
 router.post("/signup", async (req, res) => {
   try {
@@ -25,7 +29,6 @@ router.post("/signup", async (req, res) => {
     }
   }
 });
-
 
 router.post("/login", async (req, res) => {
   try {
@@ -52,9 +55,9 @@ router.post("/login", async (req, res) => {
   }
 });
 
-
-// Backend middleware
-
+// -----------------------------------------
+// Backend Middleware
+// -----------------------------------------
 
 const verifyToken = (req, res, next) => {
   try {

@@ -16,7 +16,7 @@ export default function AuthScreen() {
 
   const loginUser = async (credentials) => {
     try {
-      const response = await axios.post('http://10.0.2.2:3000/api/users/login', credentials);
+      const response = await axios.post(process.env.EXPO_PUBLIC_API_URL + '/api/users/login', credentials);
       const { user, token } = response.data;
       console.log('Login successful:', user);
       console.log('Token:', token);
@@ -38,7 +38,7 @@ export default function AuthScreen() {
         password: userData.password,
       };
   
-      const response = await axios.post('http://10.0.2.2:3000/api/users/signup', formattedData);
+      const response = await axios.post(process.env.EXPO_PUBLIC_API_URL + '/api/users/signup', formattedData);
       const { user, token } = response.data;
       console.log('Signup successful:', user);
       console.log('Token:', token);
