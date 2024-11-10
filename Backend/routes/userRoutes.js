@@ -2,6 +2,7 @@ const express = require("express");
 const mongoose = require("mongoose");
 const bcrypt = require("bcrypt");
 const User = require("../data_schemas/users");
+const Post = require("../data_schemas/post");
 const router = express.Router();
 
 // -----------------------------------------
@@ -14,8 +15,11 @@ router.post("/", async (req, res) => {
     const newUser = new User(req.body);
     newUser.password = await hashPassword(newUser.password);
     await newUser.save();
-    res.status(201).json(newUser);
+    // Remove the password from the response
+    const { password, ...userWithoutPassword } = newUser.toObject();
+    res.status(201).json({ message: "User created successfully", user: userWithoutPassword });
   } catch (error) {
+    console.error(error);
     res.status(400).json({ error: "Error creating new user" });
   }
 });
@@ -26,42 +30,46 @@ router.get("/users", async (req, res) => {
     const users = await User.find();
     res.json(users);
   } catch (error) {
+    console.error(error);
     res.status(500).json({ error: "Error getting all users" });
   }
 });
 
 // Get a user by ID
-router.get("/:id", async (req, res) => {
+router.get("/:user_id", async (req, res) => {
   try {
-    const user = await User.findById(req.params.id);
+    const user = await User.findById(req.params.user_id);
     if (!user) return res.status(404).json({ error: "User not found" });
     res.json(user);
   } catch (error) {
+    console.error(error);
     res.status(500).json({ error: "Error getting user by ID" });
   }
 });
 
 // Update a user by ID
-router.put("/:id", async (req, res) => {
+router.put("/:user_id", async (req, res) => {
   try {
-    const updatedUser = await User.findByIdAndUpdate(req.params.id, req.body, {
-      new: true,
-      runValidators: true,
-    });
+    // check if user exists
+    let updatedUser = await User.findById(req.params.user_id);
     if (!updatedUser) return res.status(404).json({ error: "User not found" });
-    res.json(updatedUser);
+
+    updatedUser = await User.findByIdAndUpdate(req.params.user_id, req.body);
+    res.status(200).json({message: "User successfully updated", user: updatedUser });
   } catch (error) {
+    console.error(error);
     res.status(400).json({ error: "Error updating user by ID" });
   }
 });
 
 // Delete a user by ID
-router.delete("/:id", async (req, res) => {
+router.delete("/:user_id", async (req, res) => {
   try {
-    const deletedUser = await User.findByIdAndDelete(req.params.id);
+    const deletedUser = await User.findByIdAndDelete(req.params.user_id);
     if (!deletedUser) return res.status(404).json({ error: "User not found" });
-    res.json({ message: "User deleted successfully" });
+    res.status(200).json({ message: "User deleted successfully" });
   } catch (error) {
+    console.error(error);
     res.status(500).json({ error: "Error deleting user by ID" });
   }
 });
@@ -70,49 +78,153 @@ router.delete("/:id", async (req, res) => {
 // Followers and Followings
 // -----------------------------------------
 
-// Add a follower to a user by ID
-router.post("/:id/followers", async (req, res) => {
+// Follow: User A follows User B
+router.post("/:userA_id/follow/:userB_id", async (req, res) => {
   try {
-    // add follower to user
-    const user = await User.findById(req.params.id);
-    if (!user) return res.status(404).json({ error: "User not found" });
-    user.followers.push(req.body.follower_id);
-    await user.save();
+    // Find user A (the follower) and user B (the user to be followed)
+    let userA = await User.findById(req.params.userA_id);
+    if (!userA) return res.status(404).json({ error: "User not found" });
 
-    // add user to follower's following list
-    const follower = await User.findById(req.body.follower_id);
-    if (!follower) return res.status(404).json({ error: "Follower not found" });
-    follower.following.push(req.params.id);
-    await follower.save();
+    let userB = await User.findById(req.params.userB_id);
+    if (!userB)
+      return res.status(404).json({ error: "User to follow not found" });
 
-    res.json({ user, follower });
+    // Check if user A is already following user B
+    if (userA.following.includes(req.params.userB_id)) {
+      return res.status(400).json({ error: "User is already following" });
+    }
+
+    // Update user A's following list and count
+    userA = await User.findOneAndUpdate(
+      { _id: userA._id },
+      {
+        $push: { following: userB._id },
+        $inc: { following_count: 1 },
+      },
+      { new: true }
+    );
+
+    // Update user B's followers list and count
+    userB = await User.findOneAndUpdate(
+      { _id: userB._id },
+      {
+        $push: { followers: userA._id },
+        $inc: { followers_count: 1 },
+      },
+      { new: true }
+    );
+
+    // Respond with the updated userA and userB data
+    res.status(200).json({ message: "User successfully follow another user", UserA: userA, UserB: userB });
   } catch (error) {
-    res.status(400).json({ error: "Error adding follower to user" });
+    console.error(error);
+    res.status(500).json({ error: "Error processing follow request" });
   }
 });
 
-// Remove a follower from a user by ID
-router.delete("/:id/followers", async (req, res) => {
+// Unfollow: User A unfollows User B
+router.delete("/:userA_id/unfollow/:userB_id", async (req, res) => {
   try {
-    // remove follower from user
-    const user = await User.findById(req.params.id);
-    if (!user) return res.status(404).json({ error: "User not found" });
-    user.followers = user.followers.filter(
-      (follower) => follower != req.body.follower_id
-    );
-    await user.save();
+    // Find user A (the follower) and user B (the user to be unfollowed)
+    let userA = await User.findById(req.params.userA_id);
+    if (!userA) return res.status(404).json({ error: "User not found" });
 
-    // remove user from follower's following list
-    const follower = await User.findById(req.body.follower_id);
-    if (!follower) return res.status(404).json({ error: "Follower not found" });
-    follower.following = follower.following.filter(
-      (following) => following != req.params.id
-    );
-    await follower.save();
+    let userB = await User.findById(req.params.userB_id);
+    if (!userB) return res.status(404).json({ error: "User to unfollow not found" });
 
-    res.json({ user, follower });
+    // Check if user A is not following user B
+    if (!userA.following.includes(req.params.userB_id)) {
+      return res.status(400).json({ error: "User is not following" });
+    }
+
+    // Remove user B from user A's following list and decrement following count
+    userA = await User.findOneAndUpdate(
+      { _id: userA._id },
+      {
+        $pull: { following: userB._id },
+        $inc: { following_count: -1 },
+      },
+      { new: true }
+    );
+
+    // Remove user A from user B's followers list and decrement followers count
+    userB = await User.findOneAndUpdate(
+      { _id: userB._id },
+      {
+        $pull: { followers: userA._id },
+        $inc: { followers_count: -1 },
+      },
+      { new: true }
+    );
+
+    // Respond with the updated userA and userB data
+    res.status(200).json({ message: "User successfully unfollow another user", UserA: userA, UserB: userB });
   } catch (error) {
-    res.status(400).json({ error: "Error removing follower from user" });
+    console.error(error);
+    res.status(500).json({ error: "Error processing unfollow request" });
+  }
+});
+
+// -----------------------------------------
+// Likes and Unlike
+// -----------------------------------------
+
+// Like: User likes a Post
+router.post("/:user_id/like/:post_id", async (req, res) => {
+  try {
+    // Find the user and post
+    const user = await User.findById(req.params.user_id);
+    if (!user) return res.status(404).json({ error: "User not found" });
+    const post = await Post.findById(req.params.post_id);
+    if (!post) return res.status(404).json({ error: "Post not found" });
+
+    // Check if post is already liked by the user
+    if (user.likes.includes(req.params.post_id)) {
+      return res.status(400).json({ error: "User already liked this post" });
+    }
+
+    // Check if post is made by the user
+    if (user._id.equals(post.user_id)) {
+      return res.status(400).json({ error: "User cannot like own post" });
+    }
+
+    // Update user's likes list
+    const updated = await User.findOneAndUpdate(
+      { _id: user._id },
+      { $push: { likes: post._id } },
+      { new: true }
+    );
+    res.status(200).json({ message: "User successfully liked the post", user: updated });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Error processing like request" });
+  }
+});
+
+// Unlike: User unlikes a Post
+router.post("/:user_id/unlike/:post_id", async (req, res) => {
+  try {
+    // Find the user and post
+    const user = await User.findById(req.params.user_id);
+    if (!user) return res.status(404).json({ error: "User not found" });
+    const post = await Post.findById(req.params.post_id);
+    if (!post) return res.status(404).json({ error: "Post not found" });
+
+    // Check if post is not liked by the user
+    if (!user.likes.includes(req.params.post_id)) {
+      return res.status(400).json({ error: "User has not liked this post" });
+    }
+
+    // Update user's likes list
+    const updated = await User.findOneAndUpdate(
+      { _id: user._id },
+      { $pull: { likes: post._id } },
+      { new: true }
+    );
+    res.status(200).json({ message: "User successfully unliked the post", user: updated });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Error processing unlike request" });
   }
 });
 

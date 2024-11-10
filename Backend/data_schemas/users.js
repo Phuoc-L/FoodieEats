@@ -13,7 +13,10 @@ const userSchema = new mongoose.Schema({
   },
 
   followers: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }], // List of user IDs who follow this user
+  followers_count: { type: Number, default: 0 }, // Number of followers
   following: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }], // List of user IDs this user is following
+  following_count: { type: Number, default: 0 }, // Number of users this user is following
+  
   collections: { type: Array, default: [] }, // No uses for now
   likes: [{ type: mongoose.Schema.Types.ObjectId, ref: "Post" }], // List of IDs of posts liked by the user
 
