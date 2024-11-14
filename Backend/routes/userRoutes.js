@@ -3,6 +3,8 @@ const mongoose = require("mongoose");
 const bcrypt = require("bcrypt");
 const User = require("../data_schemas/users");
 const Post = require("../data_schemas/post");
+const getPresignedURL = require("../functions/s3PresignedURL.js");
+require("dotenv").config({ path: "secrets.ini" });
 const router = express.Router();
 
 // -----------------------------------------
@@ -177,22 +179,24 @@ router.post("/:user_id/like/:post_id", async (req, res) => {
     if (!user) return res.status(404).json({ error: "User not found" });
     const post = await Post.findById(req.params.post_id);
     if (!post) return res.status(404).json({ error: "Post not found" });
-
     // Check if post is already liked by the user
     if (user.likes.includes(req.params.post_id)) {
       return res.status(400).json({ error: "User already liked this post" });
     }
-
     // Check if post is made by the user
     if (user._id.equals(post.user_id)) {
       return res.status(400).json({ error: "User cannot like own post" });
     }
-
     // Update user's likes list
     const updated = await User.findOneAndUpdate(
       { _id: user._id },
       { $push: { likes: post._id } },
       { new: true }
+    );
+    // update post's like list and count
+    await Post.findOneAndUpdate(
+      { _id: post._id },
+      { $push: { like_list: user._id }, $inc: { num_likes: 1 } }
     );
     res.status(200).json({ message: "User successfully liked the post", user: updated });
   } catch (error) {
@@ -209,22 +213,65 @@ router.post("/:user_id/unlike/:post_id", async (req, res) => {
     if (!user) return res.status(404).json({ error: "User not found" });
     const post = await Post.findById(req.params.post_id);
     if (!post) return res.status(404).json({ error: "Post not found" });
-
     // Check if post is not liked by the user
     if (!user.likes.includes(req.params.post_id)) {
       return res.status(400).json({ error: "User has not liked this post" });
     }
-
     // Update user's likes list
     const updated = await User.findOneAndUpdate(
       { _id: user._id },
       { $pull: { likes: post._id } },
       { new: true }
     );
+    // update post's like list and count
+    await Post.findOneAndUpdate(
+      { _id: post._id },
+      { $pull: { like_list: user._id }, $inc: { num_likes: -1 } }
+    );
     res.status(200).json({ message: "User successfully unliked the post", user: updated });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Error processing unlike request" });
+  }
+});
+
+// -----------------------------------------
+// User Profile 
+// -----------------------------------------
+
+// upload user profile picture
+router.post("/:user_id/profile", async (req, res) => {
+  try {
+    // Find the user
+    const user = await User.findById(req.params.user_id);
+    if (!user) return res.status(404).json({ error: "User not found" });
+    // Get the file name and file type
+    const { fileName, fileType } = req.body;
+    const uploadDir = "profile_pictures";
+    // Get the presigned URL
+    const presignedURL = await getPresignedURL(fileName, fileType, uploadDir);
+    console.log(presignedURL);
+    // update user with the profile picture url
+    const image_url = "https://" + process.env.BUCKET_NAME + ".s3." + process.env.REGION + ".amazonaws.com/" + uploadDir + "/" + fileName;
+    user.profile.avatar_url = image_url;
+    await user.save();
+    res.status(200).json({ presignedURL });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Error uploading profile picture" });
+  }
+});
+
+// Get user profile picture
+router.get("/:user_id/profile", async (req, res) => {
+  try {
+    // Find the user
+    const user = await User.findById(req.params.user_id);
+    if (!user) return res.status(404).json({ error: "User not found" });
+    res.status(200).json({ avatar_url: user.profile.avatar_url });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Error getting profile picture" });
   }
 });
 

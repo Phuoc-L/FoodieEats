@@ -5,14 +5,9 @@ const restaurantSchema = new mongoose.Schema({
   location: { type: String, required: true },
   average_rating: { type: Number, default: 0 },
   operating_hours: { type: String, required: true },
-
-  // owner_id: { type: mongoose.Schema.Types.ObjectId, ref: "RestaurantOwner", required: true },
-
-  // post_list: { type: Array, default: [] },
-  // num_posts: { type: Number, default: 0 },
-
-  // followers: { type: Array, default: [] },
-  // reservation_link: { type: String, required: true },
+  
+  post_list: { type: Array, default: [] },
+  num_posts: { type: Number, default: 0 },
 
   contact_info: {
     phone: { type: String, required: true },
