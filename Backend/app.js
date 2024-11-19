@@ -3,7 +3,7 @@ const app = express();
 const mongoose = require("mongoose");
 const userRoutes = require("./routes/userRoutes");
 const restaurantRoutes = require("./routes/restaurantRoutes");
-require("dotenv").config({ path: "./Backend/secrets.ini" });
+require("dotenv").config({ path: "secrets.ini" });
 const cors = require('cors');
 
 app.use(express.json());

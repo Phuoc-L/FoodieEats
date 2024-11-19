@@ -99,7 +99,7 @@
 									}
 								},
 								"url": {
-									"raw": "http://{{host}}:{{port}}/api/users/672293de6aff31cc36da8fee",
+									"raw": "http://{{host}}:{{port}}/api/users/67314122aacabd22467ce083",
 									"protocol": "http",
 									"host": [
 										"{{host}}"
@@ -108,7 +108,7 @@
 									"path": [
 										"api",
 										"users",
-										"672293de6aff31cc36da8fee"
+										"67314122aacabd22467ce083"
 									]
 								}
 							},
@@ -120,7 +120,7 @@
 								"method": "DELETE",
 								"header": [],
 								"url": {
-									"raw": "http://{{host}}:{{port}}/api/users/672293de6aff31cc36da8fee",
+									"raw": "http://{{host}}:{{port}}/api/users/67314122aacabd22467ce083",
 									"protocol": "http",
 									"host": [
 										"{{host}}"
@@ -129,7 +129,7 @@
 									"path": [
 										"api",
 										"users",
-										"672293de6aff31cc36da8fee"
+										"67314122aacabd22467ce083"
 									]
 								}
 							},
@@ -141,13 +141,13 @@
 					"name": "Following",
 					"item": [
 						{
-							"name": "Add a follower to a user by ID",
+							"name": "Follow: User A Follows User B",
 							"request": {
 								"method": "POST",
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"follower_id\": \"670372a5d9077967850ae901\"\n}",
+									"raw": "",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -155,7 +155,7 @@
 									}
 								},
 								"url": {
-									"raw": "http://{{host}}:{{port}}/api/users/670372a5d9077967850ae900/followers",
+									"raw": "http://{{host}}:{{port}}/api/users/670372a5d9077967850ae900/follow/670372a5d9077967850ae901",
 									"protocol": "http",
 									"host": [
 										"{{host}}"
@@ -165,20 +165,21 @@
 										"api",
 										"users",
 										"670372a5d9077967850ae900",
-										"followers"
+										"follow",
+										"670372a5d9077967850ae901"
 									]
 								}
 							},
 							"response": []
 						},
 						{
-							"name": "Delete a follower from a user by ID",
+							"name": "Unfollow: User A Unfollows User B",
 							"request": {
 								"method": "DELETE",
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"follower_id\": \"670372a5d9077967850ae901\"\n}",
+									"raw": "",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -186,7 +187,7 @@
 									}
 								},
 								"url": {
-									"raw": "http://{{host}}:{{port}}/api/users/670372a5d9077967850ae900/followers",
+									"raw": "http://{{host}}:{{port}}/api/users/670372a5d9077967850ae900/unfollow/670372a5d9077967850ae901",
 									"protocol": "http",
 									"host": [
 										"{{host}}"
@@ -196,7 +197,59 @@
 										"api",
 										"users",
 										"670372a5d9077967850ae900",
-										"followers"
+										"unfollow",
+										"670372a5d9077967850ae901"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Like",
+					"item": [
+						{
+							"name": "Like A Post",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"url": {
+									"raw": "http://{{host}}:{{port}}/api/users/670372a5d9077967850ae900/like/6703747fd9077967850ae905",
+									"protocol": "http",
+									"host": [
+										"{{host}}"
+									],
+									"port": "{{port}}",
+									"path": [
+										"api",
+										"users",
+										"670372a5d9077967850ae900",
+										"like",
+										"6703747fd9077967850ae905"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Unlike A Post",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"url": {
+									"raw": "http://{{host}}:{{port}}/api/users/670372a5d9077967850ae900/unlike/6703747fd9077967850ae905",
+									"protocol": "http",
+									"host": [
+										"{{host}}"
+									],
+									"port": "{{port}}",
+									"path": [
+										"api",
+										"users",
+										"670372a5d9077967850ae900",
+										"unlike",
+										"6703747fd9077967850ae905"
 									]
 								}
 							},
