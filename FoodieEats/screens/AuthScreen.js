@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { StyleSheet, View, Text, TextInput, TouchableOpacity } from 'react-native';
+import { StyleSheet, View, Text, TextInput, TouchableOpacity, Alert } from 'react-native';
+import axios from 'axios';
 import { Eye, EyeOff } from 'lucide-react-native';
 
 export default function AuthScreen() {
@@ -13,15 +14,54 @@ export default function AuthScreen() {
     password: '',
   });
 
+  const loginUser = async (credentials) => {
+    try {
+      const response = await axios.post(process.env.EXPO_PUBLIC_API_URL + '/api/users/login', credentials);
+      const { user, token } = response.data;
+      console.log('Login successful:', user);
+      console.log('Token:', token);
+      Alert.alert("Success", "Logged in successfully!");
+    } catch (error) {
+      console.error('Login error:', error.response ? error.response.data : error.message);
+      Alert.alert("Login Error", error.response?.data?.error || "Something went wrong");
+    }
+  };
+
+  const signupUser = async (userData) => {
+    try {
+      // Ensure keys match the backend schema
+      const formattedData = {
+        first_name: userData.firstName,
+        last_name: userData.lastName,
+        email: userData.email,
+        username: userData.username,
+        password: userData.password,
+      };
+  
+      const response = await axios.post(process.env.EXPO_PUBLIC_API_URL + '/api/users/signup', formattedData);
+      const { user, token } = response.data;
+      console.log('Signup successful:', user);
+      console.log('Token:', token);
+      Alert.alert("Success", "Signed up successfully!");
+    } catch (error) {
+      console.error('Signup error:', error.response ? error.response.data : error.message);
+      Alert.alert("Signup Error", error.response?.data?.error || "Something went wrong");
+    }
+  };
+  
   const handleSubmit = () => {
-    console.log('Form submitted:', formData);
+    if (isLogin) {
+      loginUser({ email: formData.email, password: formData.password });
+    } else {
+      signupUser(formData);
+    }
   };
 
   return (
     <View style={styles.container}>
       <View style={styles.content}>
         <Text style={styles.logo}>FoodieEats</Text>
-        
+
         <View style={styles.buttonContainer}>
           <TouchableOpacity 
             style={[
@@ -69,7 +109,7 @@ export default function AuthScreen() {
           
           <TextInput
             style={styles.input}
-            placeholder="Username or Email"
+            placeholder="Email"
             value={formData.email}
             onChangeText={(text) => setFormData({...formData, email: text})}
           />

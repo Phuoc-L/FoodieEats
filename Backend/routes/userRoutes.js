@@ -1,11 +1,116 @@
 const express = require("express");
 const mongoose = require("mongoose");
 const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
 const User = require("../data_schemas/users");
 const Post = require("../data_schemas/post");
 const getPresignedURL = require("../functions/s3PresignedURL.js");
 require("dotenv").config({ path: "secrets.ini" });
 const router = express.Router();
+const User = require("../data_schemas/users");
+
+// -----------------------------------------
+// User Authentication
+// -----------------------------------------
+
+router.post("/signup", async (req, res) => {
+  try {
+    const { password, ...userData } = req.body;
+    const hashedPassword = await hashPassword(password);
+    const newUser = new User({ ...userData, password: hashedPassword });
+    await newUser.save();
+
+    const token = jwt.sign({ id: newUser._id }, process.env.JWT_SECRET, { expiresIn: "1h" });
+    res.status(201).json({ user: newUser, token });
+  } catch (error) {
+    if (error.code === 11000) {
+      // Duplicate key error
+      const duplicateField = Object.keys(error.keyPattern)[0];
+      res.status(400).json({ error: `The ${duplicateField} '${error.keyValue[duplicateField]}' is already in use.` });
+    } else {
+      console.error("Signup error:", error);
+      res.status(400).json({ error: "Error signing up" });
+    }
+  }
+});
+
+router.post("/login", async (req, res) => {
+  try {
+    console.log("Login request received:", req.body);  // Log incoming request data
+    const { email, password } = req.body;
+    const user = await User.findOne({ email });
+    if (!user) {
+      console.log("User not found");
+      return res.status(400).json({ error: "Invalid email or password" });
+    }
+
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+      console.log("Password mismatch");
+      return res.status(400).json({ error: "Invalid email or password" });
+    }
+
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "1h" });
+    console.log("Login successful");
+    res.json({ user, token });
+  } catch (error) {
+    console.error("Login error:", error);
+    res.status(500).json({ error: "Error logging in" });
+  }
+});
+
+// -----------------------------------------
+// Backend Middleware
+// -----------------------------------------
+
+const verifyToken = (req, res, next) => {
+  try {
+    // Better token extraction
+    const authHeader = req.headers["authorization"];
+    if (!authHeader) {
+      return res.status(403).json({ error: "No authorization header provided" });
+    }
+
+    const token = authHeader.startsWith("Bearer ") 
+      ? authHeader.slice(7) 
+      : authHeader;
+
+    if (!token) {
+      return res.status(403).json({ error: "No token provided" });
+    }
+
+    // More detailed error handling in verification
+    jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
+      if (err) {
+        if (err.name === "TokenExpiredError") {
+          return res.status(401).json({ 
+            error: "Token expired", 
+            expiredAt: err.expiredAt 
+          });
+        }
+        if (err.name === "JsonWebTokenError") {
+          return res.status(401).json({ 
+            error: "Invalid token",
+            details: err.message 
+          });
+        }
+        return res.status(500).json({ 
+          error: "Failed to authenticate token",
+          details: err.message 
+        });
+      }
+      
+      req.userId = decoded.id;
+      next();
+    });
+  } catch (error) {
+    console.error("Token verification error:", error);
+    return res.status(500).json({ 
+      error: "Internal server error during authentication",
+      details: error.message 
+    });
+  }
+};
 
 // -----------------------------------------
 // Basic User CRUD

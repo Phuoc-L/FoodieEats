@@ -6,8 +6,8 @@ const restaurantSchema = new mongoose.Schema({
   average_rating: { type: Number, default: 0 },
   operating_hours: { type: String, required: true },
   
-  post_list: { type: Array, default: [] },
-  num_posts: { type: Number, default: 0 },
+  reviews: { type: Array, default: [] },
+  num_reviews: { type: Number, default: 0 },
 
   contact_info: {
     phone: { type: String, required: true },
