@@ -2,15 +2,13 @@ const express = require("express");
 const app = express();
 const mongoose = require("mongoose");
 const userRoutes = require("./routes/userRoutes");
-require("dotenv").config({ path: "secrets.ini" });
+const restaurantRoutes = require("./routes/restaurantRoutes");
+require("dotenv").config({ path: "./Backend/secrets.ini" });
 const cors = require('cors');
 
 app.use(express.json());
 
-// Database connection
-mongoose
-  .connect(process.env.MONGO_URL, { dbName: "FoodieEatsDB" })
-  .then(() => {
+mongoose.connect(process.env.MONGO_URL, {dbName: "FoodieEatsDB"}).then(() => {
     console.log("Connected to MongoDB");
   })
   .catch((err) => {
@@ -30,4 +28,5 @@ app.get("/", (req, res) => {
 // routes
 const jwt = require("jsonwebtoken");
 app.use("/api/users", userRoutes);
+app.use("/api/restaurants", restaurantRoutes);
 app.use(cors());
