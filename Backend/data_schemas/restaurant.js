@@ -1,32 +1,33 @@
 const mongoose = require("mongoose");
 
-const restaurantSchema = new mongoose.Schema(
-{
-    name: { type: String, required: true },
-    location: { type: String} ,
-    coordinates: {
-        latitude: { type: Number, require: true },
-        longitude: { type: Number, require: true },
+const restaurantSchema = new mongoose.Schema({
+  name: { type: String, required: true },
+  location: { type: String, required: true },
+  average_rating: { type: Number, default: 0 },
+  operating_hours: { type: String, required: true },
+  
+  reviews: { type: Array, default: [] },
+  num_reviews: { type: Number, default: 0 },
+
+  contact_info: {
+    phone: { type: String, required: true },
+    email: { type: String, required: true },
+  },
+
+  coordinates: {
+    latitude: { type: Number, required: true },
+    longitude: { type: Number, required: true },
+  },
+
+  menu: [
+    {
+      name: { type: String, required: true },
+      description: { type: String, required: true },
+      price: { type: Number, required: true },
+      average_rating: { type: Number, default: 0 },
+      num_ratings: { type: Number, default: 0 },
     },
-    reviews: { type: Array, default: [] },
-    average_rating: { type: Number, default: 0 },
-    followers: { type: Array, default: [] },
-    operating_hours: String,
-    contact_info: {
-        phone: String,
-        email: String,
-    },
-    reservation_link: String,
-    menu: [
-        {
-            name: { type: String, require: true },
-            description: { type: String, require: true },
-            average_rating: { type: Number, default: 0 },
-            price: { type: Number, require: true },
-            num_ratings: { type: Number, default: 0 }
-        }
-    ],
+  ],
 });
 
 module.exports = mongoose.model("Restaurant", restaurantSchema, "restaurants");
-
