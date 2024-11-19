@@ -2,11 +2,11 @@ const mongoose = require("mongoose");
 
 const restaurantSchema = new mongoose.Schema(
 {
-    name: String,
-    location: String,
+    name: { type: String, required: true },
+    location: type: String,
     coordinates: {
-        latitude: Number,
-        longitude: Number,
+        latitude: { type: Number, require: true },
+        longitude: { type: Number, require: true },
     },
     reviews: { type: Array, default: [] },
     average_rating: { type: Number, default: 0 },
@@ -19,10 +19,10 @@ const restaurantSchema = new mongoose.Schema(
     reservation_link: String,
     menu: [
         {
-            name: String,
-            description: String,
+            name: { type: String, require: true },
+            description: { type: String, require: true },
             average_rating: { type: Number, default: 0 },
-            price: Number,
+            price: { type: Number, require: true },
             num_ratings: { type: Number, default: 0 }
         }
     ],
