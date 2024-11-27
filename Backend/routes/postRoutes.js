@@ -4,7 +4,7 @@ const User = require("../data_schemas/users");
 const Post = require("../data_schemas/post");
 const router = express.Router();
 
-router.get("/:user_id/following", async (req, res) => {
+router.get("/:user_id/user_feed", async (req, res) => {
   const { user_id } = req.params;
 
   if (!mongoose.Types.ObjectId.isValid(user_id)) {
