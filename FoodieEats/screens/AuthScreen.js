@@ -3,7 +3,7 @@ import { StyleSheet, View, Text, TextInput, TouchableOpacity, Alert } from 'reac
 import axios from 'axios';
 import { Eye, EyeOff } from 'lucide-react-native';
 
-export default function AuthScreen() {
+export default function AuthScreen(props) {
   const [isLogin, setIsLogin] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
@@ -21,6 +21,7 @@ export default function AuthScreen() {
       console.log('Login successful:', user);
       console.log('Token:', token);
       Alert.alert("Success", "Logged in successfully!");
+      props.navigation.navigate('Profile')
     } catch (error) {
       console.error('Login error:', error.response ? error.response.data : error.message);
       Alert.alert("Login Error", error.response?.data?.error || "Something went wrong");
