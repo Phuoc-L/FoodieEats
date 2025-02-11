@@ -7,7 +7,6 @@ const Post = require("../data_schemas/post");
 const getPresignedURL = require("../functions/s3PresignedURL.js");
 require("dotenv").config({ path: "secrets.ini" });
 const router = express.Router();
-// const User = require("../data_schemas/users"); // Imported above in ln 5
 
 // -----------------------------------------
 // User Authentication
