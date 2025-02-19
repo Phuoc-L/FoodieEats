@@ -19,10 +19,10 @@ export default function App() {
   return (
     <NavigationContainer>
       <Stack.Navigator initialRouteName="UserFeed">
-        <Stack.Screen name="UserFeed" component={UserFeed} options={{ headerShown: false }} />
-        <Stack.Screen name="Explore" component={Explore} options={{ headerShown: false }} />
-        <Stack.Screen name="Profile" component={Profile} options={{ headerShown: false }} />
-        <Stack.Screen name="NewPost" component={NewPost} />
+        <Stack.Screen name="UserFeed" component={UserFeed} options={{ title: "Following" }} />
+        <Stack.Screen name="Explore" component={Explore} options={{ title: "Explore" }} />
+        <Stack.Screen name="Profile" component={Profile} options={{ title: "Profile" }} />
+        <Stack.Screen name="NewPost" component={NewPost} options={{ headerShown: false }} />
       </Stack.Navigator>
     </NavigationContainer>
   );
