@@ -202,4 +202,33 @@ router.get("/:user_id/user_feed", async (req, res) => {
   }
 });
 
+// Like/Unlike a Post
+router.post("/:post_user_id/posts/:post_id/like/:user_id", async (req, res) => {
+  try {
+    const { post_user_id, post_id, user_id } = req.params;
+    const post = await Post.findById(post_id);
+
+    if (!post) {
+      return res.status(404).json({ error: "Post not found" });
+    }
+
+    const userIndex = post.like_list.indexOf(user_id);
+
+    if (userIndex === -1) {
+      // User hasn't liked -> Add like
+      post.like_list.push(user_id);
+      post.num_like += 1;
+    } else {
+      // User has liked -> Remove like
+      post.like_list.splice(userIndex, 1);
+      post.num_like -= 1;
+    }
+
+    await post.save();
+    res.status(200).json({ message: "Like updated", post });
+  } catch (error) {
+    res.status(500).json({ error: "Error updating like", details: error.message });
+  }
+});
+
 module.exports = router;
