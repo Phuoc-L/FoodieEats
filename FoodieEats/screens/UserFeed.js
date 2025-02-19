@@ -16,7 +16,7 @@ export default function UserFeed() {
   const fetchPosts = async () => {
     try {
       const userId = '67045cebfe84a164fa7085a9'; // Replace with actual user ID
-      const post_url = `http://192.168.1.74:3000/api/posts/${userId}/user_feed`
+      const post_url = `http://192.168.99.150:3000/api/posts/${userId}/user_feed`
       const response = await axios.get(post_url);
 
       if (response.status === 200) {
@@ -24,15 +24,18 @@ export default function UserFeed() {
 
         const postsWithMenu = await Promise.all(
           postsData.map(async (post) => {
-            console.log(post.dish_id)
             try {
-              const menuResponse = await axios.get(
-                `http://192.168.1.74:3000/api/restaurants/${post.restaurant_id}/menu/${post.dish_id}`
+              const restaurantResponse = await axios.get(
+                `http://192.168.99.150:3000/api/restaurants/${post.restaurant_id}`
               );
-              return { ...post, menuItem: menuResponse.data || null };
+              console.log(restaurantResponse.data)
+              const menuResponse = await axios.get(
+                `http://192.168.99.150:3000/api/restaurants/${post.restaurant_id}/menu/${post.dish_id}`
+              );
+              return { ...post, dishName: menuResponse.data?.name || null, restaurant: restaurantResponse.data || null };
             } catch (error) {
               console.error(`Error fetching menu item for post ${post._id}:`, error);
-              return { ...post, menuItem: null };
+              return { ...post, dishName: null, restaurant: null };
             }
           })
         );
@@ -73,9 +76,20 @@ export default function UserFeed() {
       </View>
       <Image source={{ uri: item.media_url }} style={styles.media} />
       {renderStars(item.ratings)}
-      <Text style={styles.title}>{item.title}</Text>
-      <Text style={styles.description}>{item.description}</Text>
-      <Text style={styles.likes}>{item.like_list.length} likes</Text>
+      <Text style={styles.itemName}>{item.dishName}</Text>
+      <Text style={styles.restaurantName}>{item.restaurant.name}</Text>
+      <View style={styles.descriptionContainer}>
+        <Text style={styles.description}>
+          <Text style={styles.title}>{item.title}  </Text>
+          {item.description}
+        </Text>
+      </View>
+      <View style={styles.footer}>
+        <Text style={styles.likes}>{item.like_list.length} likes</Text>
+        <TouchableOpacity style={styles.commentsButton}>
+          <Text style={styles.commentsText}>View Comments</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 
@@ -105,6 +119,10 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#ccc',
   },
+  descriptionContainer: {
+    marginTop: 10,
+    marginBottom: 10
+  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -125,19 +143,22 @@ const styles = StyleSheet.create({
     height: width-20,
     alignItems: 'center',
   },
-  title: {
-    fontSize: width/16,
-    fontWeight: 'bold',
-    textAlign: 'center',
-  },
-  description: {
+  itemName: {
+      fontSize: width/16,
+      fontWeight: 'bold',
+      textAlign: 'center',
+    },
+  restaurantName: {
     fontSize: width/25,
     color: '#555',
     textAlign: 'center',
   },
-  likes: {
-    marginTop: 5,
-    color: '#555',
+  title: {
+    fontSize: width/22,
+    fontWeight: 'bold',
+  },
+  description: {
+    fontSize: width/22,
   },
   starContainer: {
     flexDirection: 'row',
@@ -147,5 +168,28 @@ const styles = StyleSheet.create({
   },
   star: {
     marginHorizontal: width/70,
+  },
+  footer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    width: '100%',
+    paddingHorizontal: 10,
+    marginTop: 5,
+  },
+  likes: {
+    color: '#0080F0',
+    fontSize: 16,
+  },
+  commentsButton: {
+    backgroundColor: '#fff',
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+    borderRadius: 5,
+  },
+  commentsText: {
+    color: '#0080F0',
+    fontSize: 14,
+    fontWeight: 'bold',
   },
 });
