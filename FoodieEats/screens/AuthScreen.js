@@ -16,12 +16,19 @@ export default function AuthScreen(props) {
 
   const loginUser = async (credentials) => {
     try {
-      const response = await axios.post(process.env.EXPO_PUBLIC_API_URL + '/api/users/login', credentials);
+      const response = await axios.post(
+        process.env.EXPO_PUBLIC_API_URL + '/api/users/login',
+        credentials
+      );
+      console.log('Full response:', response.data);
       const { user, token } = response.data;
       console.log('Login successful:', user);
       console.log('Token:', token);
+
+      // Navigate to Profile with user/token
+      props.navigation.navigate('Profile', { user, token });
+
       Alert.alert("Success", "Logged in successfully!");
-      props.navigation.navigate('Profile')
     } catch (error) {
       console.error('Login error:', error.response ? error.response.data : error.message);
       Alert.alert("Login Error", error.response?.data?.error || "Something went wrong");

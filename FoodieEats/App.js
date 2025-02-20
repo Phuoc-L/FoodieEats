@@ -18,7 +18,8 @@ const Stack = createNativeStackNavigator();
 export default function App() {
   return (
     <NavigationContainer>
-      <Stack.Navigator initialRouteName="UserFeed">
+      <Stack.Navigator initialRouteName="Auth">
+        <Stack.Screen name='Auth' component={AuthScreen}/>
         <Stack.Screen name="UserFeed" component={UserFeed} options={{ headerShown: false }} />
         <Stack.Screen name="Explore" component={Explore} options={{ headerShown: false }} />
         <Stack.Screen name="Profile" component={Profile} options={{ headerShown: false }} />
@@ -26,3 +27,4 @@ export default function App() {
       </Stack.Navigator>
     </NavigationContainer>
   );
+}
