@@ -1,11 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, StyleSheet, Image, TouchableOpacity, Dimensions } from 'react-native';
+import { View, FlatList, StyleSheet } from 'react-native';
 import NavigationBar from './Navigation';
 import axios from 'axios';
-import { FontAwesome } from '@expo/vector-icons';
 import PostComponent from './PostComponent';
-
-const { width } = Dimensions.get('window');
 
 export default function UserFeed() {
   const [posts, setPosts] = useState([]);
@@ -17,7 +14,8 @@ export default function UserFeed() {
   const fetchPosts = async () => {
     try {
       const userId = '67045cebfe84a164fa7085a9'; // Replace with actual user ID
-      const post_url = `http://192.168.99.150:3000/api/posts/${userId}/user_feed`
+      const url_prefix = "http://192.168.1.195:3000"
+      const post_url = url_prefix + `/api/posts/${userId}/user_feed`
       const response = await axios.get(post_url);
 
       if (response.status === 200) {
@@ -27,11 +25,10 @@ export default function UserFeed() {
           postsData.map(async (post) => {
             try {
               const restaurantResponse = await axios.get(
-                `http://192.168.99.150:3000/api/restaurants/${post.restaurant_id}`
+                url_prefix + `/api/restaurants/${post.restaurant_id}`
               );
-              console.log(restaurantResponse.data)
               const menuResponse = await axios.get(
-                `http://192.168.99.150:3000/api/restaurants/${post.restaurant_id}/menu/${post.dish_id}`
+                url_prefix + `/api/restaurants/${post.restaurant_id}/menu/${post.dish_id}`
               );
               return { ...post, dishName: menuResponse.data?.name || null, restaurant: restaurantResponse.data || null };
             } catch (error) {

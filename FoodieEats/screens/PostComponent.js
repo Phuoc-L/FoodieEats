@@ -1,10 +1,32 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, Image, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
+import { FaHeart, FaRegHeart } from "react-icons/fa";
 import { FontAwesome } from '@expo/vector-icons';
+import axios from 'axios';
 
 const { width } = Dimensions.get('window');
 
-export default function PostComponent({ item }) {
+const PostComponent = ({ item }) => {
+  const [likes, setLikes] = useState(item.like_list.length);
+  const [isLiked, setIsLiked] = useState(item.like_list.includes('67045cebfe84a164fa7085a9')); // Replace with actual user ID
+
+  const handleLike = async () => {
+    try {
+      const updatedLikes = isLiked ? likes - 1 : likes + 1;
+      setLikes(updatedLikes);
+      setIsLiked(!isLiked);
+
+      const userId = '67045cebfe84a164fa7085a9'; // Replace with actual user ID
+
+      await axios.post(
+        `http://192.168.1.195:3000/api/posts/${item.user_id}/posts/${item._id}/like/${userId}`
+      );
+
+    } catch (error) {
+      console.error('Error updating like:', error);
+    }
+  };
+
   const renderStars = (rating) => {
     return (
       <View style={styles.starContainer}>
@@ -41,9 +63,12 @@ export default function PostComponent({ item }) {
         </Text>
       </View>
       <View style={styles.footer}>
-        <Text style={styles.likes}>{item.like_list.length} {item.like_list.length === 1 ? "like" : "likes"}</Text>
+        <TouchableOpacity onPress={handleLike} style={styles.likeContainer}>
+          <FontAwesome name={isLiked ? 'heart' : 'heart-o'} size={30} color='#0080F0' />
+          <Text style={styles.likes}>{likes} {likes === 1 ? 'like' : 'likes'}</Text>
+        </TouchableOpacity>
         <TouchableOpacity style={styles.commentsButton}>
-          <Text style={styles.commentsText}>View Comments</Text>
+          <Text style={styles.commentsText}>{item.comment_list.length} {item.comment_list.length === 1 ? "Comment" : "Comments"}</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -52,11 +77,14 @@ export default function PostComponent({ item }) {
 
 const styles = StyleSheet.create({
   postContainer: {
-    marginTop: 20,
-    marginBottom: 20,
+    marginTop: 10,
+    marginBottom: 25,
   },
   descriptionContainer: {
     padding: 10,
+  },
+  likeContainer: {
+    flexDirection: 'row',
   },
   header: {
     flexDirection: 'row',
@@ -66,7 +94,7 @@ const styles = StyleSheet.create({
   avatar: {
     width: width / 7,
     height: width / 7,
-    borderRadius: 10,
+    borderRadius: 100,
     marginRight: width / 40,
     marginLeft: 10
   },
@@ -78,6 +106,7 @@ const styles = StyleSheet.create({
     width: width,
     height: width,
     alignItems: 'center',
+    marginVertical: 5,
   },
   itemName: {
     fontSize: width / 16,
@@ -111,11 +140,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     width: '100%',
     paddingHorizontal: 10,
-    marginTop: 5,
   },
   likes: {
     color: '#0080F0',
     fontSize: 16,
+    paddingVertical: 5,
+    paddingHorizontal: 10,
   },
   commentsButton: {
     backgroundColor: '#fff',
@@ -125,7 +155,9 @@ const styles = StyleSheet.create({
   },
   commentsText: {
     color: '#0080F0',
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: 'bold',
   },
 });
+
+export default PostComponent;
