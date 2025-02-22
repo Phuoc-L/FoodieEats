@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { StyleSheet, View, Text, TextInput, TouchableOpacity, Alert } from 'react-native';
+import { StyleSheet, View, Text, TextInput, TouchableOpacity, Alert, TouchableWithoutFeedback, Keyboard } from 'react-native';
 import axios from 'axios';
 import { Eye, EyeOff } from 'lucide-react-native';
 
@@ -19,9 +19,8 @@ export default function AuthScreen(props) {
       const response = await axios.post(process.env.EXPO_PUBLIC_API_URL + '/api/users/login', credentials);
       const { user, token } = response.data;
       console.log('Login successful:', user);
-      console.log('Token:', token);
-      Alert.alert("Success", "Logged in successfully!");
-      props.navigation.navigate('Profile')
+      // console.log('Token:', token);
+      props.navigation.navigate('UserFeed');
     } catch (error) {
       console.error('Login error:', error.response ? error.response.data : error.message);
       Alert.alert("Login Error", error.response?.data?.error || "Something went wrong");
@@ -59,97 +58,99 @@ export default function AuthScreen(props) {
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.content}>
-        <Text style={styles.logo}>FoodieEats</Text>
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+      <View style={styles.container}>
+        <View style={styles.content}>
+          <Text style={styles.logo}>FoodieEats</Text>
 
-        <View style={styles.buttonContainer}>
-          <TouchableOpacity 
-            style={[
-              styles.tabButton,
-              isLogin ? styles.activeTabButton : styles.inactiveTabButton
-            ]}
-            onPress={() => setIsLogin(true)}
-          >
-            <Text style={[
-              styles.buttonText,
-              isLogin ? styles.activeButtonText : styles.inactiveButtonText
-            ]}>Log In</Text>
-          </TouchableOpacity>
-          <TouchableOpacity 
-            style={[
-              styles.tabButton,
-              !isLogin ? styles.activeTabButton : styles.inactiveTabButton
-            ]}
-            onPress={() => setIsLogin(false)}
-          >
-            <Text style={[
-              styles.buttonText,
-              !isLogin ? styles.activeButtonText : styles.inactiveButtonText
-            ]}>Sign Up</Text>
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.form}>
-          {!isLogin && (
-            <>
-              <TextInput
-                style={styles.input}
-                placeholder="First Name"
-                value={formData.firstName}
-                onChangeText={(text) => setFormData({...formData, firstName: text})}
-              />
-              <TextInput
-                style={styles.input}
-                placeholder="Last Name"
-                value={formData.lastName}
-                onChangeText={(text) => setFormData({...formData, lastName: text})}
-              />
-            </>
-          )}
-          
-          <TextInput
-            style={styles.input}
-            placeholder="Email"
-            value={formData.email}
-            onChangeText={(text) => setFormData({...formData, email: text})}
-          />
-          
-          {!isLogin && (
-            <TextInput
-              style={styles.input}
-              placeholder="Username"
-              value={formData.username}
-              onChangeText={(text) => setFormData({...formData, username: text})}
-            />
-          )}
-          
-          <View style={styles.passwordContainer}>
-            <TextInput
-              style={styles.passwordInput}
-              placeholder="Password"
-              secureTextEntry={!showPassword}
-              value={formData.password}
-              onChangeText={(text) => setFormData({...formData, password: text})}
-            />
+          <View style={styles.buttonContainer}>
             <TouchableOpacity 
-              style={styles.eyeIcon} 
-              onPress={() => setShowPassword(!showPassword)}
+              style={[
+                styles.tabButton,
+                isLogin ? styles.activeTabButton : styles.inactiveTabButton
+              ]}
+              onPress={() => setIsLogin(true)}
             >
-              {showPassword ? (
-                <Eye size={24} color="#007AFF" />
-              ) : (
-                <EyeOff size={24} color="#007AFF" />
-              )}
+              <Text style={[
+                styles.buttonText,
+                isLogin ? styles.activeButtonText : styles.inactiveButtonText
+              ]}>Log In</Text>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={[
+                styles.tabButton,
+                !isLogin ? styles.activeTabButton : styles.inactiveTabButton
+              ]}
+              onPress={() => setIsLogin(false)}
+            >
+              <Text style={[
+                styles.buttonText,
+                !isLogin ? styles.activeButtonText : styles.inactiveButtonText
+              ]}>Sign Up</Text>
             </TouchableOpacity>
           </View>
 
-          <TouchableOpacity style={styles.goButton} onPress={handleSubmit}>
-            <Text style={styles.goButtonText}>Go</Text>
-          </TouchableOpacity>
+          <View style={styles.form}>
+            {!isLogin && (
+              <>
+                <TextInput
+                  style={styles.input}
+                  placeholder="First Name"
+                  value={formData.firstName}
+                  onChangeText={(text) => setFormData({...formData, firstName: text})}
+                />
+                <TextInput
+                  style={styles.input}
+                  placeholder="Last Name"
+                  value={formData.lastName}
+                  onChangeText={(text) => setFormData({...formData, lastName: text})}
+                />
+              </>
+            )}
+            
+            <TextInput
+              style={styles.input}
+              placeholder="Email"
+              value={formData.email}
+              onChangeText={(text) => setFormData({...formData, email: text})}
+            />
+            
+            {!isLogin && (
+              <TextInput
+                style={styles.input}
+                placeholder="Username"
+                value={formData.username}
+                onChangeText={(text) => setFormData({...formData, username: text})}
+              />
+            )}
+            
+            <View style={styles.passwordContainer}>
+              <TextInput
+                style={styles.passwordInput}
+                placeholder="Password"
+                secureTextEntry={!showPassword}
+                value={formData.password}
+                onChangeText={(text) => setFormData({...formData, password: text})}
+              />
+              <TouchableOpacity 
+                style={styles.eyeIcon} 
+                onPress={() => setShowPassword(!showPassword)}
+              >
+                {showPassword ? (
+                  <Eye size={24} color="#007AFF" />
+                ) : (
+                  <EyeOff size={24} color="#007AFF" />
+                )}
+              </TouchableOpacity>
+            </View>
+
+            <TouchableOpacity style={styles.goButton} onPress={handleSubmit}>
+              <Text style={styles.goButtonText}>Go</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
-    </View>
+    </TouchableWithoutFeedback>
   );
 }
 
