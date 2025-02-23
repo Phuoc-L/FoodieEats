@@ -119,7 +119,7 @@ router.get('/search', async (req, res) => {
   try {
     const { query, sortBy, sortOrder, minFollowers, maxFollowers, minPosts, maxPosts, showPrivate } = req.query;
 
-    console.log("Search query:", query, "Sort by:", sortBy, "Sort order:", sortOrder, 
+    console.log("User Search query:", query, "Sort by:", sortBy, "Sort order:", sortOrder, 
       "Min followers:", minFollowers, "Max followers:", maxFollowers, 
       "Min posts:", minPosts, "Max posts:", maxPosts, "Show private:", showPrivate);
 

@@ -8,118 +8,129 @@ import NavigationBar from './Navigation';
 import DropDownPicker from 'react-native-dropdown-picker';
 
 export default function Explore() {
-  const [searchVisible, setSearchVisible] = useState(false);
+  const [searchMode, setSearchMode] = useState('users'); // 'users' or 'restaurants'
   const [searchQuery, setSearchQuery] = useState('');
-  const [users, setUsers] = useState([]);
+  const [results, setResults] = useState([]);
   const [filtersVisible, setFiltersVisible] = useState(false);
-  const [minFollowers, setMinFollowers] = useState('');
-  const [maxFollowers, setMaxFollowers] = useState('');
-  const [minPosts, setMinPosts] = useState('');
-  const [maxPosts, setMaxPosts] = useState('');
-  const [showPrivate, setShowPrivate] = useState(false);
   const [sortField, setSortField] = useState('');
   const [sortOrder, setSortOrder] = useState('asc');
   const [sortOpen, setSortOpen] = useState(false);
   const [orderOpen, setOrderOpen] = useState(false);
   const navigation = useNavigation();
 
+  // User filters
+  const [minFollowers, setMinFollowers] = useState('');
+  const [maxFollowers, setMaxFollowers] = useState('');
+  const [minPosts, setMinPosts] = useState('');
+  const [maxPosts, setMaxPosts] = useState('');
+
+  // Restaurant filters
+  const [minRating, setMinRating] = useState('');
+  const [maxRating, setMaxRating] = useState('');
+
   const handleSearch = async () => {
     if (!searchQuery) return;
     try {
-      const response = await axios.get(process.env.EXPO_PUBLIC_API_URL + '/api/users/search', {
-        params: { 
-          query: searchQuery,
-          minFollowers,
-          maxFollowers,
-          minPosts,
-          maxPosts,
-          showPrivate,
-          sortBy: sortField,
-          sortOrder,
-        },
-      });
-      setUsers(response.data.users);
-      setSearchVisible(false);
+      const endpoint = searchMode === 'users' ? '/api/users/search' : '/api/restaurants/search';
+      const params = {
+        query: searchQuery,
+        sortBy: sortField || undefined,
+        sortOrder: sortOrder || 'asc',
+        ...(searchMode === 'users' ? {
+          minFollowers: minFollowers || undefined,
+          maxFollowers: maxFollowers || undefined,
+          minPosts: minPosts || undefined,
+          maxPosts: maxPosts || undefined,
+        } : {
+          minRating: minRating || undefined,
+          maxRating: maxRating || undefined,
+        }),
+      };
+
+      const response = await axios.get(process.env.EXPO_PUBLIC_API_URL + endpoint, { params });
+      setResults(response.data.restaurants || response.data.users);
+      Keyboard.dismiss();
     } catch (error) {
-      console.error('Error fetching users:', error);
+      console.error(`Error fetching ${searchMode}:`, error.response?.data || error.message);
     }
+  };
+
+  const handleModeToggle = (mode) => {
+    setSearchMode(mode);
+    setResults([]);
   };
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
       <SafeAreaView style={styles.container}>
-        <View style={styles.header}>
+        <View style={styles.header}> 
           <Text style={styles.title}>Explore</Text>
-          {searchVisible ? (
-            <View style={styles.searchContainer}>
-              <TextInput
-                style={styles.searchInput}
-                placeholder="Search users..."
-                value={searchQuery}
-                onChangeText={setSearchQuery}
-              />
-              <TouchableOpacity onPress={handleSearch}>
-                <Ionicons name="checkmark" size={24} color="black" />
-              </TouchableOpacity>
-              <TouchableOpacity onPress={() => setFiltersVisible(true)}>
-                <Ionicons name="options" size={24} color="black" />
-              </TouchableOpacity>
-            </View>
-          ) : (
-            <TouchableOpacity onPress={() => setSearchVisible(true)}>
-              <Ionicons name="search" size={24} color="black" />
+          <View style={styles.modeToggle}>
+            <TouchableOpacity onPress={() => handleModeToggle('users')}>
+              <Text style={[styles.modeButton, searchMode === 'users' && styles.activeMode]}>Users</Text>
             </TouchableOpacity>
-          )}
+            <TouchableOpacity onPress={() => handleModeToggle('restaurants')}>
+              <Text style={[styles.modeButton, searchMode === 'restaurants' && styles.activeMode]}>Restaurants</Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
-        <FlatList
-          data={users}
-          keyExtractor={(item) => item._id}
-          renderItem={({ item }) => (
-            <TouchableOpacity onPress={() => navigation.navigate('Profile', { userId: item._id })}>
-              <View style={styles.userCard}>
-                <Image source={{ uri: item.profile.avatar_url || 'https://via.placeholder.com/50' }} style={styles.avatar} />
-                <View>
-                  <Text style={styles.username}>{item.username}</Text>
-                  <Text style={styles.fullName}>{item.first_name} {item.last_name}</Text>
-                  <Text style={styles.bio}>{item.profile.bio}</Text>
-                </View>
-              </View>
-            </TouchableOpacity>
-          )}
-        />
+        <View style={styles.searchContainer}>
+          <TextInput
+            style={styles.searchInput}
+            placeholder={`Search ${searchMode}...`}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+          />
+          <TouchableOpacity onPress={() => { setFiltersVisible(true); Keyboard.dismiss(); }}>
+            <Ionicons name="options" size={30} color="black" />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={handleSearch}>
+            <Ionicons name="search" size={30} color="black" />
+          </TouchableOpacity>
+        </View>
 
-        <Modal visible={filtersVisible} animationType="slide">
+        <FlatList data={results} keyExtractor={(item) => item._id} renderItem={({ item }) => (
+          <TouchableOpacity onPress={() => navigation.navigate(searchMode === 'users' ? 'Profile' : 'Restaurant', { id: item._id })}>
+            <View style={styles.resultCard}>
+              {searchMode === 'users' && (<Image source={{ uri: item.profile.avatar_url || 'https://via.placeholder.com/50' }} style={styles.avatar} />)}
+              <View>
+                <View style={styles.restaurantRating}>
+                  <Text style={styles.resultName}>{item.name || item.username}</Text>
+                  {searchMode === 'restaurants' && (
+                    <Text>
+                      <Ionicons name="star" size={16} color="gold" /> {item.average_rating?.toFixed(1) || 'N/A'}
+                    </Text>
+                  )}
+                </View>
+                <Text style={styles.fullName}>{item.first_name || item.location} {item.last_name}</Text>
+                {searchMode === 'users' && (<Text style={styles.resultDetails}> {item.profile.bio} </Text> )}
+              </View>
+            </View>
+          </TouchableOpacity>
+        )}/>
+
+        <Modal visible={filtersVisible && searchMode === 'restaurants'} animationType="slide">
           <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
             <SafeAreaView style={styles.container}>
               <View style={styles.modalContent}>
-                <Text style={styles.label}>Min Followers</Text>
-                <TextInput style={styles.input} keyboardType="numeric" value={minFollowers} onChangeText={setMinFollowers} />
-                
-                <Text style={styles.label}>Max Followers</Text>
-                <TextInput style={styles.input} keyboardType="numeric" value={maxFollowers} onChangeText={setMaxFollowers} />
-                
-                <Text style={styles.label}>Min Posts</Text>
-                <TextInput style={styles.input} keyboardType="numeric" value={minPosts} onChangeText={setMinPosts} />
-                
-                <Text style={styles.label}>Max Posts</Text>
-                <TextInput style={styles.input} keyboardType="numeric" value={maxPosts} onChangeText={setMaxPosts} />
-                
+                <Text style={styles.label}>Min Rating</Text>
+                <TextInput style={styles.input} keyboardType="numeric" value={minRating} onChangeText={setMinRating} />
+                <Text style={styles.label}>Max Rating</Text>
+                <TextInput style={styles.input} keyboardType="numeric" value={maxRating} onChangeText={setMaxRating} />
                 <Text style={styles.label}>Sort By</Text>
                 <DropDownPicker
                   open={sortOpen}
                   value={sortField}
                   items={[
-                    { label: 'Followers', value: 'followers_count' },
-                    { label: 'Posts', value: 'posts_count' },
-                    { label: 'Username', value: 'username' },
+                    { label: 'Name', value: 'name' },
+                    { label: 'Average Rating', value: 'average_rating' }
                   ]}
                   setOpen={setSortOpen}
                   setValue={setSortField}
                   style={{ zIndex: 3000 }}
                   containerStyle={{ zIndex: 3000 }}
                 />
-
                 <Text style={styles.label}>Sort Order</Text>
                 <DropDownPicker
                   open={orderOpen}
@@ -133,13 +144,52 @@ export default function Explore() {
                   style={{ zIndex: 2000 }}
                   containerStyle={{ zIndex: 2000 }}
                 />
+                <Button title="Apply Filters" onPress={() => { setFiltersVisible(false); setSortOpen(false); setOrderOpen(false) }} />
+              </View>
+            </SafeAreaView>
+          </TouchableWithoutFeedback>
+        </Modal>
 
-                <View style={styles.checkboxContainer}>
-                  <Text>Show Private Profiles</Text>
-                  <Button title={showPrivate ? "Yes" : "No"} onPress={() => setShowPrivate(!showPrivate)} />
-                </View>
-                
-                <Button title="Apply Filters" onPress={() => { setFiltersVisible(false); handleSearch(); }} />
+        <Modal visible={filtersVisible && searchMode === 'users'} animationType="slide">
+          <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+            <SafeAreaView style={styles.container}>
+              <View style={styles.modalContent}>
+                <Text style={styles.label}>Min Followers</Text>
+                <TextInput style={styles.input} keyboardType="numeric" value={minFollowers} onChangeText={setMinFollowers} />
+                <Text style={styles.label}>Max Followers</Text>
+                <TextInput style={styles.input} keyboardType="numeric" value={maxFollowers} onChangeText={setMaxFollowers} />
+                <Text style={styles.label}>Min Posts</Text>
+                <TextInput style={styles.input} keyboardType="numeric" value={minPosts} onChangeText={setMinPosts} />
+                <Text style={styles.label}>Max Posts</Text>
+                <TextInput style={styles.input} keyboardType="numeric" value={maxPosts} onChangeText={setMaxPosts} />
+                <Text style={styles.label}>Sort By</Text>
+                <DropDownPicker
+                  open={sortOpen}
+                  value={sortField}
+                  items={[
+                    { label: 'Follower Count', value: 'followers_count' },
+                    { label: 'Post Count', value: 'posts_count' },
+                    { label: 'Username', value: 'username' },
+                  ]}
+                  setOpen={setSortOpen}
+                  setValue={setSortField}
+                  style={{ zIndex: 3000 }}
+                  containerStyle={{ zIndex: 3000 }}
+                />
+                <Text style={styles.label}>Sort Order</Text>
+                <DropDownPicker
+                  open={orderOpen}
+                  value={sortOrder}
+                  items={[
+                    { label: 'Ascending', value: 'asc' },
+                    { label: 'Descending', value: 'desc' },
+                  ]}
+                  setOpen={setOrderOpen}
+                  setValue={setSortOrder}
+                  style={{ zIndex: 2000 }}
+                  containerStyle={{ zIndex: 2000 }}
+                />
+                <Button title="Apply Filters" onPress={() => { setFiltersVisible(false); setSortOpen(false); setOrderOpen(false) }} />
               </View>
             </SafeAreaView>
           </TouchableWithoutFeedback>
@@ -154,19 +204,129 @@ export default function Explore() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20 },
-  searchContainer: { flexDirection: 'row', alignItems: 'center', flex: 1 },
-  title: { fontSize: 24, fontWeight: 'bold' },
-  searchInput: { flex: 1, marginLeft: 10, padding: 8, borderBottomWidth: 1, borderColor: '#ccc' },
-  userCard: { flexDirection: 'row', padding: 15, borderBottomWidth: 1, borderColor: '#eee' },
-  avatar: { width: 50, height: 50, borderRadius: 25, marginRight: 15, borderWidth: 1, borderColor: '#ccc' },
-  username: { fontWeight: 'bold', fontSize: 16 },
-  fullName: { color: '#666' },
-  bio: { marginTop: 5, color: '#888' },
-  navbar: { height: 60, borderTopWidth: 1, borderTopColor: '#ccc' },
-  modalContent: { padding: 20 },
-  label: { fontWeight: 'bold', marginTop: 10 },
-  input: { borderWidth: 1, padding: 10, marginBottom: 10, borderRadius: 5 },
-  checkboxContainer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 20 },
+  container: { 
+    flex: 1, 
+    backgroundColor: '#fff', 
+    padding: 10 
+  },
+  header: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    alignItems: 'flex-end', 
+    paddingVertical: 10, 
+    paddingHorizontal: 15,
+    borderBottomWidth: 1,
+    borderColor: '#ddd'
+  },
+  title: { 
+    fontSize: 32, 
+    fontWeight: 'bold' 
+  },
+  modeToggle: {
+    flexDirection: 'row',
+    justifyContent: 'flex-start',
+    alignItems: 'center',
+    backgroundColor: '#f0f0f0',
+    borderRadius: 20,
+    gap: 10,
+    flexShrink: 1,
+  },
+  modeButton: { 
+    fontSize: 16, 
+    color: '#666', 
+    paddingVertical: 5, 
+    paddingHorizontal: 10, 
+    borderRadius: 20,
+    flexShrink: 1 
+  },
+  activeMode: { 
+    fontWeight: 'bold', 
+    color: '#fff', 
+    backgroundColor: '#007bff' 
+  },
+  searchContainer: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    padding: 10, 
+    borderRadius: 10, 
+    backgroundColor: '#f9f9f9',
+    marginVertical: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 2,
+    gap: 5
+  },
+  searchInput: { 
+    flex: 1, 
+    padding: 10, 
+    borderRadius: 8, 
+    backgroundColor: '#fff', 
+    borderWidth: 1, 
+    borderColor: '#ccc',
+    marginRight: 10
+  },
+  resultCard: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    padding: 15, 
+    borderBottomWidth: 1, 
+    borderColor: '#eee', 
+    backgroundColor: '#fff', 
+    borderRadius: 10, 
+    marginVertical: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 1
+  },
+  avatar: { 
+    width: 50, 
+    height: 50, 
+    borderRadius: 25, 
+    marginRight: 15, 
+    borderWidth: 1, 
+    borderColor: '#ccc' 
+  },
+  restaurantRating: {
+    color: '#666', 
+    gap: 5,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+  },
+  resultName: { 
+    fontWeight: 'bold', 
+    fontSize: 16 
+  },
+  fullName: { 
+    color: '#666' 
+  },
+  resultDetails: { 
+    color: '#666', 
+    marginTop: 5 
+  },
+  label: { 
+    fontWeight: 'bold', 
+    marginTop: 10 
+  },
+  input: { 
+    borderWidth: 1, 
+    padding: 10, 
+    marginBottom: 10, 
+    borderRadius: 5 
+  },
+  navbar: { 
+    height: 60, 
+    borderTopWidth: 1, 
+    borderTopColor: '#ccc', 
+    backgroundColor: '#fff',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 5
+  },
 });
