@@ -112,6 +112,76 @@ const verifyToken = (req, res, next) => {
 };
 
 // -----------------------------------------
+// User Search And Filter
+// -----------------------------------------
+
+router.get('/search', async (req, res) => {
+  try {
+    const { query, sortBy, sortOrder, minFollowers, maxFollowers, minPosts, maxPosts, showPrivate } = req.query;
+
+    console.log("User Search query:", query, "Sort by:", sortBy, "Sort order:", sortOrder, 
+      "Min followers:", minFollowers, "Max followers:", maxFollowers, 
+      "Min posts:", minPosts, "Max posts:", maxPosts, "Show private:", showPrivate);
+
+    if (!query) {
+      return res.status(400).json({ error: 'Search query is required' });
+    }
+
+    const filter = {
+      $and: [
+        {
+          $or: [
+            { first_name: { $regex: query, $options: 'i' } },
+            { last_name: { $regex: query, $options: 'i' } },
+            { username: { $regex: query, $options: 'i' } },
+            { email: { $regex: query, $options: 'i' } },
+            { 'profile.bio': { $regex: query, $options: 'i' } }
+          ]
+        },
+        showPrivate === 'true' ? {} : { 'privacy_settings.profile_visibility': true }
+      ]
+    };
+
+    // Add range filters
+    if (minFollowers || maxFollowers) {
+      filter.$and.push({
+        followers_count: {
+          ...(minFollowers ? { $gte: parseInt(minFollowers) } : {}),
+          ...(maxFollowers ? { $lte: parseInt(maxFollowers) } : {})
+        }
+      });
+    }
+
+    if (minPosts || maxPosts) {
+      filter.$and.push({
+        posts_count: {
+          ...(minPosts ? { $gte: parseInt(minPosts) } : {}),
+          ...(maxPosts ? { $lte: parseInt(maxPosts) } : {})
+        }
+      });
+    }
+
+    // Build sort options
+    const sortOptions = {};
+    if (sortBy) {
+      sortOptions[sortBy] = sortOrder === 'desc' ? -1 : 1;
+    }
+
+    const users = await User.find(filter)
+      .populate('followers', 'username')
+      .populate('following', 'username')
+      .populate('likes', 'title')
+      .sort(sortOptions);
+
+    res.status(200).json({ total: users.length, users });
+
+  } catch (err) {
+    res.status(500).json({ error: 'Internal server error', details: err.message });
+  }
+});
+
+
+// -----------------------------------------
 // Basic User CRUD
 // -----------------------------------------
 
