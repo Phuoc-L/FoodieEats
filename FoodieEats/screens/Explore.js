@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, FlatList, Image, StyleSheet, Modal, Button, TouchableWithoutFeedback, Keyboard } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, FlatList, Image, StyleSheet, Modal, TouchableWithoutFeedback, Keyboard } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
@@ -90,7 +90,7 @@ export default function Explore() {
           </TouchableOpacity>
         </View>
 
-        <FlatList data={results} keyExtractor={(item) => item._id} renderItem={({ item }) => (
+        <FlatList data={results} keyExtractor={(item) => item._id} renderItem={({ item, index }) => (
           <TouchableOpacity onPress={() => navigation.navigate(searchMode === 'users' ? 'Profile' : 'Restaurant', { id: item._id })}>
             <View style={styles.resultCard}>
               {searchMode === 'users' && (<Image source={{ uri: item.profile.avatar_url || 'https://via.placeholder.com/50' }} style={styles.avatar} />)}
@@ -114,37 +114,30 @@ export default function Explore() {
           <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
             <SafeAreaView style={styles.container}>
               <View style={styles.modalContent}>
+                <View style={styles.modalHeader}> 
+                  <Text style={styles.modalTitle}>Restaurant Search Filters</Text>
+                </View>
                 <Text style={styles.label}>Min Rating</Text>
-                <TextInput style={styles.input} keyboardType="numeric" value={minRating} onChangeText={setMinRating} />
+                <TextInput style={styles.input} placeholder={"0"} placeholderTextColor={'#A0A0A0'} keyboardType="numeric" value={minRating} onChangeText={setMinRating} />
                 <Text style={styles.label}>Max Rating</Text>
-                <TextInput style={styles.input} keyboardType="numeric" value={maxRating} onChangeText={setMaxRating} />
+                <TextInput style={styles.input} placeholder={"5"} placeholderTextColor={'#A0A0A0'} keyboardType="numeric" value={maxRating} onChangeText={setMaxRating} />
                 <Text style={styles.label}>Sort By</Text>
-                <DropDownPicker
-                  open={sortOpen}
-                  value={sortField}
+                <DropDownPicker open={sortOpen} value={sortField}
                   items={[
                     { label: 'Name', value: 'name' },
                     { label: 'Average Rating', value: 'average_rating' }
-                  ]}
-                  setOpen={setSortOpen}
-                  setValue={setSortField}
-                  style={{ zIndex: 3000 }}
-                  containerStyle={{ zIndex: 3000 }}
+                  ]} setOpen={setSortOpen} setValue={setSortField} style={[styles.dropdown, {zIndex:2000}]} containerStyle={[styles.dropdownContainer, {zIndex:2000}]}
                 />
                 <Text style={styles.label}>Sort Order</Text>
-                <DropDownPicker
-                  open={orderOpen}
-                  value={sortOrder}
+                <DropDownPicker open={orderOpen} value={sortOrder}
                   items={[
                     { label: 'Ascending', value: 'asc' },
                     { label: 'Descending', value: 'desc' },
-                  ]}
-                  setOpen={setOrderOpen}
-                  setValue={setSortOrder}
-                  style={{ zIndex: 2000 }}
-                  containerStyle={{ zIndex: 2000 }}
+                  ]} setOpen={setOrderOpen} setValue={setSortOrder} style={[styles.dropdown, {zIndex:1000}]} containerStyle={[styles.dropdownContainer, {zIndex:1000}]}
                 />
-                <Button title="Apply Filters" onPress={() => { setFiltersVisible(false); setSortOpen(false); setOrderOpen(false) }} />
+                <TouchableOpacity style={styles.applyButton} onPress={() => { setFiltersVisible(false); setSortOpen(false); setOrderOpen(false); }}>
+                  <Text style={styles.applyButtonText}>Apply Filters</Text>
+                </TouchableOpacity>
               </View>
             </SafeAreaView>
           </TouchableWithoutFeedback>
@@ -154,42 +147,35 @@ export default function Explore() {
           <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
             <SafeAreaView style={styles.container}>
               <View style={styles.modalContent}>
+                <View style={styles.modalHeader}> 
+                  <Text style={styles.modalTitle}>User Search Filters</Text>
+                </View>
                 <Text style={styles.label}>Min Followers</Text>
-                <TextInput style={styles.input} keyboardType="numeric" value={minFollowers} onChangeText={setMinFollowers} />
+                <TextInput style={styles.input} placeholder={"0"} placeholderTextColor={'#A0A0A0'} keyboardType="numeric" value={minFollowers} onChangeText={setMinFollowers} />
                 <Text style={styles.label}>Max Followers</Text>
-                <TextInput style={styles.input} keyboardType="numeric" value={maxFollowers} onChangeText={setMaxFollowers} />
+                <TextInput style={styles.input} placeholder={"100"} placeholderTextColor={'#A0A0A0'} keyboardType="numeric" value={maxFollowers} onChangeText={setMaxFollowers} />
                 <Text style={styles.label}>Min Posts</Text>
-                <TextInput style={styles.input} keyboardType="numeric" value={minPosts} onChangeText={setMinPosts} />
+                <TextInput style={styles.input} placeholder={"0"} placeholderTextColor={'#A0A0A0'} keyboardType="numeric" value={minPosts} onChangeText={setMinPosts} />
                 <Text style={styles.label}>Max Posts</Text>
-                <TextInput style={styles.input} keyboardType="numeric" value={maxPosts} onChangeText={setMaxPosts} />
+                <TextInput style={styles.input} placeholder={"100"} placeholderTextColor={'#A0A0A0'} keyboardType="numeric" value={maxPosts} onChangeText={setMaxPosts} />
                 <Text style={styles.label}>Sort By</Text>
-                <DropDownPicker
-                  open={sortOpen}
-                  value={sortField}
+                <DropDownPicker open={sortOpen} value={sortField}
                   items={[
                     { label: 'Follower Count', value: 'followers_count' },
                     { label: 'Post Count', value: 'posts_count' },
                     { label: 'Username', value: 'username' },
-                  ]}
-                  setOpen={setSortOpen}
-                  setValue={setSortField}
-                  style={{ zIndex: 3000 }}
-                  containerStyle={{ zIndex: 3000 }}
+                  ]}setOpen={setSortOpen} setValue={setSortField} style={[styles.dropdown, {zIndex:2000}]} containerStyle={[styles.dropdownContainer, {zIndex:2000}]}
                 />
                 <Text style={styles.label}>Sort Order</Text>
-                <DropDownPicker
-                  open={orderOpen}
-                  value={sortOrder}
+                <DropDownPicker open={orderOpen} value={sortOrder}
                   items={[
                     { label: 'Ascending', value: 'asc' },
                     { label: 'Descending', value: 'desc' },
-                  ]}
-                  setOpen={setOrderOpen}
-                  setValue={setSortOrder}
-                  style={{ zIndex: 2000 }}
-                  containerStyle={{ zIndex: 2000 }}
+                  ]} setOpen={setOrderOpen} setValue={setSortOrder} style={[styles.dropdown, {zIndex:1000}]} containerStyle={[styles.dropdownContainer, {zIndex:1000}]}
                 />
-                <Button title="Apply Filters" onPress={() => { setFiltersVisible(false); setSortOpen(false); setOrderOpen(false) }} />
+                <TouchableOpacity style={styles.applyButton} onPress={() => { setFiltersVisible(false); setSortOpen(false); setOrderOpen(false); }}>
+                  <Text style={styles.applyButtonText}>Apply Filters</Text>
+                </TouchableOpacity>
               </View>
             </SafeAreaView>
           </TouchableWithoutFeedback>
@@ -224,15 +210,16 @@ const styles = StyleSheet.create({
   },
   modeToggle: {
     flexDirection: 'row',
-    justifyContent: 'flex-start',
+    justifyContent: 'flex-around',
     alignItems: 'center',
     backgroundColor: '#f0f0f0',
     borderRadius: 20,
-    gap: 10,
     flexShrink: 1,
   },
   modeButton: { 
     fontSize: 16, 
+    width: 110,
+    textAlign: 'center',
     color: '#666', 
     paddingVertical: 5, 
     paddingHorizontal: 10, 
@@ -308,15 +295,73 @@ const styles = StyleSheet.create({
     color: '#666', 
     marginTop: 5 
   },
+  modalHeader: { 
+    flexDirection: 'row', 
+    justifyContent: 'center', 
+    alignItems: 'flex-end', 
+    paddingVertical: 10, 
+    paddingHorizontal: 15,
+    borderBottomWidth: 1,
+    borderColor: '#ddd' 
+  },
+  modalTitle: { 
+    fontSize: 24, 
+    fontWeight: 'bold', 
+    alignContent: 'center'
+  },
+  modalContent: {
+    flex: 1, 
+    padding: 10 
+  },
   label: { 
     fontWeight: 'bold', 
     marginTop: 10 
   },
   input: { 
-    borderWidth: 1, 
-    padding: 10, 
-    marginBottom: 10, 
-    borderRadius: 5 
+    padding: 10,
+    marginTop: 10, 
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 5,
+  },
+  dropdown: {
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 5,
+  },
+  dropdownContainer: {
+    marginTop: 10,
+  },
+  applyButton: {
+    marginTop: 20,
+    paddingVertical: 15,
+    paddingHorizontal: 30,
+    backgroundColor: '#007bff',
+    borderRadius: 10,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 5,
+  },
+  applyButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
   navbar: { 
     height: 60, 
