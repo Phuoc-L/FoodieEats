@@ -14,7 +14,7 @@ export default function UserFeed() {
   const fetchPosts = async () => {
     try {
       const userId = '67045cebfe84a164fa7085a9'; // Replace with actual user ID
-      const url_prefix = "http://192.168.1.195:3000"
+      const url_prefix = "http://192.168.99.152:3000"
       const post_url = url_prefix + `/api/posts/${userId}/user_feed`
       const response = await axios.get(post_url);
 

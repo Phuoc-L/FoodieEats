@@ -17,13 +17,25 @@ const PostComponent = ({ item }) => {
       setIsLiked(!isLiked);
 
       const userId = '67045cebfe84a164fa7085a9'; // Replace with actual user ID
+      const url_prefix = 'http://192.168.99.152:3000/api'
 
-      await axios.post(
-        `http://192.168.1.195:3000/api/posts/${item.user_id}/posts/${item._id}/like/${userId}`
-      );
+      console.log(item.user_id);
+      console.log(item._id);
+
+      await axios.post(`${url_prefix}/posts/${item.user_id}/posts/${item._id}/like/${userId}`);
+
+      try {
+        if(!isLiked) {
+          await axios.post(`${url_prefix}/users/${userId}/like/${item._id}`);
+        } else {
+          await axios.post(`${url_prefix}/users/${userId}/unlike/${item._id}`);
+        }
+      } catch (error) {
+        console.error('Error updating user\'s likes:', error);
+      }
 
     } catch (error) {
-      console.error('Error updating like:', error);
+      console.error('Error updating like on post:', error);
     }
   };
 
@@ -99,8 +111,10 @@ const styles = StyleSheet.create({
     marginLeft: 10
   },
   username: {
-    color: "#0080F0",
+    color: "#000",
     fontSize: width / 20,
+    fontWeight: 700,
+    letterSpacing: 0.5,
   },
   media: {
     width: width,
@@ -140,6 +154,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     width: '100%',
     paddingHorizontal: 10,
+    marginTop: 10,
   },
   likes: {
     color: '#0080F0',
