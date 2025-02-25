@@ -9,6 +9,9 @@ const { width } = Dimensions.get('window');
 
 const CommentsPage = ({ route }) => {
     const { postId, userId } = route.params;
+
+    const { user, token } = props.route.params || {};
+
     const [comments, setComments] = useState([]);
     const [newComment, setNewComment] = useState("");
 
@@ -18,11 +21,9 @@ const CommentsPage = ({ route }) => {
         }, [])
     );
 
-    const url_prefix = 'http://192.168.99.152:3000/api';
-
     const fetchComments = async () => {
         try {
-            const response = await axios.get(`${url_prefix}/comments/${postId}/comments`);
+            const response = await axios.get(`${process.env.EXPO_PUBLIC_API_URL}/comments/${postId}/comments`);
             setComments(response.data);
         } catch (error) {
             console.error("Error fetching comments:", error);
@@ -33,7 +34,7 @@ const CommentsPage = ({ route }) => {
         if (!newComment.trim()) return; // Prevent empty comments
 
         try {
-            const response = await axios.post(`${url_prefix}/comments/${postId}/comment/${userId}`, {
+            const response = await axios.post(`${process.env.EXPO_PUBLIC_API_URL}/comments/${postId}/comment/${userId}`, {
                 comment: newComment,
             });
 
@@ -48,7 +49,7 @@ const CommentsPage = ({ route }) => {
 
     const handleLike = async (commentId) => {
         try {
-            const response = await axios.post(`${url_prefix}/comments/${commentId}/like/${userId}`);
+            const response = await axios.post(`${process.env.EXPO_PUBLIC_API_URL}/comments/${commentId}/like/${userId}`);
 
             if (response.status === 200) {
                 const updatedComment = response.data.comment;
@@ -67,7 +68,7 @@ const CommentsPage = ({ route }) => {
     const handleDeleteComment = async (commentId) => {
         try {
             const response = await axios.delete(
-                `${url_prefix}/comments/${postId}/comment/${commentId}/user/${userId}`
+                `${process.env.EXPO_PUBLIC_API_URL}/comments/${postId}/comment/${commentId}/user/${userId}`
             );
 
             if (response.status === 200) {

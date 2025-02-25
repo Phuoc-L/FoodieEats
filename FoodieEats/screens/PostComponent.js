@@ -8,12 +8,13 @@ import axios from 'axios';
 const { width } = Dimensions.get('window');
 
 const PostComponent = ({ item }) => {
+  const { user, token } = props.route.params || {};
+
   const [likes, setLikes] = useState(item.like_list.length);
   const [isLiked, setIsLiked] = useState(item.like_list.includes('67045cebfe84a164fa7085a9')); // Replace with actual user ID
   const navigation = useNavigation();
 
   const userId = '67045cebfe84a164fa7085a9'; // Replace with actual user ID
-  const url_prefix = 'http://192.168.99.152:3000/api'
 
   const handleLike = async () => {
     try {
@@ -21,18 +22,16 @@ const PostComponent = ({ item }) => {
       setLikes(updatedLikes);
       setIsLiked(!isLiked);
 
-
-
       console.log(item.user_id);
       console.log(item._id);
 
-      await axios.post(`${url_prefix}/posts/${item._id}/like/${userId}`);
+      await axios.post(`${process.env.EXPO_PUBLIC_API_URL}/posts/${item._id}/like/${userId}`);
 
       try {
         if(!isLiked) {
-          await axios.post(`${url_prefix}/users/${userId}/like/${item._id}`);
+          await axios.post(`${process.env.EXPO_PUBLIC_API_URL}/users/${userId}/like/${item._id}`);
         } else {
-          await axios.post(`${url_prefix}/users/${userId}/unlike/${item._id}`);
+          await axios.post(`${process.env.EXPO_PUBLIC_API_URL}/users/${userId}/unlike/${item._id}`);
         }
       } catch (error) {
         console.error('Error updating user\'s likes:', error);
@@ -84,7 +83,7 @@ const PostComponent = ({ item }) => {
           <Text style={styles.likes}>{likes} {likes === 1 ? 'like' : 'likes'}</Text>
         </TouchableOpacity>
         <TouchableOpacity
-          onPress={() => navigation.navigate("CommentsPage", { postId: item._id, userId: userId })}
+          onPress={() => navigation.navigate("CommentsPage", { props: props, postId: item._id, userId: userId })}
           style={styles.commentsButton}
         >
           <Text style={styles.commentsText}>
