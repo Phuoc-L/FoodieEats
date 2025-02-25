@@ -7,22 +7,17 @@ import Explore from './screens/Explore';
 import Profile from './screens/Profile';
 import NewPost from './screens/NewPost';
 
-//export default function App() {
-//  return <AuthScreen />;
-//}
-
-
-
 const Stack = createNativeStackNavigator();
 
 export default function App() {
   return (
     <NavigationContainer>
-      <Stack.Navigator initialRouteName="UserFeed">
+      <Stack.Navigator initialRouteName="Profile">
         <Stack.Screen name="UserFeed" component={UserFeed} options={{ headerShown: false }} />
         <Stack.Screen name="Explore" component={Explore} options={{ headerShown: false }} />
         <Stack.Screen name="Profile" component={Profile} options={{ headerShown: false }} />
         <Stack.Screen name="NewPost" component={NewPost} />
       </Stack.Navigator>
     </NavigationContainer>
-  );
+  )
+}
