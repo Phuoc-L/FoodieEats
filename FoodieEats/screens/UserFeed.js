@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { View, FlatList, StyleSheet } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import NavigationBar from './Navigation';
 import axios from 'axios';
 import PostComponent from './PostComponent';
@@ -7,9 +8,11 @@ import PostComponent from './PostComponent';
 export default function UserFeed() {
   const [posts, setPosts] = useState([]);
 
-  useEffect(() => {
-    fetchPosts();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      fetchPosts();
+    }, [])
+  );
 
   const fetchPosts = async () => {
     try {

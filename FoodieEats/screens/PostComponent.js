@@ -1,14 +1,19 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, Image, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
-import { FaHeart, FaRegHeart } from "react-icons/fa";
+import { useNavigation } from "@react-navigation/native";
 import { FontAwesome } from '@expo/vector-icons';
 import axios from 'axios';
+
 
 const { width } = Dimensions.get('window');
 
 const PostComponent = ({ item }) => {
   const [likes, setLikes] = useState(item.like_list.length);
   const [isLiked, setIsLiked] = useState(item.like_list.includes('67045cebfe84a164fa7085a9')); // Replace with actual user ID
+  const navigation = useNavigation();
+
+  const userId = '67045cebfe84a164fa7085a9'; // Replace with actual user ID
+  const url_prefix = 'http://192.168.99.152:3000/api'
 
   const handleLike = async () => {
     try {
@@ -16,13 +21,12 @@ const PostComponent = ({ item }) => {
       setLikes(updatedLikes);
       setIsLiked(!isLiked);
 
-      const userId = '67045cebfe84a164fa7085a9'; // Replace with actual user ID
-      const url_prefix = 'http://192.168.99.152:3000/api'
+
 
       console.log(item.user_id);
       console.log(item._id);
 
-      await axios.post(`${url_prefix}/posts/${item.user_id}/posts/${item._id}/like/${userId}`);
+      await axios.post(`${url_prefix}/posts/${item._id}/like/${userId}`);
 
       try {
         if(!isLiked) {
@@ -79,8 +83,13 @@ const PostComponent = ({ item }) => {
           <FontAwesome name={isLiked ? 'heart' : 'heart-o'} size={30} color='#0080F0' />
           <Text style={styles.likes}>{likes} {likes === 1 ? 'like' : 'likes'}</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.commentsButton}>
-          <Text style={styles.commentsText}>{item.comment_list.length} {item.comment_list.length === 1 ? "Comment" : "Comments"}</Text>
+        <TouchableOpacity
+          onPress={() => navigation.navigate("CommentsPage", { postId: item._id, userId: userId })}
+          style={styles.commentsButton}
+        >
+          <Text style={styles.commentsText}>
+            {item.comment_list.length} {item.comment_list.length === 1 ? "Comment" : "Comments"}
+          </Text>
         </TouchableOpacity>
       </View>
     </View>
