@@ -256,6 +256,38 @@
 							"response": []
 						}
 					]
+				},
+				{
+					"name": "Search",
+					"item": [
+						{
+							"name": "Search user",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "http://{{host}}:{{port}}/api/users/search?query=food",
+									"protocol": "http",
+									"host": [
+										"{{host}}"
+									],
+									"port": "{{port}}",
+									"path": [
+										"api",
+										"users",
+										"search"
+									],
+									"query": [
+										{
+											"key": "query",
+											"value": "food"
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
 				}
 			]
 		},
