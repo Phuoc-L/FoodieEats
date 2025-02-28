@@ -7,7 +7,13 @@ import NavigationBar from './Navigation';
 export default function Profile() {
   const [user, setUser] = useState("");
   const [displayUser, setDisplayUser] = useState("");
-  const [following, setFollowing] = useState([]);
+  const [btnTxt, setBtnTxt] = useState("");
+
+  const EDIT_PROFILE_MSG = "Edit Profile";
+  const UNFOLLOW_MSG = "Unfollow";
+  const FOLLOW_MSG = "Follow";
+
+  let count = 0;
 
   const urlPrefix = process.env.EXPO_PUBLIC_API_URL + '/api/users/';
 
@@ -18,6 +24,8 @@ export default function Profile() {
   useEffect(() => {
     if (isFocused) {
       getUsers();
+      count = count + 1;
+      console.log(count);
     }
   }, [isFocused]);
 
@@ -27,19 +35,27 @@ export default function Profile() {
         const userIdResponse = await axios.get(urlPrefix + userId);
         setUser(userIdResponse.data);
 
-        const displayUserId = '67045cebfe84a164fa7085a9'; // Replace with actual user ID
+        const displayUserId = '670372a5d9077967850ae901'; // Replace with actual user ID
         const displayUserIdResponse = await axios.get(urlPrefix + displayUserId);
         setDisplayUser(displayUserIdResponse.data);
 
-        // if (user != displayUser) {
-        //   setFollowing(userIdResponse.following);set
-        // } else {
-        //   setFollowing([]);
-        // }
+        setDisplayButtonText(userIdResponse.data, displayUserIdResponse.data._id);
     } catch (error) {
         console.error('Error getting user info', error)
     }
   };
+
+  const setDisplayButtonText = (userData, displayUserId) => {
+    if (userData._id === displayUserId) {
+      setBtnTxt(EDIT_PROFILE_MSG);
+    } else {
+      if (userData.following.find(id => id === displayUserId)) {
+        setBtnTxt(UNFOLLOW_MSG);
+      } else {
+        setBtnTxt(FOLLOW_MSG);
+      }
+    }
+  }
 
   const getUserImage = () => {
     if (displayUser != null && displayUser.profile != null && displayUser.profile.avatar_url != null) {
@@ -49,25 +65,24 @@ export default function Profile() {
     }
   };
 
-  const displayButtonText = () => {
-    // if (user == displayUser) {
-    //   return "Edit Profile";
-    // } else if (following.find(id => id === displayUserId)) {
-    //   return "Unfollow";
-    // } else {
-    //   return "Follow";
-    // }
-    return "test";
+  const handleProfileButtonPress = () => {
+    if (btnTxt === EDIT_PROFILE_MSG) {
+
+    } else if (btnTxt === UNFOLLOW_MSG) {
+
+    } else if (btnTxt === FOLLOW_MSG) {
+
+    }
   };
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>{displayUser?.username || 'Username'}</Text>
+      <View style={styles.headerContainer}>
+        <Text style={styles.usernameTitle}>{displayUser?.username || 'Username'}</Text>
       </View>
 
       {/* Header (user info) */}
-      <View style={styles.profileHeader}>
+      <View style={styles.profileHeaderContainer}>
         <Image source={{uri: getUserImage()}} style={styles.avatar}/>
         <View>
           <Text style={styles.text}>Followers: {displayUser?.followers_count || 0}</Text>
@@ -75,10 +90,15 @@ export default function Profile() {
         </View>
       </View>
       
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.buttonStyle} onPress={() => {}}>
-          <Text style={styles.buttonText}>Top</Text>
+      <View style={styles.headerContainer}>
+        <TouchableOpacity style={styles.profileButton} onPress={handleProfileButtonPress}>
+          <Text style={styles.buttonText}>{btnTxt}</Text>
         </TouchableOpacity>
+      </View>
+
+      <View style={styles.marginContainer}>
+        <Text style={styles.bioName}>{displayUser?.first_name || "First"} {displayUser?.last_name || "Last"}</Text>
+        <Text style={styles.bioParagraph}>{displayUser?.profile.bio || "About me"}</Text>
       </View>
 
       <View>
@@ -97,10 +117,19 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     alignContent: 'center'
   },
-  header: {
+  marginContainer: {
+    margin: 10
+  },
+  headerContainer: {
     alignItems: 'center'
   },
-  title: { 
+  profileHeaderContainer: {
+    display: 'flex',
+    flexDirection: 'row', 
+    alignItems: 'center', 
+  },
+
+  usernameTitle: { 
     fontSize: 32, 
     fontWeight: 'bold',
     color: '#000'
@@ -115,14 +144,9 @@ const styles = StyleSheet.create({
     borderWidth: 1, 
     borderColor: '#ccc',
   },
-  profileHeader: {
-    display: 'flex',
-    flexDirection: 'row', 
-    alignItems: 'center', 
-  },
-  buttonStyle: {
-    width: 100,
-    height: 20,
+
+  profileButton: {
+    margin: 10,
     paddingVertical: 15,
     paddingHorizontal: 30,
     backgroundColor: '#007bff',
@@ -133,6 +157,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 3,
     elevation: 5,
+    height: 50
   },
   buttonText: {
     color: '#fff',
@@ -140,9 +165,20 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
 
+  bioName: {
+    margin: 3,
+    fontWeight: 'bold',
+    fontSize: 18
+  },
+  bioParagraph: {
+    margin: 3,
+    fontSize: 14
+  },
 
   text: {
     color: '#000',
     fontSize: 18,
   },
+
+  
 });
