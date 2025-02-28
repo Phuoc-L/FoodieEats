@@ -12,14 +12,24 @@ router.get("/", async (req, res) => {
   }
 });
 
+// Search for restaurants with filtering and sorting
 router.get('/search', async (req, res) => {
   try {
     const { query, minRating, maxRating, sortBy, sortOrder } = req.query;
 
-    console.log('restaurant search query:', query, 'minRating:', minRating, 'maxRating:', maxRating, 'sortBy:', sortBy, 'sortOrder:', sortOrder);
+    console.log("restaurant route: ", req.query);
 
     if (!query) {
-      return res.status(400).json({ error: 'Search query is required' });
+      const sortOptions = {};
+      if (sortBy) {
+        sortOptions[sortBy] = sortOrder === 'desc' ? -1 : 1;
+      }
+      else {
+        sortOptions.average_rating = -1;
+      }
+      // if no query return highest rated restaurants
+      const restaurants = await Restaurant.find().sort(sortOptions);
+      return res.status(200).json({ total: restaurants.length, restaurants });
     }
 
     // Build the filter
