@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { StyleSheet, View, Text, Image, TouchableOpacity } from 'react-native';
 import { useIsFocused } from '@react-navigation/native'; // so we can refresh on screen focus
+import {Card, Button , Title ,Paragraph } from 'react-native-paper';
 import axios from 'axios';
 import NavigationBar from './Navigation';
 
@@ -8,14 +9,15 @@ export default function Profile() {
   const [user, setUser] = useState("");
   const [displayUser, setDisplayUser] = useState("");
   const [btnTxt, setBtnTxt] = useState("");
+  const [posts, setPosts] = useState([]);
 
   const EDIT_PROFILE_MSG = "Edit Profile";
   const UNFOLLOW_MSG = "Unfollow";
   const FOLLOW_MSG = "Follow";
 
   let count = 0;
-
-  const urlPrefix = process.env.EXPO_PUBLIC_API_URL + '/api/users/';
+  const userId = '670372a5d9077967850ae900'; // Replace with actual user ID
+  const displayUserId = '670372a5d9077967850ae901'; // Replace with actual user ID
 
   // This hook tells us if this screen is currently focused
   const isFocused = useIsFocused();
@@ -23,29 +25,29 @@ export default function Profile() {
   // Fetch posts whenever screen is focused (including after navigating back)
   useEffect(() => {
     if (isFocused) {
-      getUsers();
+      GetUsers();
+      FetchPosts();
+
       count = count + 1;
       console.log(count);
     }
   }, [isFocused]);
 
-  const getUsers = async () => {
+  const GetUsers = async () => {
     try {
-        const userId = '670372a5d9077967850ae900'; // Replace with actual user ID
-        const userIdResponse = await axios.get(urlPrefix + userId);
+        const userIdResponse = await axios.get(`${process.env.EXPO_PUBLIC_API_URL}/api/users/${userId}`);
         setUser(userIdResponse.data);
 
-        const displayUserId = '670372a5d9077967850ae901'; // Replace with actual user ID
-        const displayUserIdResponse = await axios.get(urlPrefix + displayUserId);
+        const displayUserIdResponse = await axios.get(`${process.env.EXPO_PUBLIC_API_URL}/api/users/${displayUserId}`);
         setDisplayUser(displayUserIdResponse.data);
 
-        setDisplayButtonText(userIdResponse.data, displayUserIdResponse.data._id);
+        SetDisplayButtonText(userIdResponse.data, displayUserIdResponse.data._id);
     } catch (error) {
         console.error('Error getting user info', error)
     }
   };
 
-  const setDisplayButtonText = (userData, displayUserId) => {
+  const SetDisplayButtonText = (userData, displayUserId) => {
     if (userData._id === displayUserId) {
       setBtnTxt(EDIT_PROFILE_MSG);
     } else {
@@ -57,7 +59,16 @@ export default function Profile() {
     }
   }
 
-  const getUserImage = () => {
+  const FetchPosts = async () => {
+    try {
+      const userIdResponse = await axios.get(`${process.env.EXPO_PUBLIC_API_URL}/api/posts/${userId}/posts`);
+      setPosts([...userIdResponse.data]);
+    } catch (error) {
+        console.error('Error getting user posts', error)
+    }
+  }
+
+  const GetUserImage = () => {
     if (displayUser != null && displayUser.profile != null && displayUser.profile.avatar_url != null) {
       return displayUser.profile.avatar_url;
     } else {
@@ -65,13 +76,39 @@ export default function Profile() {
     }
   };
 
-  const handleProfileButtonPress = () => {
+  const HandleProfileButtonPress = () => {
     if (btnTxt === EDIT_PROFILE_MSG) {
 
     } else if (btnTxt === UNFOLLOW_MSG) {
 
     } else if (btnTxt === FOLLOW_MSG) {
 
+    }
+  };
+
+  const DisplayPosts = () => {
+
+  }
+
+  const CreateCardPost = () => {
+    return (
+      <Card>
+        <Card.Content>
+          <Title>{posts[0].title}</Title>
+        </Card.Content>
+        <Card.Cover source={{uri: GetPostImage(posts[0])}}/>
+        <Card.Content>
+          <Paragraph>{posts[0].ratings}</Paragraph>
+        </Card.Content>
+      </Card>
+    )
+  }
+
+  const GetPostImage = (post) => {
+    if (post != null && post.media_url != null) {
+      return post.media_url;
+    } else {
+      return 'https://via.placeholder.com/50';
     }
   };
 
@@ -83,7 +120,7 @@ export default function Profile() {
 
       {/* Header (user info) */}
       <View style={styles.profileHeaderContainer}>
-        <Image source={{uri: getUserImage()}} style={styles.avatar}/>
+        <Image source={{uri: GetUserImage()}} style={styles.avatar}/>
         <View>
           <Text style={styles.text}>Followers: {displayUser?.followers_count || 0}</Text>
           <Text style={styles.text}>Following: {displayUser?.following_count || 0}</Text>
@@ -91,21 +128,19 @@ export default function Profile() {
       </View>
       
       <View style={styles.headerContainer}>
-        <TouchableOpacity style={styles.profileButton} onPress={handleProfileButtonPress}>
+        <TouchableOpacity style={styles.profileButton} onPress={CreateCardPost}>
           <Text style={styles.buttonText}>{btnTxt}</Text>
         </TouchableOpacity>
       </View>
 
       <View style={styles.marginContainer}>
         <Text style={styles.bioName}>{displayUser?.first_name || "First"} {displayUser?.last_name || "Last"}</Text>
-        <Text style={styles.bioParagraph}>{displayUser?.profile.bio || "About me"}</Text>
+        <Text style={styles.bioParagraph}>{displayUser?.profile.bio || "Description"}</Text>
       </View>
 
       <View>
-
+        <CreateCardPost/>
       </View>
-{/* 
-      <NavigationBar /> */}
     </View>
   );
 }
@@ -127,6 +162,9 @@ const styles = StyleSheet.create({
     display: 'flex',
     flexDirection: 'row', 
     alignItems: 'center', 
+  },
+  postContainer: {
+    margin: 10
   },
 
   usernameTitle: { 
@@ -178,7 +216,5 @@ const styles = StyleSheet.create({
   text: {
     color: '#000',
     fontSize: 18,
-  },
-
-  
+  }
 });
