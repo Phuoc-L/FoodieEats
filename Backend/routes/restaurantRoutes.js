@@ -1,6 +1,7 @@
 const express = require("express");
 const mongoose = require("mongoose");
 const Restaurant = require("../data_schemas/restaurant");
+const Posts = require("../data_schemas/post");
 const router = express.Router();
 
 router.get("/", async (req, res) => {
@@ -127,6 +128,22 @@ router.delete("/:id/menu/:dishId", async (req, res) => {
   } catch (error) {
     res.status(500).send({ error: "Error deleting menu item" });
   }
+});
+
+router.get("/:dish_id/reviews", async (req, res) => {
+    const { dish_id } = req.params;
+
+    try {
+        const posts = await Posts.find({ dish_id: dish_id} );
+
+        if(!posts) {
+            return res.status(404).json({ error: "No reviews found" });
+        }
+
+        res.status(200).json({ message: "Reviews found successfully", posts: posts });
+    } catch (error) {
+        res.status(500).json({ error: "Error getting reviews" });
+    }
 });
 
 router.put("/:id", async (req, res) => {
