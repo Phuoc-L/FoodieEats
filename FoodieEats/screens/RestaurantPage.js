@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, FlatList, StyleSheet, Image, TouchableOpacity, Dimensions } from 'react-native';
+import { View, Text, FlatList, StyleSheet, Image, TouchableOpacity, Dimensions, Button } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { FontAwesome } from '@expo/vector-icons';
 import axios from 'axios';
@@ -29,20 +29,24 @@ export default function RestaurantPage(props) {
 
     const renderMenuItem = ({ item }) => {
         return (
-            <View style={styles.menuItemContainer}>
+            <TouchableOpacity style={styles.menuItemContainer}>
                 <View style={styles.dishHeader}>
                     <Text style={styles.dishTitle}>{item.name}</Text>
-                    <Text style={styles.dishRatingValue}>{item.average_rating}</Text>
-                    <FontAwesome
-                        name={"star"}
-                        size={width / 18}
-                        color="#0080F0"
-                        style={{ paddingHorizontal: 5 }}
-                    />
-                    <Text style={styles.dishNumRatings}>
-                        ({item.num_ratings}
-                        {item.num_ratings === 1 ? " review" : " reviews"})
-                    </Text>
+                    <View style={styles.rating}>
+                        <View style={styles.starRating}>
+                            <Text style={styles.dishRatingValue}>{parseFloat(item.average_rating).toFixed(1)}</Text>
+                            <FontAwesome
+                                name={"star"}
+                                size={width / 18}
+                                color="#0080F0"
+                                style={{ paddingHorizontal: 5 }}
+                            />
+                        </View>
+                        <Text style={styles.dishNumRatings}>
+                            ({item.num_ratings}
+                            {item.num_ratings === 1 ? " review" : " reviews"})
+                        </Text>
+                    </View>
                 </View>
                 <View>
                     <Text style={styles.dishPrice}>${item.price}</Text>
@@ -50,7 +54,7 @@ export default function RestaurantPage(props) {
                 <View style={styles.dishDetails}>
                     <Text style={styles.dishDetailsText}>{item.description}</Text>
                 </View>
-            </View>
+            </TouchableOpacity>
         );
     };
 
@@ -60,8 +64,16 @@ export default function RestaurantPage(props) {
                 <Text style={styles.title}>{restaurant.name}</Text>
                 <View style={styles.restaurantInfo}>
                     <View style={styles.restaurantDetails}>
-                        <Text style={styles.detailsText}>{restaurant.location}</Text>
-                        <Text style={styles.detailsText}>{restaurant.operating_hours}</Text>
+                        <View>
+                            <Text style={styles.detailsText}>
+                                <Text style={{ fontWeight: 'bold' }}>Location: </Text>
+                                {restaurant.location}
+                            </Text>
+                            <Text style={styles.detailsText}>
+                                <Text style={{ fontWeight: 'bold' }}>Hours: </Text>
+                                {restaurant.operating_hours}
+                            </Text>
+                        </View>
                     </View>
                     <View style={styles.rating}>
                         <View style={styles.starRating}>
@@ -70,7 +82,7 @@ export default function RestaurantPage(props) {
                                 name={"star"}
                                 size={width / 13}
                                 color="#0080F0"
-                                style={{ paddingHorizontal: 5 }}
+                                style={{ paddingHorizontal: 3 }}
                             />
                         </View>
                         <Text style={styles.restaurantNumRatings}>
@@ -112,14 +124,21 @@ const styles = StyleSheet.create({
         width: width-20,
         flexDirection: 'row',
         justifyContent: "space-between",
+        alignItems: 'center',
+    },
+    restaurantDetails: {
+        flexShrink: 1,
+        marginRight: 10,
     },
     detailsText: {
         fontSize: width / 25,
         color: '#555',
         padding: 3,
+        flexWrap: 'wrap',
     },
     rating: {
         alignItems: 'center',
+        minWidth: width/5,
     },
     starRating: {
         alignItems: 'center',
@@ -143,21 +162,24 @@ const styles = StyleSheet.create({
     dishHeader: {
         flexDirection: 'row',
         alignItems: 'center',
-
+        flexWrap: 'wrap',
+        justifyContent: 'space-between',
     },
     dishTitle: {
         fontSize: width / 16,
         fontWeight: 'bold',
         marginRight: 15,
+        flex: 1,
     },
     dishRatingValue: {
         color: '#0080F0',
         fontSize: width / 22,
+        paddingHorizontal: 3,
     },
     dishNumRatings: {
         color: '#555',
-        fontSize: width / 24,
-        paddingHorizontal: 5,
+        fontSize: width / 29,
+        paddingHorizontal: 3,
     },
     dishPrice: {
         fontSize: width / 22,
