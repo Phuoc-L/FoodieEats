@@ -9,6 +9,8 @@ import DropDownPicker from 'react-native-dropdown-picker';
 import { useEffect } from 'react';
 
 export default function Explore(props) {
+  const user = props.route.params.user;
+
   const [searchMode, setSearchMode] = useState('posts'); // 'users' or 'restaurants' or 'posts'
   const [searchQuery, setSearchQuery] = useState('');
   const [results, setResults] = useState([]);
@@ -60,8 +62,8 @@ export default function Explore(props) {
     }
   };
 
-  const renderUserItem = (item, navigation) => (
-    <TouchableOpacity onPress={() => navigation.navigate('Profile', { ...props, item })}>
+  const renderUserItem = (item) => (
+    <TouchableOpacity onPress={() => navigation.navigate('Profile', { user: user , view_user: item })}>
       <View style={styles.resultCard}>
         <Image source={{ uri: item.profile.avatar_url || 'https://via.placeholder.com/50' }} style={styles.avatar} />
         <View style={styles.resultDetailBox}>
@@ -73,8 +75,8 @@ export default function Explore(props) {
     </TouchableOpacity>
   );
   
-  const renderRestaurantItem = (item, navigation) => (
-    <TouchableOpacity onPress={() => navigation.navigate('Restaurant', { ...props, item })}>
+  const renderRestaurantItem = (item) => (
+    <TouchableOpacity onPress={() => navigation.navigate('Restaurant', { user: item, restaurant: item })}>
       <View style={styles.resultCard}>
         <View style={styles.resultDetailBox}>
           <View style={styles.Rating}>
@@ -89,8 +91,8 @@ export default function Explore(props) {
     </TouchableOpacity>
   );
 
-  const renderPostItem = (item, navigation) => (
-    <TouchableOpacity onPress={() => navigation.navigate('Post', { ...props, item })}>
+  const renderPostItem = (item) => (
+    <TouchableOpacity onPress={() => navigation.navigate('Post', { user: item, post: item })}>
       <View style={styles.resultCard}>
         <View>
           <View style={{flexDirection: 'row', alignItems: 'center'}}>
@@ -225,10 +227,10 @@ export default function Explore(props) {
           keyExtractor={(item) => item._id}
           renderItem={({ item }) => 
             searchMode === 'users' 
-              ? renderUserItem(item, navigation) 
+              ? renderUserItem(item) 
               : searchMode === 'restaurants' 
-                ? renderRestaurantItem(item, navigation)
-                : renderPostItem(item, navigation)
+                ? renderRestaurantItem(item)
+                : renderPostItem(item)
           }
         />
 
@@ -515,7 +517,7 @@ const styles = StyleSheet.create({
     width: '100%',
     aspectRatio: 1,
     borderRadius: 10,
-    marginTop: 5,
+    marginTop: 10,
   },
   actionContainer: {
     flexDirection: 'row',
