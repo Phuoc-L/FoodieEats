@@ -22,6 +22,113 @@ const verifyPostOwnership = async (req, res, next) => {
   }
 };
 
+// Search for posts with filtering and sorting
+router.get('/search', async (req, res) => {
+  try {
+    const { query, sortBy, sortOrder, minLikes, maxLikes, minComments, maxComments, minRating, maxRating, startDate, endDate } = req.query;
+
+    console.log("posts route: ", req.query);
+
+    // if no query, return posts by most likes
+    if (!query) {
+      const sortOptions = {};
+      if (sortBy) {
+        sortOptions[sortBy] = sortOrder === 'desc' ? -1 : 1;
+      } else {
+        sortOptions.timestamp = -1; // Default sort by latest posts
+      }
+      const posts = await Post.find().sort(sortOptions)
+      .populate({
+        path: 'user_id',
+        match: { 
+          'privacy_settings.profile_visibility': true, 
+          'privacy_settings.post_visibility': true 
+        }
+      })
+      .populate('restaurant_id');
+      return res.status(200).json({ total: posts.length, posts });
+    }
+
+    const filter = {
+      $and: []
+    };
+
+    if (query) {
+      filter.$and.push({
+        $or: [
+          { title: { $regex: query, $options: 'i' } },
+          { description: { $regex: query, $options: 'i' } }
+        ]
+      });
+    }
+
+    // Add range filters
+    if (minLikes || maxLikes) {
+      filter.$and.push({
+        num_like: {
+          ...(minLikes ? { $gte: parseInt(minLikes) } : {}),
+          ...(maxLikes ? { $lte: parseInt(maxLikes) } : {})
+        }
+      });
+    }
+
+    if (minComments || maxComments) {
+      filter.$and.push({
+        num_comments: {
+          ...(minComments ? { $gte: parseInt(minComments) } : {}),
+          ...(maxComments ? { $lte: parseInt(maxComments) } : {})
+        }
+      });
+    }
+
+    if (minRating || maxRating) {
+      filter.$and.push({
+        ratings: {
+          ...(minRating ? { $gte: parseFloat(minRating) } : {}),
+          ...(maxRating ? { $lte: parseFloat(maxRating) } : {})
+        }
+      });
+    }
+
+    if (startDate || endDate) {
+      filter.$and.push({
+        timestamp: {
+          ...(startDate ? { $gte: new Date(startDate) } : {}),
+          ...(endDate ? { $lte: new Date(endDate) } : {})
+        }
+      });
+    }
+
+    if (filter.$and.length === 0) {
+      delete filter.$and;
+    }
+
+    // Build sort options
+    const sortOptions = {};
+    if (sortBy) {
+      sortOptions[sortBy] = sortOrder === 'desc' ? -1 : 1;
+    } else {
+      sortOptions.timestamp = -1; // Default sort by latest posts
+    }
+
+    const posts = await Post.find(filter).sort(sortOptions)
+    .populate({
+      path: 'user_id',
+      match: { 
+        'privacy_settings.profile_visibility': true, 
+        'privacy_settings.post_visibility': true 
+      }
+    })
+    .populate('restaurant_id');
+
+    res.status(200).json({ total: posts.length, posts });
+
+  } catch (err) {
+    res.status(500).json({ error: 'Internal server error', details: err.message });
+  }
+});
+
+
 // Create a new post
 router.post("/:user_id/create", async (req, res) => {
   try {

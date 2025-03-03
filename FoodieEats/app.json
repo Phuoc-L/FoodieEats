@@ -1,5 +1,6 @@
 {
   "expo": {
+    "newArchEnabled": true,
     "name": "FoodieEats",
     "slug": "FoodieEats",
     "version": "1.0.0",
