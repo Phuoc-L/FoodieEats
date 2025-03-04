@@ -2,13 +2,17 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { View, Text, FlatList, StyleSheet, Image, TouchableOpacity, Dimensions, Button } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { FontAwesome } from '@expo/vector-icons';
+import { useNavigation } from "@react-navigation/native";
 import axios from 'axios';
 
 
 const { width } = Dimensions.get('window');
 
 export default function RestaurantPage(props) {
+
     const [restaurant, setRestaurant] = useState("");
+
+    const navigation = useNavigation();
 
     useFocusEffect(
         useCallback(() => {
@@ -29,7 +33,10 @@ export default function RestaurantPage(props) {
 
     const renderMenuItem = ({ item }) => {
         return (
-            <TouchableOpacity style={styles.menuItemContainer}>
+            <TouchableOpacity
+                onPress={() => navigation.navigate("DishReviews", { props: '', dish: item })}
+                style={styles.menuItemContainer}
+            >
                 <View style={styles.dishHeader}>
                     <Text style={styles.dishTitle}>{item.name}</Text>
                     <View style={styles.rating}>
