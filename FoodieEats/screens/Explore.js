@@ -8,8 +8,8 @@ import NavigationBar from './Navigation';
 import DropDownPicker from 'react-native-dropdown-picker';
 import { useEffect } from 'react';
 
-export default function Explore(props) {
-  const user = props.route.params.user;
+export default function Explore() {
+  // const user = props.route.params.user;
 
   const [searchMode, setSearchMode] = useState('posts'); // 'users' or 'restaurants' or 'posts'
   const [searchQuery, setSearchQuery] = useState('');
@@ -63,7 +63,7 @@ export default function Explore(props) {
   };
 
   const renderUserItem = (item) => (
-    <TouchableOpacity onPress={() => navigation.navigate('Profile', { user: user , view_user: item })}>
+    <TouchableOpacity onPress={() => navigation.navigate('Profile', { displayUserID: item._id })}>
       <View style={styles.resultCard}>
         <Image source={{ uri: item.profile.avatar_url || 'https://via.placeholder.com/50' }} style={styles.avatar} />
         <View style={styles.resultDetailBox}>
@@ -76,7 +76,7 @@ export default function Explore(props) {
   );
   
   const renderRestaurantItem = (item) => (
-    <TouchableOpacity onPress={() => navigation.navigate('Restaurant', { user: item, restaurant: item })}>
+    <TouchableOpacity onPress={() => navigation.navigate('Restaurant', { restaurantID: item._id })}>
       <View style={styles.resultCard}>
         <View style={styles.resultDetailBox}>
           <View style={styles.Rating}>
@@ -92,7 +92,7 @@ export default function Explore(props) {
   );
 
   const renderPostItem = (item) => (
-    <TouchableOpacity onPress={() => navigation.navigate('Post', { user: item, post: item })}>
+    <TouchableOpacity onPress={() => navigation.navigate('Post', { postID: item_id })}>
       <View style={styles.resultCard}>
         <View>
           <View style={{flexDirection: 'row', alignItems: 'center'}}>
