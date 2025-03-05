@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { StyleSheet, View, Text, TextInput, TouchableOpacity, Alert, TouchableWithoutFeedback, Keyboard } from 'react-native';
+import { StyleSheet, View, Text, TextInput, TouchableOpacity, Alert, TouchableWithoutFeedback, Platform, Keyboard, KeyboardAvoidingView } from 'react-native';
 import axios from 'axios';
 import { Eye, EyeOff } from 'lucide-react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function AuthScreen(props) {
   const [isLogin, setIsLogin] = useState(true);
@@ -14,13 +15,23 @@ export default function AuthScreen(props) {
     password: '',
   });
 
+  // Save user data
+  const saveUserID = async (userID) => {
+    try {
+        await AsyncStorage.setItem('userID', userID);
+    } catch (e) {
+        console.error(e);
+    }
+  };
+
   const loginUser = async (credentials) => {
     try {
       const response = await axios.post(process.env.EXPO_PUBLIC_API_URL + '/api/users/login', credentials);
       const { user, token } = response.data;
-      console.log('Login successful:', user);
-      // console.log('Token:', token);
-      props.navigation.navigate('UserFeed');
+      // save user data
+      await saveUserID(user._id);
+      Keyboard.dismiss();
+      props.navigation.navigate('Explore');
     } catch (error) {
       console.error('Login error:', error.response ? error.response.data : error.message);
       Alert.alert("Login Error", error.response?.data?.error || "Something went wrong");
@@ -39,6 +50,7 @@ export default function AuthScreen(props) {
       };
   
       const response = await axios.post(process.env.EXPO_PUBLIC_API_URL + '/api/users/signup', formattedData);
+      Keyboard.dismiss();
       const { user, token } = response.data;
       console.log('Signup successful:', user);
       console.log('Token:', token);
@@ -60,7 +72,7 @@ export default function AuthScreen(props) {
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
       <View style={styles.container}>
-        <View style={styles.content}>
+        <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={styles.content}>
           <Text style={styles.logo}>FoodieEats</Text>
 
           <View style={styles.buttonContainer}>
@@ -148,7 +160,7 @@ export default function AuthScreen(props) {
               <Text style={styles.goButtonText}>Go</Text>
             </TouchableOpacity>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </View>
     </TouchableWithoutFeedback>
   );
@@ -163,7 +175,7 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 20,
     alignItems: 'center',
-    marginTop: 40,
+    justifyContent: 'center',
   },
   logo: {
     fontSize: 50,
