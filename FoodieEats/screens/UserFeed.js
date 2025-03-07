@@ -1,23 +1,43 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { View, FlatList, StyleSheet } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
+import { AsyncStorage } from '@react-native-async-storage/async-storage';
 import NavigationBar from './Navigation';
 import axios from 'axios';
 import PostComponent from './PostComponent';
 
 export default function UserFeed() {
   const [posts, setPosts] = useState([]);
+  const [currentUser, setCurrentUser] = useState("");
 
   useFocusEffect(
     useCallback(() => {
+      getUser();
       fetchPosts();
     }, [])
   );
 
+  // Get user data
+  const getUser = async () => {
+    try {
+      const userID = await AsyncStorage.getItem('userID');
+      if (!userID) {
+        console.error('User ID not found in AsyncStorage');
+        return;
+      }
+      const user = await axios.get(process.env.EXPO_PUBLIC_API_URL + '/api/users/' + userID);
+      setCurrentUser(user.data);
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
   const fetchPosts = async () => {
     try {
-      const userId = '67045cebfe84a164fa7085a9'; // Replace with actual user ID
+      console.log(currentUser);
+      const userId = currentUser;
 
+      console.log(`${process.env.EXPO_PUBLIC_API_URL}/api/posts/${userId}/user_feed`);
       const response = await axios.get(`${process.env.EXPO_PUBLIC_API_URL}/api/posts/${userId}/user_feed`);
 
       if (response.status === 200) {

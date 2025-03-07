@@ -10,8 +10,6 @@ const { width } = Dimensions.get('window');
 const CommentsPage = ({ route }) => {
     const { postId, userId } = route.params;
 
-    const { user, token } = props.route.params || {};
-
     const [comments, setComments] = useState([]);
     const [newComment, setNewComment] = useState("");
 

@@ -12,14 +12,16 @@ import CommentsPage from './screens/CommentsPage';
 //  return <AuthScreen />;
 //}
 
-
+import { enableScreens } from 'react-native-screens';
+enableScreens();
 
 const Stack = createNativeStackNavigator();
 
 export default function App() {
   return (
     <NavigationContainer>
-      <Stack.Navigator initialRouteName="UserFeed">
+      <Stack.Navigator initialRouteName="Auth">
+        <Stack.Screen name="Auth" component={AuthScreen} options={{ headerShown: true }} />
         <Stack.Screen name="UserFeed" component={UserFeed} options={{ title: "Following" }} />
         <Stack.Screen name="Explore" component={Explore} options={{ title: "Explore" }} />
         <Stack.Screen name="Profile" component={Profile} options={{ title: "Profile" }} />
