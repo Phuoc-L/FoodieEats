@@ -8,6 +8,8 @@ import axios from 'axios';
 const { width } = Dimensions.get('window');
 
 const PostComponent = ({ item }) => {
+  const { user, token } = props.route.params || {};
+
   const [likes, setLikes] = useState(item.like_list.length);
   const [isLiked, setIsLiked] = useState(item.like_list.includes('67045cebfe84a164fa7085a9')); // Replace with actual user ID
   const navigation = useNavigation();

@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
 import { StyleSheet, View, Text, TextInput, TouchableOpacity, Alert } from 'react-native';
-import { AsyncStorage } from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import { Eye, EyeOff } from 'lucide-react-native';
 
-export default function AuthScreen(props) {
+export default function AuthScreen() {
   const [isLogin, setIsLogin] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
@@ -17,20 +16,10 @@ export default function AuthScreen(props) {
 
   const loginUser = async (credentials) => {
     try {
-      const response = await axios.post(
-        process.env.EXPO_PUBLIC_API_URL + '/api/users/login',
-        credentials
-      );
-      console.log('Full response:', response.data);
+      const response = await axios.post(process.env.EXPO_PUBLIC_API_URL + '/api/users/login', credentials);
       const { user, token } = response.data;
       console.log('Login successful:', user);
       console.log('Token:', token);
-
-      saveUser(user);
-
-      // Navigate to Profile with user/token
-      props.navigation.navigate('UserFeed');
-
       Alert.alert("Success", "Logged in successfully!");
     } catch (error) {
       console.error('Login error:', error.response ? error.response.data : error.message);
@@ -48,7 +37,7 @@ export default function AuthScreen(props) {
         username: userData.username,
         password: userData.password,
       };
-
+  
       const response = await axios.post(process.env.EXPO_PUBLIC_API_URL + '/api/users/signup', formattedData);
       const { user, token } = response.data;
       console.log('Signup successful:', user);
@@ -59,23 +48,13 @@ export default function AuthScreen(props) {
       Alert.alert("Signup Error", error.response?.data?.error || "Something went wrong");
     }
   };
-
-  const saveUser = async (user) => {
-    try {
-      await AsyncStorage.setItem('user', JSON.stringify(user));
-    } catch (e) {
-      console.error(e);
-    }
-  }
-
+  
   const handleSubmit = () => {
     if (isLogin) {
       loginUser({ email: formData.email, password: formData.password });
     } else {
       signupUser(formData);
     }
-
-
   };
 
   return (
@@ -84,7 +63,7 @@ export default function AuthScreen(props) {
         <Text style={styles.logo}>FoodieEats</Text>
 
         <View style={styles.buttonContainer}>
-          <TouchableOpacity
+          <TouchableOpacity 
             style={[
               styles.tabButton,
               isLogin ? styles.activeTabButton : styles.inactiveTabButton
@@ -96,7 +75,7 @@ export default function AuthScreen(props) {
               isLogin ? styles.activeButtonText : styles.inactiveButtonText
             ]}>Log In</Text>
           </TouchableOpacity>
-          <TouchableOpacity
+          <TouchableOpacity 
             style={[
               styles.tabButton,
               !isLogin ? styles.activeTabButton : styles.inactiveTabButton
@@ -127,14 +106,14 @@ export default function AuthScreen(props) {
               />
             </>
           )}
-
+          
           <TextInput
             style={styles.input}
             placeholder="Email"
             value={formData.email}
             onChangeText={(text) => setFormData({...formData, email: text})}
           />
-
+          
           {!isLogin && (
             <TextInput
               style={styles.input}
@@ -143,7 +122,7 @@ export default function AuthScreen(props) {
               onChangeText={(text) => setFormData({...formData, username: text})}
             />
           )}
-
+          
           <View style={styles.passwordContainer}>
             <TextInput
               style={styles.passwordInput}
@@ -152,8 +131,8 @@ export default function AuthScreen(props) {
               value={formData.password}
               onChangeText={(text) => setFormData({...formData, password: text})}
             />
-            <TouchableOpacity
-              style={styles.eyeIcon}
+            <TouchableOpacity 
+              style={styles.eyeIcon} 
               onPress={() => setShowPassword(!showPassword)}
             >
               {showPassword ? (
