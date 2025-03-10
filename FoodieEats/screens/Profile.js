@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, View, Text, Image, TouchableOpacity } from 'react-native';
+import { StyleSheet, View, Text, Image, TouchableOpacity, Touchable, ScrollView } from 'react-native';
 import { useIsFocused } from '@react-navigation/native'; // so we can refresh on screen focus
 import {Card, Button , Title ,Paragraph } from 'react-native-paper';
 import axios from 'axios';
+import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import NavigationBar from './Navigation';
 
-export default function Profile() {
+export default function Profile(props) {
   const [user, setUser] = useState("");
   const [displayUser, setDisplayUser] = useState("");
   const [btnTxt, setBtnTxt] = useState("");
@@ -63,6 +64,7 @@ export default function Profile() {
     try {
       const userIdResponse = await axios.get(`${process.env.EXPO_PUBLIC_API_URL}/api/posts/${userId}/posts`);
       setPosts([...userIdResponse.data]);
+
     } catch (error) {
         console.error('Error getting user posts', error)
     }
@@ -87,22 +89,46 @@ export default function Profile() {
   };
 
   const DisplayPosts = () => {
+    let a = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+    return a.map(post => CreateCardPost(post));
 
+    // return posts?.map(post => CreateCardPost(post));
+    // return CreateCardPost();
   }
 
-  const CreateCardPost = () => {
+  const CreateCardPost = (post) => {
     return (
-      <Card>
-        <Card.Content>
-          <Title>{posts[0].title}</Title>
-        </Card.Content>
-        <Card.Cover source={{uri: GetPostImage(posts[0])}}/>
-        <Card.Content>
-          <Paragraph>{posts[0].ratings}</Paragraph>
-        </Card.Content>
-      </Card>
+      <TouchableOpacity>
+        <Card style={styles.postShape}>
+          <Card.Content style={{height: 60}}>
+            <Paragraph numberOfLines={2} style={{fontWeight: 'bold'}}>1;l</Paragraph>
+          </Card.Content>
+          <Card.Cover source={{uri: GetPostImage(posts[0])}} style={styles.imgStyle}/>
+          <Card.Content style={{height: 60}}>
+            <Paragraph>{posts[0]?.ratings}</Paragraph>
+            {/* <FontAwesomeIcon icon="fas fa-star" /> */}
+          </Card.Content>
+        </Card>
+      </TouchableOpacity>
     )
   }
+
+              {/* <Card.Content>
+              <Title>{post?.title}</Title>
+            </Card.Content>
+            <Card.Cover source={{uri: GetPostImage(post)}} style={styles.imgStyle}/>
+            <Card.Content>
+              <Paragraph>{post?.ratings}</Paragraph>
+            </Card.Content>
+          </Card>
+          <Card>
+            <Card.Content>
+              <Title>{post?.title}</Title>
+            </Card.Content>
+            <Card.Cover source={{uri: GetPostImage(post)}}/>
+            <Card.Content>
+              <Paragraph>{post?.ratings}</Paragraph>
+            </Card.Content> */}
 
   const GetPostImage = (post) => {
     if (post != null && post.media_url != null) {
@@ -128,24 +154,40 @@ export default function Profile() {
       </View>
       
       <View style={styles.headerContainer}>
-        <TouchableOpacity style={styles.profileButton} onPress={CreateCardPost}>
+        <TouchableOpacity style={styles.profileButton}>
           <Text style={styles.buttonText}>{btnTxt}</Text>
         </TouchableOpacity>
       </View>
 
       <View style={styles.marginContainer}>
         <Text style={styles.bioName}>{displayUser?.first_name || "First"} {displayUser?.last_name || "Last"}</Text>
-        <Text style={styles.bioParagraph}>{displayUser?.profile.bio || "Description"}</Text>
+        <Text style={styles.bioParagraph}>{displayUser?.profile?.bio || "Description"}</Text>
       </View>
 
-      <View>
-        <CreateCardPost/>
-      </View>
+      <ScrollView>
+        <View style={styles.postContainer}>
+          {DisplayPosts()}
+        </View>
+      </ScrollView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  imgStyle: {
+    width: 80,
+    height: 80,
+    alignSelf: 'center',
+  },
+  postShape: {
+    width: 110,
+    height: 170,
+    margin: 3, 
+  },
+  star: {
+    marginHorizontal: width / 70,
+  },
+
   container: {
     flex: 1,
     padding: 10,
@@ -164,7 +206,10 @@ const styles = StyleSheet.create({
     alignItems: 'center', 
   },
   postContainer: {
-    margin: 10
+    margin: 10,
+    display: 'flex',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
   },
 
   usernameTitle: { 
@@ -211,6 +256,10 @@ const styles = StyleSheet.create({
   bioParagraph: {
     margin: 3,
     fontSize: 14
+  },
+
+  cardStyle: {
+    margin: 10,
   },
 
   text: {
