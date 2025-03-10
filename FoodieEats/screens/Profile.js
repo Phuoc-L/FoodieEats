@@ -3,7 +3,7 @@ import { StyleSheet, View, Text, Image, TouchableOpacity, Touchable, ScrollView 
 import { useIsFocused } from '@react-navigation/native'; // so we can refresh on screen focus
 import {Card, Button , Title ,Paragraph } from 'react-native-paper';
 import axios from 'axios';
-import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
+import { FontAwesome } from '@expo/vector-icons';
 import NavigationBar from './Navigation';
 
 export default function Profile(props) {
@@ -28,9 +28,6 @@ export default function Profile(props) {
     if (isFocused) {
       GetUsers();
       FetchPosts();
-
-      count = count + 1;
-      console.log(count);
     }
   }, [isFocused]);
 
@@ -89,46 +86,29 @@ export default function Profile(props) {
   };
 
   const DisplayPosts = () => {
-    let a = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
-    return a.map(post => CreateCardPost(post));
+    // Testing: For testing multiple posts
+    // let a = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+    // return a.map(post => CreateCardPost(post));
 
-    // return posts?.map(post => CreateCardPost(post));
-    // return CreateCardPost();
+    return posts?.map(post => CreateCardPost(post));
   }
 
   const CreateCardPost = (post) => {
     return (
-      <TouchableOpacity>
+      <TouchableOpacity key={post._id} onPress={() => props.navigation.navigate('Explore')}>
         <Card style={styles.postShape}>
           <Card.Content style={{height: 60}}>
-            <Paragraph numberOfLines={2} style={{fontWeight: 'bold'}}>1;l</Paragraph>
+            <Paragraph numberOfLines={2} style={{fontWeight: 'bold'}}>{post?.title}</Paragraph>
           </Card.Content>
-          <Card.Cover source={{uri: GetPostImage(posts[0])}} style={styles.imgStyle}/>
-          <Card.Content style={{height: 60}}>
-            <Paragraph>{posts[0]?.ratings}</Paragraph>
-            {/* <FontAwesomeIcon icon="fas fa-star" /> */}
+          <Card.Cover source={{uri: GetPostImage(post)}} style={styles.imgStyle}/>
+          <Card.Content style={styles.rating}>
+            <Paragraph style={{color: "#0080F0"}}>{post?.ratings}</Paragraph>
+            <FontAwesome name={"star"} style={styles.star}/>
           </Card.Content>
         </Card>
       </TouchableOpacity>
     )
   }
-
-              {/* <Card.Content>
-              <Title>{post?.title}</Title>
-            </Card.Content>
-            <Card.Cover source={{uri: GetPostImage(post)}} style={styles.imgStyle}/>
-            <Card.Content>
-              <Paragraph>{post?.ratings}</Paragraph>
-            </Card.Content>
-          </Card>
-          <Card>
-            <Card.Content>
-              <Title>{post?.title}</Title>
-            </Card.Content>
-            <Card.Cover source={{uri: GetPostImage(post)}}/>
-            <Card.Content>
-              <Paragraph>{post?.ratings}</Paragraph>
-            </Card.Content> */}
 
   const GetPostImage = (post) => {
     if (post != null && post.media_url != null) {
@@ -150,6 +130,7 @@ export default function Profile(props) {
         <View>
           <Text style={styles.text}>Followers: {displayUser?.followers_count || 0}</Text>
           <Text style={styles.text}>Following: {displayUser?.following_count || 0}</Text>
+          <Text style={styles.text}>Post Count: {displayUser?.posts_count || 0}</Text>
         </View>
       </View>
       
@@ -174,20 +155,6 @@ export default function Profile(props) {
 }
 
 const styles = StyleSheet.create({
-  imgStyle: {
-    width: 80,
-    height: 80,
-    alignSelf: 'center',
-  },
-  postShape: {
-    width: 110,
-    height: 170,
-    margin: 3, 
-  },
-  star: {
-    marginHorizontal: width / 70,
-  },
-
   container: {
     flex: 1,
     padding: 10,
@@ -258,8 +225,26 @@ const styles = StyleSheet.create({
     fontSize: 14
   },
 
-  cardStyle: {
-    margin: 10,
+  imgStyle: {
+    width: 80,
+    height: 80,
+    alignSelf: 'center',
+  },
+  postShape: {
+    width: 110,
+    height: 170,
+    margin: 3, 
+  },
+  rating: {
+    height: 60,
+    display: 'flex',
+    flexDirection: 'row',
+    alignSelf: 'center'
+  },
+  star: {
+    color: '#0080F0',
+    marginHorizontal: 3, 
+    marginVertical: 7
   },
 
   text: {
