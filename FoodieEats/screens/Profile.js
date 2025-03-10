@@ -4,11 +4,14 @@ import { useIsFocused } from '@react-navigation/native'; // so we can refresh on
 import {Card, Button , Title ,Paragraph } from 'react-native-paper';
 import axios from 'axios';
 import { FontAwesome } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import NavigationBar from './Navigation';
 
+
 export default function Profile(props) {
+  const [userId, setUserId]  = useState();
   const [user, setUser] = useState("");
-  const [displayUser, setDisplayUser] = useState("");
+  const [displayedUser, setDisplayedUser] = useState("");
   const [btnTxt, setBtnTxt] = useState("");
   const [posts, setPosts] = useState([]);
 
@@ -16,8 +19,7 @@ export default function Profile(props) {
   const UNFOLLOW_MSG = "Unfollow";
   const FOLLOW_MSG = "Follow";
 
-  let count = 0;
-  const userId = '670372a5d9077967850ae900'; // Replace with actual user ID
+  // const userId = '670372a5d9077967850ae900'; // Replace with actual user ID
   const displayUserId = '670372a5d9077967850ae901'; // Replace with actual user ID
 
   // This hook tells us if this screen is currently focused
@@ -26,30 +28,38 @@ export default function Profile(props) {
   // Fetch posts whenever screen is focused (including after navigating back)
   useEffect(() => {
     if (isFocused) {
-      GetUsers();
-      FetchPosts();
+      FetchUserInfo();
     }
   }, [isFocused]);
 
-  const GetUsers = async () => {
+  const FetchUserInfo = async () => {
     try {
-        const userIdResponse = await axios.get(`${process.env.EXPO_PUBLIC_API_URL}/api/users/${userId}`);
-        setUser(userIdResponse.data);
+      const userIdResponse = await AsyncStorage.getItem('userID');
+      if (userIdResponse != null) {
+        setUserId(userIdResponse);
 
-        const displayUserIdResponse = await axios.get(`${process.env.EXPO_PUBLIC_API_URL}/api/users/${displayUserId}`);
-        setDisplayUser(displayUserIdResponse.data);
+        const userDataResponse = await axios.get(`${process.env.EXPO_PUBLIC_API_URL}/api/users/${userIdResponse}`);
+        setUser(userDataResponse.data);
 
-        SetDisplayButtonText(userIdResponse.data, displayUserIdResponse.data._id);
+        const displayedUserDataResponse = await axios.get(`${process.env.EXPO_PUBLIC_API_URL}/api/users/${displayUserId}`);
+        setDisplayedUser(displayedUserDataResponse.data);
+
+        const displayedUserPostResponse = await axios.get(`${process.env.EXPO_PUBLIC_API_URL}/api/posts/${displayUserId}/posts`);
+        setPosts([...displayedUserPostResponse.data]);
+        console.log(displayedUserPostResponse.data);
+
+        SetDisplayButtonText(userDataResponse.data, displayedUserDataResponse.data._id);
+      }
     } catch (error) {
-        console.error('Error getting user info', error)
+        console.error('Error getting user info', error);
     }
   };
 
-  const SetDisplayButtonText = (userData, displayUserId) => {
-    if (userData._id === displayUserId) {
+  const SetDisplayButtonText = (loggedInUser, displayedUserId) => {
+    if (loggedInUser._id === displayedUserId) {
       setBtnTxt(EDIT_PROFILE_MSG);
     } else {
-      if (userData.following.find(id => id === displayUserId)) {
+      if (loggedInUser.following.find(id => id === displayedUserId)) {
         setBtnTxt(UNFOLLOW_MSG);
       } else {
         setBtnTxt(FOLLOW_MSG);
@@ -57,19 +67,9 @@ export default function Profile(props) {
     }
   }
 
-  const FetchPosts = async () => {
-    try {
-      const userIdResponse = await axios.get(`${process.env.EXPO_PUBLIC_API_URL}/api/posts/${userId}/posts`);
-      setPosts([...userIdResponse.data]);
-
-    } catch (error) {
-        console.error('Error getting user posts', error)
-    }
-  }
-
   const GetUserImage = () => {
-    if (displayUser != null && displayUser.profile != null && displayUser.profile.avatar_url != null) {
-      return displayUser.profile.avatar_url;
+    if (displayedUser != null && displayedUser.profile != null && displayedUser.profile.avatar_url != null) {
+      return displayedUser.profile.avatar_url;
     } else {
       return 'https://via.placeholder.com/50';
     }
@@ -121,16 +121,15 @@ export default function Profile(props) {
   return (
     <View style={styles.container}>
       <View style={styles.headerContainer}>
-        <Text style={styles.usernameTitle}>{displayUser?.username || 'Username'}</Text>
+        <Text style={styles.usernameTitle}>{displayedUser?.username || 'Username'}</Text>
       </View>
 
-      {/* Header (user info) */}
       <View style={styles.profileHeaderContainer}>
         <Image source={{uri: GetUserImage()}} style={styles.avatar}/>
         <View>
-          <Text style={styles.text}>Followers: {displayUser?.followers_count || 0}</Text>
-          <Text style={styles.text}>Following: {displayUser?.following_count || 0}</Text>
-          <Text style={styles.text}>Post Count: {displayUser?.posts_count || 0}</Text>
+          <Text style={styles.text}>Followers: {displayedUser?.followers_count || 0}</Text>
+          <Text style={styles.text}>Following: {displayedUser?.following_count || 0}</Text>
+          <Text style={styles.text}>Post Count: {displayedUser?.posts_count || 0}</Text>
         </View>
       </View>
       
@@ -141,8 +140,8 @@ export default function Profile(props) {
       </View>
 
       <View style={styles.marginContainer}>
-        <Text style={styles.bioName}>{displayUser?.first_name || "First"} {displayUser?.last_name || "Last"}</Text>
-        <Text style={styles.bioParagraph}>{displayUser?.profile?.bio || "Description"}</Text>
+        <Text style={styles.bioName}>{displayedUser?.first_name || "First"} {displayedUser?.last_name || "Last"}</Text>
+        <Text style={styles.bioParagraph}>{displayedUser?.profile?.bio || "Description"}</Text>
       </View>
 
       <ScrollView>
