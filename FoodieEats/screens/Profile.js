@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { StyleSheet, View, Text, Image, TouchableOpacity, Touchable, ScrollView } from 'react-native';
-import { useIsFocused } from '@react-navigation/native'; // so we can refresh on screen focus
+import { useIsFocused, useNavigation } from '@react-navigation/native';
 import {Card, Button , Title ,Paragraph } from 'react-native-paper';
 import axios from 'axios';
 import { FontAwesome } from '@expo/vector-icons';
@@ -8,7 +8,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import NavigationBar from './Navigation';
 
 
-export default function Profile(props) {
+export default function Profile({route}) {
   const [userId, setUserId]  = useState();
   const [user, setUser] = useState("");
   const [displayedUser, setDisplayedUser] = useState("");
@@ -19,13 +19,13 @@ export default function Profile(props) {
   const UNFOLLOW_MSG = "Unfollow";
   const FOLLOW_MSG = "Follow";
 
-  // const userId = '670372a5d9077967850ae900'; // Replace with actual user ID
-  const displayUserId = '670372a5d9077967850ae901'; // Replace with actual user ID
+  // const userId = '670372a5d9077967850ae900'; // Test: Logged In user ID
+  // const displayUserId = '673026985ab6f593df4682d7'; // Test: User ID
+  // const displayedUserId = '670372a5d9077967850ae901'; // Test: Displayed user ID
 
-  // This hook tells us if this screen is currently focused
+  const navigation = useNavigation();
   const isFocused = useIsFocused();
 
-  // Fetch posts whenever screen is focused (including after navigating back)
   useEffect(() => {
     if (isFocused) {
       FetchUserInfo();
@@ -35,18 +35,35 @@ export default function Profile(props) {
   const FetchUserInfo = async () => {
     try {
       const userIdResponse = await AsyncStorage.getItem('userID');
-      if (userIdResponse != null) {
-        setUserId(userIdResponse);
+      if (userIdResponse == null) {
+        console.error('Error getting userId');
+        return;
+      }
 
-        const userDataResponse = await axios.get(`${process.env.EXPO_PUBLIC_API_URL}/api/users/${userIdResponse}`);
-        setUser(userDataResponse.data);
+      const displayedUserId = route.params.displayUserID;
+      if (displayedUserId == null) {
+        console.error('Error getting displayedUserId');
+        return;
+      }
 
-        const displayedUserDataResponse = await axios.get(`${process.env.EXPO_PUBLIC_API_URL}/api/users/${displayUserId}`);
+      setUserId(userIdResponse);
+
+      const userDataResponse = await axios.get(`${process.env.EXPO_PUBLIC_API_URL}/api/users/${userIdResponse}`);
+      setUser(userDataResponse.data);
+
+      if (userIdResponse === displayedUserId) {
+        setDisplayedUser(userDataResponse.data);
+
+        const displayedUserPostResponse = await axios.get(`${process.env.EXPO_PUBLIC_API_URL}/api/posts/${userIdResponse}/posts`);
+        setPosts([...displayedUserPostResponse.data]);
+
+        setBtnTxt(EDIT_PROFILE_MSG);
+      } else {
+        const displayedUserDataResponse = await axios.get(`${process.env.EXPO_PUBLIC_API_URL}/api/users/${displayedUserId}`);
         setDisplayedUser(displayedUserDataResponse.data);
 
-        const displayedUserPostResponse = await axios.get(`${process.env.EXPO_PUBLIC_API_URL}/api/posts/${displayUserId}/posts`);
+        const displayedUserPostResponse = await axios.get(`${process.env.EXPO_PUBLIC_API_URL}/api/posts/${displayedUserId}/posts`);
         setPosts([...displayedUserPostResponse.data]);
-        console.log(displayedUserPostResponse.data);
 
         SetDisplayButtonText(userDataResponse.data, displayedUserDataResponse.data._id);
       }
@@ -56,14 +73,10 @@ export default function Profile(props) {
   };
 
   const SetDisplayButtonText = (loggedInUser, displayedUserId) => {
-    if (loggedInUser._id === displayedUserId) {
-      setBtnTxt(EDIT_PROFILE_MSG);
+    if (loggedInUser.following.find(id => id === displayedUserId)) {
+      setBtnTxt(UNFOLLOW_MSG);
     } else {
-      if (loggedInUser.following.find(id => id === displayedUserId)) {
-        setBtnTxt(UNFOLLOW_MSG);
-      } else {
-        setBtnTxt(FOLLOW_MSG);
-      }
+      setBtnTxt(FOLLOW_MSG);
     }
   }
 
@@ -95,7 +108,7 @@ export default function Profile(props) {
 
   const CreateCardPost = (post) => {
     return (
-      <TouchableOpacity key={post._id} onPress={() => props.navigation.navigate('Explore')}>
+      <TouchableOpacity key={post._id} onPress={() => navigation.navigate('Explore', { postID: post._id })}>
         <Card style={styles.postShape}>
           <Card.Content style={{height: 60}}>
             <Paragraph numberOfLines={2} style={{fontWeight: 'bold'}}>{post?.title}</Paragraph>
@@ -129,12 +142,12 @@ export default function Profile(props) {
         <View>
           <Text style={styles.text}>Followers: {displayedUser?.followers_count || 0}</Text>
           <Text style={styles.text}>Following: {displayedUser?.following_count || 0}</Text>
-          <Text style={styles.text}>Post Count: {displayedUser?.posts_count || 0}</Text>
+          <Text style={styles.text}>Posts: {displayedUser?.posts_count || 0}</Text>
         </View>
       </View>
       
       <View style={styles.headerContainer}>
-        <TouchableOpacity style={styles.profileButton}>
+        <TouchableOpacity style={styles.profileButton} onPress={() => HandleProfileButtonPress()}>
           <Text style={styles.buttonText}>{btnTxt}</Text>
         </TouchableOpacity>
       </View>
@@ -149,6 +162,8 @@ export default function Profile(props) {
           {DisplayPosts()}
         </View>
       </ScrollView>
+
+      <NavigationBar/>
     </View>
   );
 }
