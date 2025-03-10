@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, View, Text, Image, TouchableOpacity, Touchable, ScrollView } from 'react-native';
+import { StyleSheet, View, Text, Image, TouchableOpacity, ScrollView } from 'react-native';
 import { useIsFocused, useNavigation } from '@react-navigation/native';
-import {Card, Button , Title ,Paragraph } from 'react-native-paper';
+import {Card, Paragraph } from 'react-native-paper';
 import axios from 'axios';
 import { FontAwesome } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import NavigationBar from './Navigation';
+import { ALERT_TYPE, Dialog, AlertNotificationRoot } from 'react-native-alert-notification';
 
 
 export default function Profile({route}) {
@@ -14,13 +15,14 @@ export default function Profile({route}) {
   const [displayedUser, setDisplayedUser] = useState("");
   const [btnTxt, setBtnTxt] = useState("");
   const [posts, setPosts] = useState([]);
+  const [state, setState] = useState(0);
 
   const EDIT_PROFILE_MSG = "Edit Profile";
   const UNFOLLOW_MSG = "Unfollow";
   const FOLLOW_MSG = "Follow";
 
-  // const userId = '670372a5d9077967850ae900'; // Test: Logged In user ID
-  // const displayUserId = '673026985ab6f593df4682d7'; // Test: User ID
+  // const userIdResponse = '670372a5d9077967850ae900'; // Test: Logged In user ID
+  // const displayedUserId = '673026985ab6f593df4682d7'; // Test: User ID
   // const displayedUserId = '670372a5d9077967850ae901'; // Test: Displayed user ID
 
   const navigation = useNavigation();
@@ -30,19 +32,19 @@ export default function Profile({route}) {
     if (isFocused) {
       FetchUserInfo();
     }
-  }, [isFocused]);
+  }, [isFocused, state]);
 
   const FetchUserInfo = async () => {
     try {
-      const userIdResponse = await AsyncStorage.getItem('userID');
-      if (userIdResponse == null) {
-        console.error('Error getting userId');
-        return;
-      }
-
       const displayedUserId = route.params.displayUserID;
       if (displayedUserId == null) {
         console.error('Error getting displayedUserId');
+        return;
+      }
+
+      const userIdResponse = await AsyncStorage.getItem('userID');
+      if (userIdResponse == null) {
+        console.error('Error getting userId');
         return;
       }
 
@@ -92,9 +94,57 @@ export default function Profile({route}) {
     if (btnTxt === EDIT_PROFILE_MSG) {
 
     } else if (btnTxt === UNFOLLOW_MSG) {
-
+      UnfollowUser();
     } else if (btnTxt === FOLLOW_MSG) {
+      FollowUser();
+    }
+  };
 
+  const UnfollowUser = async () => {
+    try {
+      const response = await axios.delete(`${process.env.EXPO_PUBLIC_API_URL}/api/users/${userId}/unfollow/${displayedUser._id}`);
+      if (response.status === 200) {
+        Dialog.show({
+          type: ALERT_TYPE.SUCCESS,
+          title: 'Complete',
+          textBody: 'Unfollow succeeded',
+          button: 'Close',
+        })
+
+        setState(state + 1);
+      }
+    } catch (error) {
+      console.error('Error unfollowing displayed user', error);
+      Dialog.show({
+        type: ALERT_TYPE.DANGER,
+        title: 'Incomplete',
+        textBody: 'Error unfollowing user',
+        button: 'Close',
+      })
+    }
+  }
+
+  const FollowUser = async () => {
+    try {
+      const response = await axios.post(`${process.env.EXPO_PUBLIC_API_URL}/api/users/${userId}/follow/${displayedUser._id}`);
+      if (response.status === 200) {
+        Dialog.show({
+          type: ALERT_TYPE.SUCCESS,
+          title: 'Complete',
+          textBody: 'Follow succeeded',
+          button: 'Close',
+        })
+
+        setState(state + 1);
+      }
+    } catch (error) {
+      console.error('Error following displayed user', error);
+      Dialog.show({
+        type: ALERT_TYPE.DANGER,
+        title: 'Incomplete',
+        textBody: 'Error following user',
+        button: 'Close',
+      })
     }
   };
 
@@ -146,11 +196,13 @@ export default function Profile({route}) {
         </View>
       </View>
       
-      <View style={styles.headerContainer}>
-        <TouchableOpacity style={styles.profileButton} onPress={() => HandleProfileButtonPress()}>
-          <Text style={styles.buttonText}>{btnTxt}</Text>
-        </TouchableOpacity>
-      </View>
+      <AlertNotificationRoot>
+        <View style={styles.headerContainer}>
+          <TouchableOpacity style={styles.profileButton} onPress={() => HandleProfileButtonPress()}>
+            <Text style={styles.buttonText}>{btnTxt}</Text>
+          </TouchableOpacity>
+        </View>
+      </AlertNotificationRoot>
 
       <View style={styles.marginContainer}>
         <Text style={styles.bioName}>{displayedUser?.first_name || "First"} {displayedUser?.last_name || "Last"}</Text>
