@@ -12,6 +12,48 @@ router.get("/", async (req, res) => {
   }
 });
 
+router.get('/search', async (req, res) => {
+  try {
+    const { query, minRating, maxRating, sortBy, sortOrder } = req.query;
+
+    console.log('restaurant search query:', query, 'minRating:', minRating, 'maxRating:', maxRating, 'sortBy:', sortBy, 'sortOrder:', sortOrder);
+
+    if (!query) {
+      return res.status(400).json({ error: 'Search query is required' });
+    }
+
+    // Build the filter
+    const filter = {
+      $or: [
+        { name: { $regex: query, $options: 'i' } },
+        { location: { $regex: query, $options: 'i' } },
+        { 'menu.name': { $regex: query, $options: 'i' } },
+        { 'menu.description': { $regex: query, $options: 'i' } },
+      ],
+    };
+
+    // Add rating filters
+    if (minRating || maxRating) {
+      filter.average_rating = {};
+      if (minRating) filter.average_rating.$gte = parseFloat(minRating);
+      if (maxRating) filter.average_rating.$lte = parseFloat(maxRating);
+    }
+
+    // Build sort options
+    const sortOptions = {};
+    if (sortBy) {
+      sortOptions[sortBy] = sortOrder === 'desc' ? -1 : 1;
+    }
+
+    // Query the database
+    const restaurants = await Restaurant.find(filter).sort(sortOptions);
+
+    res.status(200).json({ total: restaurants.length, restaurants });
+  } catch (err) {
+    res.status(500).json({ error: 'Internal server error', details: err.message });
+  }
+});
+
 router.get("/:id", async (req, res) => {
   const { id } = req.params;
 
