@@ -119,12 +119,19 @@ router.get('/search', async (req, res) => {
   try {
     const { query, sortBy, sortOrder, minFollowers, maxFollowers, minPosts, maxPosts, showPrivate } = req.query;
 
-    console.log("User Search query:", query, "Sort by:", sortBy, "Sort order:", sortOrder, 
-      "Min followers:", minFollowers, "Max followers:", maxFollowers, 
-      "Min posts:", minPosts, "Max posts:", maxPosts, "Show private:", showPrivate);
+    console.log("user route: ", req.query);
 
     if (!query) {
-      return res.status(400).json({ error: 'Search query is required' });
+      const sortOptions = {};
+      if (sortBy) {
+        sortOptions[sortBy] = sortOrder === 'desc' ? -1 : 1;
+      }
+      else {
+        sortOptions['followers_count'] = -1;
+      }
+      // if no query return all users with most followers
+      const users = await User.find({ 'privacy_settings.profile_visibility': true }).sort(sortOptions);
+      return res.status(200).json({ total: users.length, users });
     }
 
     const filter = {
@@ -167,11 +174,7 @@ router.get('/search', async (req, res) => {
       sortOptions[sortBy] = sortOrder === 'desc' ? -1 : 1;
     }
 
-    const users = await User.find(filter)
-      .populate('followers', 'username')
-      .populate('following', 'username')
-      .populate('likes', 'title')
-      .sort(sortOptions);
+    const users = await User.find(filter).sort(sortOptions);
 
     res.status(200).json({ total: users.length, users });
 
