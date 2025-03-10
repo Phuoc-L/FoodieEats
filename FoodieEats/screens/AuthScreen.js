@@ -15,10 +15,10 @@ export default function AuthScreen(props) {
     password: '',
   });
 
-  // Save user data
-  const saveUserID = async (userID) => {
+  // Save data
+  const saveData = async (dataName, data) => {
     try {
-        await AsyncStorage.setItem('userID', userID);
+        await AsyncStorage.setItem(dataName, data);
     } catch (e) {
         console.error(e);
     }
@@ -29,7 +29,8 @@ export default function AuthScreen(props) {
       const response = await axios.post(process.env.EXPO_PUBLIC_API_URL + '/api/users/login', credentials);
       const { user, token } = response.data;
       // save user data
-      await saveUserID(user._id);
+      await saveData("userID", user._id);
+      await saveData("token", token);
       Keyboard.dismiss();
       props.navigation.navigate('Explore');
     } catch (error) {
