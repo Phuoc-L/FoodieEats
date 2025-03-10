@@ -7,7 +7,7 @@ import { FontAwesome } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import NavigationBar from './Navigation';
 import { ALERT_TYPE, Dialog, AlertNotificationRoot } from 'react-native-alert-notification';
-
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 
 export default function Profile({route}) {
   const [userId, setUserId]  = useState();
@@ -80,6 +80,15 @@ export default function Profile({route}) {
     } else {
       setBtnTxt(FOLLOW_MSG);
     }
+  }
+
+  const LogoutDisplay = () => {
+    if (userId === displayedUser._id) {
+      return (
+        <TouchableOpacity>
+          <MaterialIcons name="logout" size={24} style={styles.logout} onPress={() => navigation.navigate('Auth')}/>
+        </TouchableOpacity>
+    )}
   }
 
   const GetUserImage = () => {
@@ -183,6 +192,8 @@ export default function Profile({route}) {
 
   return (
     <View style={styles.container}>
+      {LogoutDisplay()}
+
       <View style={styles.headerContainer}>
         <Text style={styles.usernameTitle}>{displayedUser?.username || 'Username'}</Text>
       </View>
@@ -311,6 +322,11 @@ const styles = StyleSheet.create({
     color: '#0080F0',
     marginHorizontal: 3, 
     marginVertical: 7
+  },
+
+  logout: {
+    alignSelf: 'flex-end',
+    color: '#000',
   },
 
   text: {
