@@ -45,24 +45,18 @@ export default function Profile({route}) {
       }
       setUserId(userIdResponse);
 
-      console.log("loggedInUser: " + userIdResponse);
-
+      const displayedUserId = route.params.displayUserID;
       // Get passed-in displayed user ID
-      let displayedUserId = route.params.displayUserId;
-      if (displayedUserId == null) {
+      if (route.params.displayUserId === null) {
         console.error('Error getting displayedUserId');
         return;
-      } else if (displayedUserId === DEFAULT_LOGGED_IN_USER_ID) {
-        displayedUserId = userIdResponse;
       }
-
-      console.log("displayedUserId: " + displayedUserId);
 
       // Get logged-in user data
       const userDataResponse = await axios.get(`${process.env.EXPO_PUBLIC_API_URL}/api/users/${userIdResponse}`);
       setUser(userDataResponse.data);
 
-      if (userIdResponse === displayedUserId) {
+      if (userIdResponse === route.params.displayUserId || route.params.displayUserId === DEFAULT_LOGGED_IN_USER_ID) {
         // Logged-in user ID and displayed user ID is the same
         setDisplayedUser(userDataResponse.data);
 
@@ -178,8 +172,14 @@ export default function Profile({route}) {
     // let a = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
     // return a.map(post => CreateCardPost(post));
 
-    // Create a card component for each displayed user's post
-    return posts?.map(post => CreateCardPost(post));
+    if (posts.length === 0) {
+      return <View style={styles.emptyContainer}>
+        <Text style={styles.emptyPostText}>No Posts</Text>
+      </View>
+    } else {
+      // Create a card component for each displayed user's post
+      return posts?.map(post => CreateCardPost(post));
+    }
   }
 
   const CreateCardPost = (post) => {
@@ -243,7 +243,7 @@ export default function Profile({route}) {
       </View>
 
       {/* Display displayed user's posts */}
-      <ScrollView>
+      <ScrollView style={{height: 200}}>
         <View style={styles.postContainer}>
           {DisplayPosts()}
         </View>
@@ -262,7 +262,9 @@ const styles = StyleSheet.create({
     alignContent: 'center'
   },
   marginContainer: {
-    margin: 10
+    margin: 10,
+    borderBottomColor: 'black',
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
   headerContainer: {
     alignItems: 'center'
@@ -277,6 +279,9 @@ const styles = StyleSheet.create({
     display: 'flex',
     flexDirection: 'row',
     flexWrap: 'wrap',
+  },
+  emptyContainer: {
+    height: 200,
   },
 
   usernameTitle: { 
@@ -355,5 +360,10 @@ const styles = StyleSheet.create({
   text: {
     color: '#000',
     fontSize: 18,
-  }
+  },
+  emptyPostText: {
+    fontStyle: 'italic',
+    color: '#000',
+    fontSize: 18,
+  },
 });

@@ -63,7 +63,7 @@ export default function Explore() {
   };
 
   const renderUserItem = (item) => (
-    <TouchableOpacity onPress={() => navigation.navigate('Profile', { displayUserID: item._id })}>
+    <TouchableOpacity onPress={() => navigation.push('Profile', { displayUserID: item._id })}>
       <View style={styles.resultCard}>
         <Image source={{ uri: item.profile.avatar_url || 'https://via.placeholder.com/50' }} style={styles.avatar} />
         <View style={styles.resultDetailBox}>
