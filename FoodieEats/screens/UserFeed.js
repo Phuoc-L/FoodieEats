@@ -1,31 +1,44 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, FlatList, StyleSheet } from 'react-native';
+import { View, FlatList, StyleSheet, Text, Dimensions } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import { AsyncStorage } from '@react-native-async-storage/async-storage';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import NavigationBar from './Navigation';
 import axios from 'axios';
 import PostComponent from './PostComponent';
 
+
+const { width } = Dimensions.get('window');
+
 export default function UserFeed() {
   const [posts, setPosts] = useState([]);
   const [currentUser, setCurrentUser] = useState("");
+  const [userId, setUserId] = useState("");
 
   useFocusEffect(
     useCallback(() => {
-      getUser();
-      fetchPosts();
+      const initialize = async () => {
+        await getUser();
+      };
+      initialize();
     }, [])
   );
+
+  useEffect(() => {
+    if (userId) {
+      fetchPosts();
+    }
+  }, [userId]);
 
   // Get user data
   const getUser = async () => {
     try {
-      const userID = await AsyncStorage.getItem('userID');
-      if (!userID) {
+      const user_id = await AsyncStorage.getItem('user');
+      if (!user_id) {
         console.error('User ID not found in AsyncStorage');
         return;
       }
-      const user = await axios.get(process.env.EXPO_PUBLIC_API_URL + '/api/users/' + userID);
+      setUserId(user_id);
+      const user = await axios.get(process.env.EXPO_PUBLIC_API_URL + '/api/users/' + user_id);
       setCurrentUser(user.data);
     } catch (e) {
       console.error(e);
@@ -34,10 +47,6 @@ export default function UserFeed() {
 
   const fetchPosts = async () => {
     try {
-      console.log(currentUser);
-      const userId = currentUser;
-
-      console.log(`${process.env.EXPO_PUBLIC_API_URL}/api/posts/${userId}/user_feed`);
       const response = await axios.get(`${process.env.EXPO_PUBLIC_API_URL}/api/posts/${userId}/user_feed`);
 
       if (response.status === 200) {
@@ -65,7 +74,7 @@ export default function UserFeed() {
         console.error('Error fetching posts:', response.status);
       }
     } catch (error) {
-      console.error('Error fetching posts:', error);
+      console.error('Error fetching posts (2):', error);
     }
   };
 
@@ -74,8 +83,9 @@ export default function UserFeed() {
       <FlatList
         data={posts}
         keyExtractor={(item) => item._id}
-        renderItem={({ item }) => <PostComponent item={item} />}
-        contentContainerStyle={styles.feed}
+        renderItem={({ item }) => <PostComponent userId={userId} item={item} />}
+        contentContainerStyle={posts.length === 0 ? styles.emptyContainer : styles.feed}
+        ListEmptyComponent={<Text style={styles.emptyText}>No posts to show.</Text>}
       />
       <NavigationBar />
     </View>
@@ -87,7 +97,18 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#fff',
   },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   feed: {
     paddingBottom: 60,
+  },
+  emptyText: {
+    textAlign: 'center',
+    fontSize: 18,
+    color: 'gray',
+    marginBottom: 60,
   },
 });

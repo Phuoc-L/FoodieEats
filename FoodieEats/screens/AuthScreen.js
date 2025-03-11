@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { StyleSheet, View, Text, TextInput, TouchableOpacity, Alert } from 'react-native';
-import { AsyncStorage } from '@react-native-async-storage/async-storage';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import { Eye, EyeOff } from 'lucide-react-native';
 
@@ -62,7 +62,7 @@ export default function AuthScreen(props) {
 
   const saveUser = async (user) => {
     try {
-      await AsyncStorage.setItem('user', JSON.stringify(user));
+      await AsyncStorage.setItem('user', user._id);
     } catch (e) {
       console.error(e);
     }
