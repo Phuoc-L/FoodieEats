@@ -188,7 +188,7 @@ router.get("/:user_id/user_feed", async (req, res) => {
 
     const following = active_user.following
     if (!following || following.length === 0) {
-        return res.status(200).send({ error: "No followed users found.", posts: [] });
+        return res.status(200).send([]);
     }
 
     const posts = await Post.find({ user_id: { $in: following } })

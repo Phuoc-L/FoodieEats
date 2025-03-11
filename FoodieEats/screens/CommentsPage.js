@@ -23,7 +23,9 @@ const CommentsPage = ({ route }) => {
 
     const fetchComments = async () => {
         try {
-            const response = await axios.get(`${process.env.EXPO_PUBLIC_API_URL}/comments/${postId}/comments`);
+            const response = await axios.get(
+                `${process.env.EXPO_PUBLIC_API_URL}/api/comments/${postId}/comments`
+            );
             setComments(response.data);
         } catch (error) {
             console.error("Error fetching comments:", error);

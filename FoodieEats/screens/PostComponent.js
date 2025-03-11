@@ -7,14 +7,10 @@ import axios from 'axios';
 
 const { width } = Dimensions.get('window');
 
-const PostComponent = ({ item }) => {
-  const { user, token } = props.route.params || {};
-
+const PostComponent = ({ userId, item }) => {
   const [likes, setLikes] = useState(item.like_list.length);
   const [isLiked, setIsLiked] = useState(item.like_list.includes('67045cebfe84a164fa7085a9')); // Replace with actual user ID
   const navigation = useNavigation();
-
-  const userId = '67045cebfe84a164fa7085a9'; // Replace with actual user ID
 
   const handleLike = async () => {
     try {
@@ -83,7 +79,7 @@ const PostComponent = ({ item }) => {
           <Text style={styles.likes}>{likes} {likes === 1 ? 'like' : 'likes'}</Text>
         </TouchableOpacity>
         <TouchableOpacity
-          onPress={() => navigation.navigate("CommentsPage", { props: props, postId: item._id, userId: userId })}
+          onPress={() => navigation.navigate("CommentsPage", { postId: item._id, userId: userId })}
           style={styles.commentsButton}
         >
           <Text style={styles.commentsText}>
