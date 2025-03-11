@@ -20,6 +20,7 @@ export default function Profile({route}) {
   const EDIT_PROFILE_MSG = "Edit Profile";
   const UNFOLLOW_MSG = "Unfollow";
   const FOLLOW_MSG = "Follow";
+  const DEFAULT_LOGGED_IN_USER_ID = 0;
 
   // const userIdResponse = '670372a5d9077967850ae900'; // Test: Logged In user ID
   // const displayedUserId = '673026985ab6f593df4682d7'; // Test: User ID
@@ -36,37 +37,51 @@ export default function Profile({route}) {
 
   const FetchUserInfo = async () => {
     try {
-      const displayedUserId = route.params.displayUserID;
-      if (displayedUserId == null) {
-        console.error('Error getting displayedUserId');
-        return;
-      }
-
+      // Get logged-in user ID
       const userIdResponse = await AsyncStorage.getItem('userID');
       if (userIdResponse == null) {
         console.error('Error getting userId');
         return;
       }
-
       setUserId(userIdResponse);
 
+      console.log("loggedInUser: " + userIdResponse);
+
+      // Get passed-in displayed user ID
+      let displayedUserId = route.params.displayUserId;
+      if (displayedUserId == null) {
+        console.error('Error getting displayedUserId');
+        return;
+      } else if (displayedUserId === DEFAULT_LOGGED_IN_USER_ID) {
+        displayedUserId = userIdResponse;
+      }
+
+      console.log("displayedUserId: " + displayedUserId);
+
+      // Get logged-in user data
       const userDataResponse = await axios.get(`${process.env.EXPO_PUBLIC_API_URL}/api/users/${userIdResponse}`);
       setUser(userDataResponse.data);
 
       if (userIdResponse === displayedUserId) {
+        // Logged-in user ID and displayed user ID is the same
         setDisplayedUser(userDataResponse.data);
 
+        // Get logged-in user's posts
         const displayedUserPostResponse = await axios.get(`${process.env.EXPO_PUBLIC_API_URL}/api/posts/${userIdResponse}/posts`);
         setPosts([...displayedUserPostResponse.data]);
 
+        // Set button text
         setBtnTxt(EDIT_PROFILE_MSG);
       } else {
+        // Get displayed user's data
         const displayedUserDataResponse = await axios.get(`${process.env.EXPO_PUBLIC_API_URL}/api/users/${displayedUserId}`);
         setDisplayedUser(displayedUserDataResponse.data);
 
+        // Get displayed user's posts
         const displayedUserPostResponse = await axios.get(`${process.env.EXPO_PUBLIC_API_URL}/api/posts/${displayedUserId}/posts`);
         setPosts([...displayedUserPostResponse.data]);
 
+        // Set button text to either 'follow' or 'unfollow'
         SetDisplayButtonText(userDataResponse.data, displayedUserDataResponse.data._id);
       }
     } catch (error) {
@@ -83,6 +98,7 @@ export default function Profile({route}) {
   }
 
   const LogoutDisplay = () => {
+    // If logged-in user ID and displayed user ID is the same, display a logout button
     if (userId === displayedUser._id) {
       return (
         <TouchableOpacity>
@@ -101,7 +117,7 @@ export default function Profile({route}) {
 
   const HandleProfileButtonPress = () => {
     if (btnTxt === EDIT_PROFILE_MSG) {
-
+      // Not implemented yet
     } else if (btnTxt === UNFOLLOW_MSG) {
       UnfollowUser();
     } else if (btnTxt === FOLLOW_MSG) {
@@ -162,6 +178,7 @@ export default function Profile({route}) {
     // let a = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
     // return a.map(post => CreateCardPost(post));
 
+    // Create a card component for each displayed user's post
     return posts?.map(post => CreateCardPost(post));
   }
 
@@ -192,12 +209,15 @@ export default function Profile({route}) {
 
   return (
     <View style={styles.container}>
+      {/* Display logout button option */}
       {LogoutDisplay()}
 
+      {/* Display displayed user's name */}
       <View style={styles.headerContainer}>
         <Text style={styles.usernameTitle}>{displayedUser?.username || 'Username'}</Text>
       </View>
 
+      {/* Display displayed user's profile pic, followers, following, and posts numbers */}
       <View style={styles.profileHeaderContainer}>
         <Image source={{uri: GetUserImage()}} style={styles.avatar}/>
         <View>
@@ -207,6 +227,7 @@ export default function Profile({route}) {
         </View>
       </View>
       
+      {/* Display Edit Profile/Follow/Unfollow button and enable alert popup modal response */}
       <AlertNotificationRoot>
         <View style={styles.headerContainer}>
           <TouchableOpacity style={styles.profileButton} onPress={() => HandleProfileButtonPress()}>
@@ -215,11 +236,13 @@ export default function Profile({route}) {
         </View>
       </AlertNotificationRoot>
 
+      {/* Display displayed user's name and description */}
       <View style={styles.marginContainer}>
         <Text style={styles.bioName}>{displayedUser?.first_name || "First"} {displayedUser?.last_name || "Last"}</Text>
         <Text style={styles.bioParagraph}>{displayedUser?.profile?.bio || "Description"}</Text>
       </View>
 
+      {/* Display displayed user's posts */}
       <ScrollView>
         <View style={styles.postContainer}>
           {DisplayPosts()}
