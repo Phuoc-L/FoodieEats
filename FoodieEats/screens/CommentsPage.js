@@ -10,8 +10,6 @@ const { width } = Dimensions.get('window');
 const CommentsPage = ({ route }) => {
     const { postId, userId } = route.params;
 
-    const { user, token } = props.route.params || {};
-
     const [comments, setComments] = useState([]);
     const [newComment, setNewComment] = useState("");
 
@@ -33,16 +31,18 @@ const CommentsPage = ({ route }) => {
     };
 
     const handleCommentSubmit = async () => {
-        if (!newComment.trim()) return; // Prevent empty comments
+        if (!newComment.trim()) return;
 
         try {
-            const response = await axios.post(`${process.env.EXPO_PUBLIC_API_URL}/comments/${postId}/comment/${userId}`, {
+            const response = await axios.post(
+                `${process.env.EXPO_PUBLIC_API_URL}/api/comments/${postId}/comment/${userId}`,
+            {
                 comment: newComment,
             });
 
             if (response.status === 201) {
-                setComments([...comments, response.data.comment]); // Update UI
-                setNewComment(""); // Clear input field
+                setComments([...comments, response.data.comment]);
+                setNewComment("");
             }
         } catch (error) {
             console.error("Error adding comment:", error);
@@ -51,7 +51,9 @@ const CommentsPage = ({ route }) => {
 
     const handleLike = async (commentId) => {
         try {
-            const response = await axios.post(`${process.env.EXPO_PUBLIC_API_URL}/comments/${commentId}/like/${userId}`);
+            const response = await axios.post(
+                `${process.env.EXPO_PUBLIC_API_URL}/api/comments/${commentId}/like/${userId}`
+            );
 
             if (response.status === 200) {
                 const updatedComment = response.data.comment;
@@ -70,7 +72,7 @@ const CommentsPage = ({ route }) => {
     const handleDeleteComment = async (commentId) => {
         try {
             const response = await axios.delete(
-                `${process.env.EXPO_PUBLIC_API_URL}/comments/${postId}/comment/${commentId}/user/${userId}`
+                `${process.env.EXPO_PUBLIC_API_URL}/api/comments/${postId}/comment/${commentId}/user/${userId}`
             );
 
             if (response.status === 200) {

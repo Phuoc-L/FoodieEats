@@ -18,16 +18,11 @@ export default function UserFeed() {
     useCallback(() => {
       const initialize = async () => {
         await getUser();
+        fetchPosts(true);
       };
       initialize();
     }, [])
   );
-
-  useEffect(() => {
-    if (userId) {
-      fetchPosts();
-    }
-  }, [userId]);
 
   // Get user data
   const getUser = async () => {
@@ -45,8 +40,10 @@ export default function UserFeed() {
     }
   };
 
-  const fetchPosts = async () => {
+  const fetchPosts = async (refresh = false) => {
     try {
+      if (!userId) return;
+
       const response = await axios.get(`${process.env.EXPO_PUBLIC_API_URL}/api/posts/${userId}/user_feed`);
 
       if (response.status === 200) {

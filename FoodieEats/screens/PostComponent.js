@@ -9,7 +9,7 @@ const { width } = Dimensions.get('window');
 
 const PostComponent = ({ userId, item }) => {
   const [likes, setLikes] = useState(item.like_list.length);
-  const [isLiked, setIsLiked] = useState(item.like_list.includes('67045cebfe84a164fa7085a9')); // Replace with actual user ID
+  const [isLiked, setIsLiked] = useState(item.like_list.includes(userId));
   const navigation = useNavigation();
 
   const handleLike = async () => {
@@ -18,16 +18,20 @@ const PostComponent = ({ userId, item }) => {
       setLikes(updatedLikes);
       setIsLiked(!isLiked);
 
-      console.log(item.user_id);
-      console.log(item._id);
-
-      await axios.post(`${process.env.EXPO_PUBLIC_API_URL}/posts/${item._id}/like/${userId}`);
+      const post_user_id = item.user_id._id;
+      await axios.post(
+        `${process.env.EXPO_PUBLIC_API_URL}/api/posts/${post_user_id}/posts/${item._id}/like/${userId}`
+      );
 
       try {
         if(!isLiked) {
-          await axios.post(`${process.env.EXPO_PUBLIC_API_URL}/users/${userId}/like/${item._id}`);
+          await axios.post(
+            `${process.env.EXPO_PUBLIC_API_URL}/api/users/${userId}/like/${item._id}`
+          );
         } else {
-          await axios.post(`${process.env.EXPO_PUBLIC_API_URL}/users/${userId}/unlike/${item._id}`);
+          await axios.post(
+            `${process.env.EXPO_PUBLIC_API_URL}/api/users/${userId}/unlike/${item._id}`
+          );
         }
       } catch (error) {
         console.error('Error updating user\'s likes:', error);
