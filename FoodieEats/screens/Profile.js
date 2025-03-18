@@ -200,12 +200,16 @@ export default function Profile({route}) {
   }
 
   const GetPostImage = (post) => {
-    if (post != null && post.media_url != null) {
-      return post.media_url;
-    } else {
-      return 'https://via.placeholder.com/50';
+    if (post) {
+      if (post.media_url && post.media_url.trim() !== "") {
+        return post.media_url;
+      } else if (post.image_url && post.image_url.trim() !== "") {
+        return post.image_url;
+      }
     }
+    return 'https://via.placeholder.com/50';
   };
+  
 
   return (
     <View style={styles.container}>

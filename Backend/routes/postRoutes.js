@@ -132,7 +132,7 @@ router.get('/search', async (req, res) => {
 // Create a new post
 router.post("/:user_id/create", async (req, res) => {
   try {
-    const { restaurant_id, dish_id, title, description, rating } = req.body;
+    const { restaurant_id, dish_id, title, description, ratings } = req.body;
     
     // Validate user exists
     const user = await User.findById(req.params.user_id);
@@ -147,7 +147,7 @@ router.post("/:user_id/create", async (req, res) => {
       dish_id,
       title,
       description,
-      rating
+      ratings
     });
 
     // Save post
@@ -185,7 +185,7 @@ router.post("/:user_id/posts/:post_id/image", verifyPostOwnership, async (req, r
     const image_url = `https://${process.env.BUCKET_NAME}.s3.${process.env.REGION}.amazonaws.com/${uploadDir}/${fileName}`;
     
     // Update post with image URL
-    req.post.image_url = image_url;
+    req.post.media_url = image_url;
     await req.post.save();
 
     res.status(200).json({ 
@@ -236,12 +236,12 @@ router.get("/:user_id/posts/:post_id", async (req, res) => {
 // Update post
 router.put("/:user_id/posts/:post_id", verifyPostOwnership, async (req, res) => {
   try {
-    const { title, description, rating } = req.body;
+    const { title, description, ratings } = req.body;
     
     // Update only provided fields
     if (title) req.post.title = title;
     if (description) req.post.description = description;
-    if (rating) req.post.rating = rating;
+    if (ratings) req.post.ratings = ratings;
 
     await req.post.save();
     res.status(200).json({ 
