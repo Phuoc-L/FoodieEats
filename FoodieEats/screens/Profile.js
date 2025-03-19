@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, View, Text, Image, TouchableOpacity, ScrollView } from 'react-native';
+import { StyleSheet, View, Text, Image, TouchableOpacity, ScrollView, Modal, TextInput, Alert } from 'react-native';
 import { useIsFocused, useNavigation } from '@react-navigation/native';
 import {Card, Paragraph } from 'react-native-paper';
 import axios from 'axios';
@@ -8,6 +8,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import NavigationBar from './Navigation';
 import { ALERT_TYPE, Dialog, AlertNotificationRoot } from 'react-native-alert-notification';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import {SafeAreaView, SafeAreaProvider} from 'react-native-safe-area-context';
 
 export default function Profile({route}) {
   const [userId, setUserId]  = useState();
@@ -16,6 +17,14 @@ export default function Profile({route}) {
   const [btnTxt, setBtnTxt] = useState("");
   const [posts, setPosts] = useState([]);
   const [state, setState] = useState(0);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [profileInfo, setProfileInfo] = useState({
+      username: '',
+      firstName: '',
+      lastName: '',
+      bio: '',
+      profilePic: '',
+    });
 
   const EDIT_PROFILE_MSG = "Edit Profile";
   const UNFOLLOW_MSG = "Unfollow";
@@ -111,11 +120,91 @@ export default function Profile({route}) {
 
   const HandleProfileButtonPress = () => {
     if (btnTxt === EDIT_PROFILE_MSG) {
-      // Not implemented yet
+      setModalVisible(true);
     } else if (btnTxt === UNFOLLOW_MSG) {
       UnfollowUser();
     } else if (btnTxt === FOLLOW_MSG) {
       FollowUser();
+    }
+  };
+
+  const DisplayEditProfileForm = () => {
+    return (
+      <Modal animationType='slide' transparent={true} visible={modalVisible} onRequestClose={() => {setModalVisible(!modalVisible)}}>
+        <View style={styles.centerContainer}>
+          <View style={styles.modalContainer}>
+            
+            <Text style={styles.textLeft}>Username:</Text>
+            <TextInput style={styles.input} placeholder={'Username'} placeholderTextColor={'#A0A0A0'} defaultValue={user?.username}
+              inputMode='text' clearButtonMode={'always'} maxLength={100} onEndEditing={name => setProfileInfo({...profileInfo, username: name})}/>           
+            <Text style={styles.textLeft}>First Name:</Text>
+            <TextInput style={styles.input} placeholder={'First Name'} placeholderTextColor={'#A0A0A0'} defaultValue={user?.first_name}
+              inputMode='text' clearButtonMode={'always'} maxLength={100} onEndEditing={name => setProfileInfo({...profileInfo, firstName: name})}/>
+            <Text style={styles.textLeft}>Last Name:</Text>
+            <TextInput style={styles.input} placeholder={'Last Name'} placeholderTextColor={'#A0A0A0'} defaultValue={user?.last_name}
+              inputMode='text' clearButtonMode={'always'} maxLength={100} onEndEditing={name => setProfileInfo({...profileInfo, lastName: name})}/>
+            <Text style={styles.textLeft}>Profile Description:</Text>
+            <TextInput style={styles.inputMultiline} placeholder={'Description'} placeholderTextColor={'#A0A0A0'} defaultValue={user?.profile?.bio} scrollEnabled={true}
+              multiline={true} maxLength={500} onEndEditing={description => setProfileInfo({...profileInfo, bio: description})}/>
+
+            <View style={styles.editProfileBtnContainer}>
+              <TouchableOpacity style={styles.profileButton} onPress={() => UpdateUserInfo()}>
+                <Text style={styles.buttonText}>Save</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.profileButton} onPress={() => setModalVisible(!modalVisible)}>
+                <Text style={styles.buttonText}>Close</Text>
+              </TouchableOpacity>
+            </View>
+
+          </View>
+        </View>
+      </Modal>
+    )
+  }
+
+  const UpdateUserInfo = async () => {
+    try {
+      let changeMsgs = '';
+      let errorMsgs = '';
+
+      if (user?.username !== profileInfo.username) {
+        const response = await axios.put(`${process.env.EXPO_PUBLIC_API_URL}/api/users/${userId}/username`, `${profileInfo.username}`);
+        if (response.status === '400') {
+
+        }
+        
+        //If axios successful
+        change = true;
+      }
+      if (user?.first_name !== profileInfo.firstName) {
+        // update first name
+
+        //If axios successful
+        change = true;
+      }
+      if (user?.last_name !== profileInfo.lastName) {
+        // update last name
+
+        //If axios successful
+        change = true;
+      }
+      if (user?.profile?.bio !== profileInfo.bio) {
+        // update description
+
+        //If axios successful
+        change = true;
+      }
+
+      if (changeMsgs !== "") {
+        setState(state + 1);
+        //Alert what has been updated
+      } 
+      if (errorMsgs !== "") {
+        //Alert error messages
+      }
+    } catch (error) {
+      console.error('Error updating user info', error);
+      Alert.alert('Error updating user info', error);
     }
   };
 
@@ -191,7 +280,7 @@ export default function Profile({route}) {
           </Card.Content>
           <Card.Cover source={GetPostImage(post)} style={styles.imgStyle}/>
           <Card.Content style={styles.rating}>
-            <Paragraph style={{color: "#0080F0"}}>{post?.ratings}</Paragraph>
+            <Paragraph style={{color: '#0080F0'}}>{post?.ratings}</Paragraph>
             <FontAwesome name={"star"} style={styles.star}/>
           </Card.Content>
         </Card>
@@ -208,49 +297,52 @@ export default function Profile({route}) {
   };
 
   return (
-    <View style={styles.container}>
-      {/* Display logout button option */}
-      {LogoutDisplay()}
+    <SafeAreaProvider>
+      <SafeAreaView style={styles.container}>
+        {/* Display logout button option */}
+        {LogoutDisplay()}
 
-      {/* Display displayed user's name */}
-      <View style={styles.headerContainer}>
-        <Text style={styles.usernameTitle}>{displayedUser?.username || 'Username'}</Text>
-      </View>
-
-      {/* Display displayed user's profile pic, followers, following, and posts numbers */}
-      <View style={styles.profileHeaderContainer}>
-        <Image source={GetUserImage()} style={styles.avatar}/>
-        <View>
-          <Text style={styles.text}>Followers: {displayedUser?.followers_count || 0}</Text>
-          <Text style={styles.text}>Following: {displayedUser?.following_count || 0}</Text>
-          <Text style={styles.text}>Posts: {displayedUser?.posts_count || 0}</Text>
-        </View>
-      </View>
-      
-      {/* Display Edit Profile/Follow/Unfollow button and enable alert popup modal response */}
-      <AlertNotificationRoot>
+        {/* Display displayed user's name */}
         <View style={styles.headerContainer}>
-          <TouchableOpacity style={styles.profileButton} onPress={() => HandleProfileButtonPress()}>
-            <Text style={styles.buttonText}>{btnTxt}</Text>
-          </TouchableOpacity>
+          <Text style={styles.usernameTitle}>{displayedUser?.username || 'Username'}</Text>
         </View>
-      </AlertNotificationRoot>
 
-      {/* Display displayed user's name and description */}
-      <View style={styles.marginContainer}>
-        <Text style={styles.bioName}>{displayedUser?.first_name || "First"} {displayedUser?.last_name || "Last"}</Text>
-        <Text style={styles.bioParagraph}>{displayedUser?.profile?.bio || "Description"}</Text>
-      </View>
-
-      {/* Display displayed user's posts */}
-      <ScrollView style={{height: 200}}>
-        <View style={styles.postContainer}>
-          {DisplayPosts()}
+        {/* Display displayed user's profile pic, followers, following, and posts numbers */}
+        <View style={styles.profileHeaderContainer}>
+          <Image source={GetUserImage()} style={styles.avatar}/>
+          <View>
+            <Text style={styles.text}>Followers: {displayedUser?.followers_count || 0}</Text>
+            <Text style={styles.text}>Following: {displayedUser?.following_count || 0}</Text>
+            <Text style={styles.text}>Posts: {displayedUser?.posts_count || 0}</Text>
+          </View>
         </View>
-      </ScrollView>
+        
+        {/* Display Edit Profile/Follow/Unfollow button and enable alert popup modal response */}
+        <AlertNotificationRoot>
+          <View style={styles.headerContainer}>
+            <TouchableOpacity style={styles.profileButton} onPress={() => HandleProfileButtonPress()}>
+              <Text style={styles.buttonText}>{btnTxt}</Text>
+            </TouchableOpacity>
+          </View>
+        </AlertNotificationRoot>
 
-      <NavigationBar/>
-    </View>
+        {/* Display displayed user's name and description */}
+        <View style={styles.marginContainer}>
+          <Text style={styles.bioName}>{displayedUser?.first_name || "First"} {displayedUser?.last_name || "Last"}</Text>
+          <Text style={styles.bioParagraph}>{displayedUser?.profile?.bio || "Description"}</Text>
+        </View>
+
+        {/* Display displayed user's posts */}
+        <ScrollView style={{height: 200}}>
+          <View style={styles.postContainer}>
+            {DisplayPosts()}
+          </View>
+        </ScrollView>
+
+        {DisplayEditProfileForm()}
+        <NavigationBar/>
+      </SafeAreaView>
+    </SafeAreaProvider>
   );
 }
 
@@ -282,6 +374,33 @@ const styles = StyleSheet.create({
   },
   emptyContainer: {
     height: 200,
+  },
+  centerContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalContainer: {
+    margin: 20,
+    backgroundColor: 'white',
+    borderRadius: 20,
+    padding: 35,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  editProfileBtnContainer: {
+    display: 'flex',
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    alignContent: 'center',
+    justifyContent: 'center',
   },
 
   usernameTitle: { 
@@ -361,9 +480,29 @@ const styles = StyleSheet.create({
     color: '#000',
     fontSize: 18,
   },
+  textLeft: {
+    color: '#000',
+    fontSize: 18,
+    alignSelf: 'flex-start'
+  },
   emptyPostText: {
     fontStyle: 'italic',
     color: '#000',
     fontSize: 18,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#000',
+    padding: 15,
+    borderRadius: 5,
+    width: 300,
+  },
+  inputMultiline: {
+    borderWidth: 1,
+    borderColor: '#000',
+    padding: 15,
+    borderRadius: 5,
+    width: 300,
+    height: 100,
   },
 });
