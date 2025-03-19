@@ -102,10 +102,10 @@ export default function Profile({route}) {
   }
 
   const GetUserImage = () => {
-    if (displayedUser != null && displayedUser.profile != null && displayedUser.profile.avatar_url != null) {
-      return displayedUser.profile.avatar_url;
+    if (displayedUser?.profile?.avatar_url) {
+      return {uri: displayedUser?.profile?.avatar_url};
     } else {
-      return 'https://via.placeholder.com/50';
+      return require('../assets/defaultUserIcon.png');
     }
   };
 
@@ -189,7 +189,7 @@ export default function Profile({route}) {
           <Card.Content style={{height: 60}}>
             <Paragraph numberOfLines={2} style={{fontWeight: 'bold'}}>{post?.title}</Paragraph>
           </Card.Content>
-          <Card.Cover source={{uri: GetPostImage(post)}} style={styles.imgStyle}/>
+          <Card.Cover source={GetPostImage(post)} style={styles.imgStyle}/>
           <Card.Content style={styles.rating}>
             <Paragraph style={{color: "#0080F0"}}>{post?.ratings}</Paragraph>
             <FontAwesome name={"star"} style={styles.star}/>
@@ -200,10 +200,10 @@ export default function Profile({route}) {
   }
 
   const GetPostImage = (post) => {
-    if (post != null && post.media_url != null) {
-      return post.media_url;
+    if (post?.media_url) {
+      return {uri: post?.media_url};
     } else {
-      return 'https://via.placeholder.com/50';
+      return require('../assets/defaultFoodIcon.png');
     }
   };
 
@@ -219,7 +219,7 @@ export default function Profile({route}) {
 
       {/* Display displayed user's profile pic, followers, following, and posts numbers */}
       <View style={styles.profileHeaderContainer}>
-        <Image source={{uri: GetUserImage()}} style={styles.avatar}/>
+        <Image source={GetUserImage()} style={styles.avatar}/>
         <View>
           <Text style={styles.text}>Followers: {displayedUser?.followers_count || 0}</Text>
           <Text style={styles.text}>Following: {displayedUser?.following_count || 0}</Text>
