@@ -181,13 +181,13 @@ router.post("/:user_id/posts/:post_id/image", verifyPostOwnership, async (req, r
     // Get presigned URL from S3
     const presignedURL = await getPresignedURL(fileName, fileType, uploadDir);
     
-    // Generate the final image URL - use the correct S3 URL format without region in the hostname
-    const image_url = `https://${process.env.BUCKET_NAME}.s3.amazonaws.com/${uploadDir}/${fileName}`;
+    // Generate the final image URL
+    const image_url = `https://${process.env.BUCKET_NAME}.s3.${process.env.REGION}.amazonaws.com/${uploadDir}/${fileName}`;
     
     // Update post with image URL
     req.post.media_url = image_url;
     await req.post.save();
-    console.log("Generated image URL:", image_url);
+
     res.status(200).json({ 
       presignedURL,
       image_url 

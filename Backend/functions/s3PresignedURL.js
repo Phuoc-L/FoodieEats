@@ -20,7 +20,6 @@ async function getPresignedURL(fileName, fileType, uploadDir)
     Key: `${uploadDir}/${fileName}`,
     Expires: 60, // seconds
     ContentType: fileType
-    // ACL: 'public-read' // Removed: Bucket does not support ACLs
   };
 
   try {

@@ -62,7 +62,6 @@ export default function Profile({route}) {
 
         // Get logged-in user's posts
         const displayedUserPostResponse = await axios.get(`${process.env.EXPO_PUBLIC_API_URL}/api/posts/${userIdResponse}/posts`);
-        // console.log("Fetched Posts Data (Self):", JSON.stringify(displayedUserPostResponse.data, null, 2)); // Removed logging
         setPosts([...displayedUserPostResponse.data]);
 
         // Set button text
@@ -74,7 +73,6 @@ export default function Profile({route}) {
 
         // Get displayed user's posts
         const displayedUserPostResponse = await axios.get(`${process.env.EXPO_PUBLIC_API_URL}/api/posts/${displayedUserId}/posts`);
-        // console.log(`Fetched Posts Data (User ${displayedUserId}):`, JSON.stringify(displayedUserPostResponse.data, null, 2)); // Removed logging
         setPosts([...displayedUserPostResponse.data]);
 
         // Set button text to either 'follow' or 'unfollow'
@@ -185,21 +183,13 @@ export default function Profile({route}) {
   }
 
   const CreateCardPost = (post) => {
-    const imageUrl = GetPostImage(post); // Get the URL
-    // console.log(`Rendering post ${post?._id} with image URL: ${imageUrl}`); // Removed logging
     return (
       <TouchableOpacity key={post._id} onPress={() => navigation.navigate('Explore', { postID: post._id })}>
         <Card style={styles.postShape}>
           <Card.Content style={{height: 60}}>
             <Paragraph numberOfLines={2} style={{fontWeight: 'bold'}}>{post?.title}</Paragraph>
           </Card.Content>
-          {/* Revert back to Card.Cover, ensuring placeholder logic is handled */}
-          {imageUrl !== 'https://via.placeholder.com/50' ? (
-            <Card.Cover source={{uri: imageUrl}} style={styles.imgStyle}/>
-          ) : (
-             // Render placeholder view if no valid image
-            <View style={[styles.imgStyle, styles.placeholderImage]}><Text>No Image</Text></View>
-          )}
+          <Card.Cover source={{uri: GetPostImage(post)}} style={styles.imgStyle}/>
           <Card.Content style={styles.rating}>
             <Paragraph style={{color: "#0080F0"}}>{post?.ratings}</Paragraph>
             <FontAwesome name={"star"} style={styles.star}/>
@@ -210,12 +200,13 @@ export default function Profile({route}) {
   }
 
   const GetPostImage = (post) => {
-    // Check if the post object and media_url exist and are not empty
-    if (post && post.media_url && post.media_url.trim() !== "") {
-      return post.media_url;
+    if (post) {
+      if (post.media_url && post.media_url.trim() !== "") {
+        return post.media_url;
+      } else if (post.image_url && post.image_url.trim() !== "") {
+        return post.image_url;
+      }
     }
-    // If media_url is missing or empty, return placeholder (warning removed)
-    // console.warn(`Post ${post?._id} missing valid media_url ('${post?.media_url}'). Using placeholder.`);
     return 'https://via.placeholder.com/50';
   };
   
@@ -347,14 +338,6 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     alignSelf: 'center',
-  },
-  placeholderImage: {
-     // Specific styles for the placeholder View
-     backgroundColor: '#eee', // Placeholder background
-     justifyContent: 'center',
-     alignItems: 'center',
-     borderWidth: 1,
-     borderColor: '#ccc',
   },
   postShape: {
     width: 110,
