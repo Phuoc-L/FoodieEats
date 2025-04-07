@@ -5,21 +5,44 @@ import TempPostComponent from './TempPostComponent';
 import axios from 'axios';
 
 
-export default function DishReviews(props, dish) {
-    const dish_param = props.route.params.dish;
+export default function DishReviews({ route }) {
+    const { dish } = route.params || {};
+
+    console.log("Dish:", dish);
+
     const [posts, setPosts] = useState([]);
+    const [currentUser, setCurrentUser] = useState("");
+    const [userId, setUserId] = useState("");
 
     useFocusEffect(
         useCallback(() => {
+            getUser();
             fetchPosts();
         }, [])
     );
 
-    const fetchPosts = async () => {
-        const url_prefix = 'http://192.168.99.152:3000/api';
+    const getUser = async () => {
+        try {
+//            const user_id = await AsyncStorage.getItem('user');
+            const user_id = '67045cebfe84a164fa7085a9'
+            if (!user_id) {
+                console.error('User ID not found in AsyncStorage');
+                return;
+            }
+            setUserId(user_id);
+            const url = process.env.EXPO_PUBLIC_API_URL + '/api/users/' + user_id
+            console.log("GET", url);
+            const user = await axios.get(process.env.EXPO_PUBLIC_API_URL + '/api/users/' + user_id);
+            console.log("Fetched user:", user.data);
+            setCurrentUser(user.data);
+        } catch (e) {
+            console.error(e);
+        }
+    };
 
-        const response = await axios.get(`${url_prefix}/restaurants/${dish_param._id}/reviews`);
-        console.log(response.data)
+    const fetchPosts = async () => {
+        const response = await axios.get(`${process.env.EXPO_PUBLIC_API_URL}/api/restaurants/${dish._id}/reviews`);
+        console.log("Posts:", response.data);
 
         if (response.status === 200) {
             const responseData = response.data || [];
@@ -37,7 +60,9 @@ export default function DishReviews(props, dish) {
             <FlatList
                 data={posts}
                 keyExtractor={(item) => item._id}
-                renderItem={({ item }) => <TempPostComponent {...props} item={item} />}
+                renderItem={({ item }) => <TempPostComponent
+                    userId={userId} currentUser={currentUser} dish={item}
+                />}
                 contentContainerStyle={styles.feed}
             />
         </View>

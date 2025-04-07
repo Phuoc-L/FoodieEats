@@ -8,7 +8,7 @@ import axios from 'axios';
 
 const { width } = Dimensions.get('window');
 
-export default function RestaurantPage(props) {
+export default function RestaurantPage() {
 
     const [restaurant, setRestaurant] = useState("");
 
@@ -22,19 +22,18 @@ export default function RestaurantPage(props) {
 
     const fetchRestaurant = async () => {
         const restaurantId = '670373b1d9077967850ae902' // Replace with parameter
-        const url_prefix = 'http://192.168.99.152:3000/api' // Replace with env var
 
         const response = await axios.get(
-            `${url_prefix}/restaurants/${restaurantId}`
+            `${process.env.EXPO_PUBLIC_API_URL}/api/restaurants/${restaurantId}`
         );
-
+        console.log("Response:", response.data);
         setRestaurant(response.data);
     };
 
     const renderMenuItem = ({ item }) => {
         return (
             <TouchableOpacity
-                onPress={() => navigation.navigate("DishReviews", { props: '', dish: item })}
+                onPress={() => navigation.navigate("DishReviews", { dish: item })}
                 style={styles.menuItemContainer}
             >
                 <View style={styles.dishHeader}>

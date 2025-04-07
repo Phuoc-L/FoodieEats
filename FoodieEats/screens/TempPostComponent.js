@@ -7,14 +7,11 @@ import axios from 'axios';
 
 const { width } = Dimensions.get('window');
 
-export default function TempPostComponent(props, item) {
-  const { user, token } = props.route?.params || {};
-
-  const [likes, setLikes] = useState(item.like_list.length);
-  const [isLiked, setIsLiked] = useState(item.like_list.includes('67045cebfe84a164fa7085a9')); // Replace with actual user ID
+const TempPostComponent = ({ userId, currentUser, dish }) => {
+//  console.log("current user:", currentUser);
+  const [likes, setLikes] = useState(dish.like_list.length);
+  const [isLiked, setIsLiked] = useState(dish.like_list.includes(userId));
   const navigation = useNavigation();
-
-  const userId = '67045cebfe84a164fa7085a9'; // Replace with actual user ID
 
   const handleLike = async () => {
     try {
@@ -22,16 +19,20 @@ export default function TempPostComponent(props, item) {
       setLikes(updatedLikes);
       setIsLiked(!isLiked);
 
-      console.log(item.user_id);
-      console.log(item._id);
-
-      await axios.post(`${process.env.EXPO_PUBLIC_API_URL}/posts/${item._id}/like/${userId}`);
+      const post_user_id = dish.user_id._id;
+      await axios.post(
+        `${process.env.EXPO_PUBLIC_API_URL}/api/posts/${post_user_id}/posts/${dish._id}/like/${userId}`
+      );
 
       try {
         if(!isLiked) {
-          await axios.post(`${process.env.EXPO_PUBLIC_API_URL}/users/${userId}/like/${item._id}`);
+          await axios.post(
+            `${process.env.EXPO_PUBLIC_API_URL}/api/users/${userId}/like/${dish._id}`
+          );
         } else {
-          await axios.post(`${process.env.EXPO_PUBLIC_API_URL}/users/${userId}/unlike/${item._id}`);
+          await axios.post(
+            `${process.env.EXPO_PUBLIC_API_URL}/api/users/${userId}/unlike/${dish._id}`
+          );
         }
       } catch (error) {
         console.error('Error updating user\'s likes:', error);
@@ -62,19 +63,19 @@ export default function TempPostComponent(props, item) {
     <View style={styles.postContainer}>
       <View style={styles.header}>
         <Image
-          source={{ uri: item.user_id.profile.avatar_url }}
+          source={{ uri: dish.user_id.profile.avatar_url }}
           style={styles.avatar}
         />
-        <Text style={styles.username}>@{item.user_id.username}</Text>
+        <Text style={styles.username}>@{dish.user_id.username}</Text>
       </View>
-      <Image source={{ uri: item.media_url }} style={styles.media} />
-      {renderStars(item.ratings)}
-      <Text style={styles.itemName}>{item.dishName}</Text>
-      <Text style={styles.restaurantName}>{item.restaurant.name}</Text>
+      <Image source={{ uri: dish.media_url }} style={styles.media} />
+      {renderStars(dish.ratings)}
+      <Text style={styles.dishName}>{dish.dishName}</Text>
+      <Text style={styles.restaurantName}>{dish.restaurant.name}</Text>
       <View style={styles.descriptionContainer}>
         <Text style={styles.description}>
-          <Text style={styles.title}>{item.title}  </Text>
-          {item.description}
+          <Text style={styles.title}>{dish.title}  </Text>
+          {dish.description}
         </Text>
       </View>
       <View style={styles.footer}>
@@ -83,11 +84,11 @@ export default function TempPostComponent(props, item) {
           <Text style={styles.likes}>{likes} {likes === 1 ? 'like' : 'likes'}</Text>
         </TouchableOpacity>
         <TouchableOpacity
-          onPress={() => navigation.navigate("CommentsPage", { props: props, postId: item._id, userId: userId })}
+          onPress={() => navigation.navigate("CommentsPage", { postId: dish._id, userId: userId })}
           style={styles.commentsButton}
         >
           <Text style={styles.commentsText}>
-            {item.comment_list.length} {item.comment_list.length === 1 ? "Comment" : "Comments"}
+            {dish.comment_list.length} {dish.comment_list.length === 1 ? "Comment" : "Comments"}
           </Text>
         </TouchableOpacity>
       </View>
@@ -108,7 +109,7 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: 'row',
-    alignItems: 'center',
+    aligndishs: 'center',
     marginBottom: 5,
   },
   avatar: {
@@ -127,10 +128,10 @@ const styles = StyleSheet.create({
   media: {
     width: width,
     height: width,
-    alignItems: 'center',
+    aligndishs: 'center',
     marginVertical: 5,
   },
-  itemName: {
+  dishName: {
     fontSize: width / 16,
     fontWeight: 'bold',
     textAlign: 'center',
@@ -150,7 +151,7 @@ const styles = StyleSheet.create({
   starContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
-    alignItems: 'center',
+    aligndishs: 'center',
     marginVertical: 5,
   },
   star: {
@@ -159,7 +160,7 @@ const styles = StyleSheet.create({
   footer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    aligndishs: 'center',
     width: '100%',
     paddingHorizontal: 10,
     marginTop: 10,
@@ -182,3 +183,5 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
 });
+
+export default TempPostComponent;
