@@ -4,6 +4,7 @@ const mongoose = require("mongoose");
 const userRoutes = require("./routes/userRoutes");
 const restaurantRoutes = require("./routes/restaurantRoutes");
 const postRoutes = require("./routes/postRoutes");
+const speechRoutes = require("./routes/speechRoutes");
 require("dotenv").config({ path: "secrets.ini" });
 const cors = require('cors');
 
@@ -30,5 +31,6 @@ app.get("/", (req, res) => {
 const jwt = require("jsonwebtoken");
 app.use("/api/users", userRoutes);
 app.use("/api/restaurants", restaurantRoutes);
-app.use("/api/posts", postRoutes)
+app.use("/api/posts", postRoutes);
+app.use("/api/speech", speechRoutes);
 app.use(cors());

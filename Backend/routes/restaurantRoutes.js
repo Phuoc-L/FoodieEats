@@ -96,6 +96,37 @@ router.get("/:id/menu", async (req, res) => {
   }
 });
 
+// Search for menu items within a specific restaurant
+router.get("/:id/menu/search", async (req, res) => {
+  const { id } = req.params;
+  const { query } = req.query; // Get the search query from query parameters
+
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return res.status(400).send('Invalid Restaurant ObjectId');
+  }
+  if (!query || typeof query !== 'string') {
+    // If no query, maybe return empty or the full menu? Let's return empty for autocomplete.
+    return res.status(200).send([]);
+  }
+
+  try {
+    const restaurant = await Restaurant.findById(id, "menu"); // Only fetch the menu
+    if (!restaurant) {
+      return res.status(404).send({ error: "Restaurant not found" });
+    }
+
+    // Filter the menu items based on the query (case-insensitive regex)
+    const regex = new RegExp(query, 'i');
+    const matchingItems = restaurant.menu.filter(item => regex.test(item.name));
+
+    res.status(200).send(matchingItems);
+  } catch (error) {
+    console.error("Error searching menu items:", error);
+    res.status(500).send({ error: "Error searching menu items" });
+  }
+});
+
+
 router.post("/:id/menu", async (req, res) => {
   const { id } = req.params;
   const { name, description, price } = req.body;
