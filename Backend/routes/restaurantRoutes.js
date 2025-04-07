@@ -186,7 +186,12 @@ router.get("/:dish_id/reviews", async (req, res) => {
     const { dish_id } = req.params;
 
     try {
-        const posts = await Posts.find({ dish_id: dish_id} );
+        const posts = await Posts.find({ dish_id: dish_id} )
+            .sort({ timestamp: -1 })
+            .populate("user_id", "username profile.avatar_url")
+            .populate("restaurant_id", "name")
+            .exec();
+
 
         if(!posts) {
             return res.status(404).json({ error: "No reviews found" });

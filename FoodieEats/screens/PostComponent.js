@@ -7,8 +7,7 @@ import axios from 'axios';
 
 const { width } = Dimensions.get('window');
 
-const TempPostComponent = ({ userId, currentUser, dish }) => {
-//  console.log("current user:", currentUser);
+const PostComponent = ({ userId, dish }) => {
   const [likes, setLikes] = useState(dish.like_list.length);
   const [isLiked, setIsLiked] = useState(dish.like_list.includes(userId));
   const navigation = useNavigation();
@@ -71,7 +70,7 @@ const TempPostComponent = ({ userId, currentUser, dish }) => {
       <Image source={{ uri: dish.media_url }} style={styles.media} />
       {renderStars(dish.ratings)}
       <Text style={styles.dishName}>{dish.dishName}</Text>
-      <Text style={styles.restaurantName}>{dish.restaurant.name}</Text>
+      <Text style={styles.restaurantName}>{dish.restaurant_id.name}</Text>
       <View style={styles.descriptionContainer}>
         <Text style={styles.description}>
           <Text style={styles.title}>{dish.title}  </Text>
@@ -184,4 +183,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default TempPostComponent;
+export default PostComponent;

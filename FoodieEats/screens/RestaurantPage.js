@@ -8,7 +8,8 @@ import axios from 'axios';
 
 const { width } = Dimensions.get('window');
 
-export default function RestaurantPage() {
+export default function RestaurantPage({ route }) {
+    const { restaurantId } = route.params || {};
 
     const [restaurant, setRestaurant] = useState("");
 
@@ -21,12 +22,9 @@ export default function RestaurantPage() {
       );
 
     const fetchRestaurant = async () => {
-        const restaurantId = '670373b1d9077967850ae902' // Replace with parameter
-
         const response = await axios.get(
             `${process.env.EXPO_PUBLIC_API_URL}/api/restaurants/${restaurantId}`
         );
-        console.log("Response:", response.data);
         setRestaurant(response.data);
     };
 
