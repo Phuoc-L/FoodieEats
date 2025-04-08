@@ -6,18 +6,32 @@ import { FontAwesome } from '@expo/vector-icons';
 export default function NavigationBar() {
   const navigation = useNavigation();
 
+  const DEFAULT_LOGGED_IN_USER_ID = 0;
+
   return (
     <View style={styles.navBar}>
-      <TouchableOpacity onPress={() => navigation.navigate('UserFeed')}>
+      <TouchableOpacity onPress={() => navigation.reset({
+        index: 0,
+        routes: [{name: 'UserFeed'}],
+      })}>
         <FontAwesome name="home" size={24} color="black" />
       </TouchableOpacity>
-      <TouchableOpacity onPress={() => navigation.navigate('Explore')}>
+      <TouchableOpacity onPress={() => navigation.reset({
+        index: 0,
+        routes: [{name: 'Explore'}],
+      })}>
         <FontAwesome name="globe" size={24} color="black" />
       </TouchableOpacity>
-      <TouchableOpacity onPress={() => navigation.navigate('NewPost')}>
+      <TouchableOpacity onPress={() => navigation.reset({
+        index: 0,
+        routes: [{name: 'NewPost'}],
+      })}>
         <FontAwesome name="plus-circle" size={24} color="black" />
       </TouchableOpacity>
-      <TouchableOpacity onPress={() => navigation.navigate('Profile')}>
+      <TouchableOpacity onPress={() => navigation.reset({
+        index: 0,
+        routes: [{name: 'Profile', params: { displayUserId: DEFAULT_LOGGED_IN_USER_ID}}],
+      })}>
         <FontAwesome name="user" size={24} color="black" />
       </TouchableOpacity>
     </View>

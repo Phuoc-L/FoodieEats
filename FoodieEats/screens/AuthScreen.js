@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { StyleSheet, View, Text, TextInput, TouchableOpacity, Alert } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { StyleSheet, View, Text, TextInput, TouchableOpacity, Alert, TouchableWithoutFeedback, Platform, Keyboard, KeyboardAvoidingView } from 'react-native';
 import axios from 'axios';
 import { Eye, EyeOff } from 'lucide-react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function AuthScreen(props) {
   const [isLogin, setIsLogin] = useState(true);
@@ -15,23 +15,24 @@ export default function AuthScreen(props) {
     password: '',
   });
 
+  // Save data
+  const saveData = async (dataName, data) => {
+    try {
+        await AsyncStorage.setItem(dataName, data);
+    } catch (e) {
+        console.error(e);
+    }
+  };
+
   const loginUser = async (credentials) => {
     try {
-      const response = await axios.post(
-        process.env.EXPO_PUBLIC_API_URL + '/api/users/login',
-        credentials
-      );
-      console.log('Full response:', response.data);
+      const response = await axios.post(process.env.EXPO_PUBLIC_API_URL + '/api/users/login', credentials);
       const { user, token } = response.data;
-      console.log('Login successful:', user);
-      console.log('Token:', token);
-
-      saveUser(user);
-
-      // Navigate to Profile with user/token
-      props.navigation.navigate('UserFeed');
-
-      Alert.alert("Success", "Logged in successfully!");
+      // save user data
+      await saveData("userID", user._id);
+      await saveData("token", token);
+      Keyboard.dismiss();
+      props.navigation.navigate('Explore');
     } catch (error) {
       console.error('Login error:', error.response ? error.response.data : error.message);
       Alert.alert("Login Error", error.response?.data?.error || "Something went wrong");
@@ -48,8 +49,9 @@ export default function AuthScreen(props) {
         username: userData.username,
         password: userData.password,
       };
-
+  
       const response = await axios.post(process.env.EXPO_PUBLIC_API_URL + '/api/users/signup', formattedData);
+      Keyboard.dismiss();
       const { user, token } = response.data;
       console.log('Signup successful:', user);
       console.log('Token:', token);
@@ -59,117 +61,109 @@ export default function AuthScreen(props) {
       Alert.alert("Signup Error", error.response?.data?.error || "Something went wrong");
     }
   };
-
-  const saveUser = async (user) => {
-    try {
-      await AsyncStorage.setItem('user', user._id);
-    } catch (e) {
-      console.error(e);
-    }
-  }
-
+  
   const handleSubmit = () => {
     if (isLogin) {
       loginUser({ email: formData.email, password: formData.password });
     } else {
       signupUser(formData);
     }
-
-
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.content}>
-        <Text style={styles.logo}>FoodieEats</Text>
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+      <View style={styles.container}>
+        <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={styles.content}>
+          <Text style={styles.logo}>FoodieEats</Text>
 
-        <View style={styles.buttonContainer}>
-          <TouchableOpacity
-            style={[
-              styles.tabButton,
-              isLogin ? styles.activeTabButton : styles.inactiveTabButton
-            ]}
-            onPress={() => setIsLogin(true)}
-          >
-            <Text style={[
-              styles.buttonText,
-              isLogin ? styles.activeButtonText : styles.inactiveButtonText
-            ]}>Log In</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[
-              styles.tabButton,
-              !isLogin ? styles.activeTabButton : styles.inactiveTabButton
-            ]}
-            onPress={() => setIsLogin(false)}
-          >
-            <Text style={[
-              styles.buttonText,
-              !isLogin ? styles.activeButtonText : styles.inactiveButtonText
-            ]}>Sign Up</Text>
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.form}>
-          {!isLogin && (
-            <>
-              <TextInput
-                style={styles.input}
-                placeholder="First Name"
-                value={formData.firstName}
-                onChangeText={(text) => setFormData({...formData, firstName: text})}
-              />
-              <TextInput
-                style={styles.input}
-                placeholder="Last Name"
-                value={formData.lastName}
-                onChangeText={(text) => setFormData({...formData, lastName: text})}
-              />
-            </>
-          )}
-
-          <TextInput
-            style={styles.input}
-            placeholder="Email"
-            value={formData.email}
-            onChangeText={(text) => setFormData({...formData, email: text})}
-          />
-
-          {!isLogin && (
-            <TextInput
-              style={styles.input}
-              placeholder="Username"
-              value={formData.username}
-              onChangeText={(text) => setFormData({...formData, username: text})}
-            />
-          )}
-
-          <View style={styles.passwordContainer}>
-            <TextInput
-              style={styles.passwordInput}
-              placeholder="Password"
-              secureTextEntry={!showPassword}
-              value={formData.password}
-              onChangeText={(text) => setFormData({...formData, password: text})}
-            />
-            <TouchableOpacity
-              style={styles.eyeIcon}
-              onPress={() => setShowPassword(!showPassword)}
+          <View style={styles.buttonContainer}>
+            <TouchableOpacity 
+              style={[
+                styles.tabButton,
+                isLogin ? styles.activeTabButton : styles.inactiveTabButton
+              ]}
+              onPress={() => setIsLogin(true)}
             >
-              {showPassword ? (
-                <Eye size={24} color="#007AFF" />
-              ) : (
-                <EyeOff size={24} color="#007AFF" />
-              )}
+              <Text style={[
+                styles.buttonText,
+                isLogin ? styles.activeButtonText : styles.inactiveButtonText
+              ]}>Log In</Text>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={[
+                styles.tabButton,
+                !isLogin ? styles.activeTabButton : styles.inactiveTabButton
+              ]}
+              onPress={() => setIsLogin(false)}
+            >
+              <Text style={[
+                styles.buttonText,
+                !isLogin ? styles.activeButtonText : styles.inactiveButtonText
+              ]}>Sign Up</Text>
             </TouchableOpacity>
           </View>
 
-          <TouchableOpacity style={styles.goButton} onPress={handleSubmit}>
-            <Text style={styles.goButtonText}>Go</Text>
-          </TouchableOpacity>
-        </View>
+          <View style={styles.form}>
+            {!isLogin && (
+              <>
+                <TextInput
+                  style={styles.input}
+                  placeholder="First Name"
+                  value={formData.firstName}
+                  onChangeText={(text) => setFormData({...formData, firstName: text})}
+                />
+                <TextInput
+                  style={styles.input}
+                  placeholder="Last Name"
+                  value={formData.lastName}
+                  onChangeText={(text) => setFormData({...formData, lastName: text})}
+                />
+              </>
+            )}
+            
+            <TextInput
+              style={styles.input}
+              placeholder="Email"
+              value={formData.email}
+              onChangeText={(text) => setFormData({...formData, email: text})}
+            />
+            
+            {!isLogin && (
+              <TextInput
+                style={styles.input}
+                placeholder="Username"
+                value={formData.username}
+                onChangeText={(text) => setFormData({...formData, username: text})}
+              />
+            )}
+            
+            <View style={styles.passwordContainer}>
+              <TextInput
+                style={styles.passwordInput}
+                placeholder="Password"
+                secureTextEntry={!showPassword}
+                value={formData.password}
+                onChangeText={(text) => setFormData({...formData, password: text})}
+              />
+              <TouchableOpacity 
+                style={styles.eyeIcon} 
+                onPress={() => setShowPassword(!showPassword)}
+              >
+                {showPassword ? (
+                  <Eye size={24} color="#007AFF" />
+                ) : (
+                  <EyeOff size={24} color="#007AFF" />
+                )}
+              </TouchableOpacity>
+            </View>
+
+            <TouchableOpacity style={styles.goButton} onPress={handleSubmit}>
+              <Text style={styles.goButtonText}>Go</Text>
+            </TouchableOpacity>
+          </View>
+        </KeyboardAvoidingView>
       </View>
-    </View>
+    </TouchableWithoutFeedback>
   );
 }
 
@@ -182,7 +176,7 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 20,
     alignItems: 'center',
-    marginTop: 40,
+    justifyContent: 'center',
   },
   logo: {
     fontSize: 50,

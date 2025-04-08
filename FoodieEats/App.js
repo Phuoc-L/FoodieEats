@@ -8,12 +8,6 @@ import Profile from './screens/Profile';
 import NewPost from './screens/NewPost';
 import CommentsPage from './screens/CommentsPage';
 
-//export default function App() {
-//  return <AuthScreen />;
-//}
-
-
-
 const Stack = createNativeStackNavigator();
 
 export default function App() {
@@ -21,10 +15,10 @@ export default function App() {
     <NavigationContainer>
       <Stack.Navigator initialRouteName="Auth">
         <Stack.Screen name="Auth" component={AuthScreen} options={{ headerShown: false }} />
-        <Stack.Screen name="UserFeed" component={UserFeed} options={{ title: "Following" }} />
-        <Stack.Screen name="Explore" component={Explore} options={{ title: "Explore" }} />
-        <Stack.Screen name="Profile" component={Profile} options={{ title: "Profile" }} />
-        <Stack.Screen name="NewPost" component={NewPost} options={{ headerShown: false }} />
+        <Stack.Screen name="UserFeed" component={UserFeed} options={{ headerShown: false }} />
+        <Stack.Screen name="Explore" component={Explore} options={{ headerShown: false }} />
+        <Stack.Screen name="Profile" component={Profile} options={{ headerShown: true }} />
+        <Stack.Screen name="NewPost" component={NewPost} />
         <Stack.Screen name="CommentsPage" component={CommentsPage} options={{ title: "Comments" }}/>
       </Stack.Navigator>
     </NavigationContainer>

@@ -23,10 +23,117 @@ const verifyPostOwnership = async (req, res, next) => {
   }
 };
 
+// Search for posts with filtering and sorting
+router.get('/search', async (req, res) => {
+  try {
+    const { query, sortBy, sortOrder, minLikes, maxLikes, minComments, maxComments, minRating, maxRating, startDate, endDate } = req.query;
+
+    console.log("posts route: ", req.query);
+
+    // if no query, return posts by most likes
+    if (!query) {
+      const sortOptions = {};
+      if (sortBy) {
+        sortOptions[sortBy] = sortOrder === 'desc' ? -1 : 1;
+      } else {
+        sortOptions.timestamp = -1; // Default sort by latest posts
+      }
+      const posts = await Post.find().sort(sortOptions)
+      .populate({
+        path: 'user_id',
+        match: { 
+          'privacy_settings.profile_visibility': true, 
+          'privacy_settings.post_visibility': true 
+        }
+      })
+      .populate('restaurant_id');
+      return res.status(200).json({ total: posts.length, posts });
+    }
+
+    const filter = {
+      $and: []
+    };
+
+    if (query) {
+      filter.$and.push({
+        $or: [
+          { title: { $regex: query, $options: 'i' } },
+          { description: { $regex: query, $options: 'i' } }
+        ]
+      });
+    }
+
+    // Add range filters
+    if (minLikes || maxLikes) {
+      filter.$and.push({
+        num_like: {
+          ...(minLikes ? { $gte: parseInt(minLikes) } : {}),
+          ...(maxLikes ? { $lte: parseInt(maxLikes) } : {})
+        }
+      });
+    }
+
+    if (minComments || maxComments) {
+      filter.$and.push({
+        num_comments: {
+          ...(minComments ? { $gte: parseInt(minComments) } : {}),
+          ...(maxComments ? { $lte: parseInt(maxComments) } : {})
+        }
+      });
+    }
+
+    if (minRating || maxRating) {
+      filter.$and.push({
+        ratings: {
+          ...(minRating ? { $gte: parseFloat(minRating) } : {}),
+          ...(maxRating ? { $lte: parseFloat(maxRating) } : {})
+        }
+      });
+    }
+
+    if (startDate || endDate) {
+      filter.$and.push({
+        timestamp: {
+          ...(startDate ? { $gte: new Date(startDate) } : {}),
+          ...(endDate ? { $lte: new Date(endDate) } : {})
+        }
+      });
+    }
+
+    if (filter.$and.length === 0) {
+      delete filter.$and;
+    }
+
+    // Build sort options
+    const sortOptions = {};
+    if (sortBy) {
+      sortOptions[sortBy] = sortOrder === 'desc' ? -1 : 1;
+    } else {
+      sortOptions.timestamp = -1; // Default sort by latest posts
+    }
+
+    const posts = await Post.find(filter).sort(sortOptions)
+    .populate({
+      path: 'user_id',
+      match: { 
+        'privacy_settings.profile_visibility': true, 
+        'privacy_settings.post_visibility': true 
+      }
+    })
+    .populate('restaurant_id');
+
+    res.status(200).json({ total: posts.length, posts });
+
+  } catch (err) {
+    res.status(500).json({ error: 'Internal server error', details: err.message });
+  }
+});
+
+
 // Create a new post
 router.post("/:user_id/create", async (req, res) => {
   try {
-    const { restaurant_id, dish_id, title, description, rating } = req.body;
+    const { restaurant_id, dish_id, title, description, ratings } = req.body;
     
     // Validate user exists
     const user = await User.findById(req.params.user_id);
@@ -41,7 +148,7 @@ router.post("/:user_id/create", async (req, res) => {
       dish_id,
       title,
       description,
-      rating
+      ratings
     });
 
     // Save post
@@ -79,7 +186,7 @@ router.post("/:user_id/posts/:post_id/image", verifyPostOwnership, async (req, r
     const image_url = `https://${process.env.BUCKET_NAME}.s3.${process.env.REGION}.amazonaws.com/${uploadDir}/${fileName}`;
     
     // Update post with image URL
-    req.post.image_url = image_url;
+    req.post.media_url = image_url;
     await req.post.save();
 
     res.status(200).json({ 
@@ -130,12 +237,12 @@ router.get("/:user_id/posts/:post_id", async (req, res) => {
 // Update post
 router.put("/:user_id/posts/:post_id", verifyPostOwnership, async (req, res) => {
   try {
-    const { title, description, rating } = req.body;
+    const { title, description, ratings } = req.body;
     
     // Update only provided fields
     if (title) req.post.title = title;
     if (description) req.post.description = description;
-    if (rating) req.post.rating = rating;
+    if (ratings) req.post.ratings = ratings;
 
     await req.post.save();
     res.status(200).json({ 

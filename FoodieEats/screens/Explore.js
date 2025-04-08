@@ -74,7 +74,7 @@ export default function Explore() {
       </View>
     </TouchableOpacity>
   );
-
+  
   const renderRestaurantItem = (item) => (
     <TouchableOpacity onPress={() => navigation.navigate('Restaurant', { restaurantID: item._id })}>
       <View style={styles.resultCard}>
@@ -82,7 +82,7 @@ export default function Explore() {
           <View style={styles.Rating}>
             <Text style={styles.resultName}>{item.name}</Text>
             <Text>
-              {item.average_rating?.toFixed(1) || 'N/A'} <Ionicons name="star" size={16} color="gold" />
+              {item.average_rating?.toFixed(1) || 'N/A'} <Ionicons name="star" size={16} color="gold" /> 
             </Text>
           </View>
           <Text style={styles.fullName}>{item.location}</Text>
@@ -168,7 +168,7 @@ export default function Explore() {
     Keyboard.dismiss();
     const tempSearchMode = searchMode;
     setSearchMode(mode);
-
+    
     // store the search results for previous mode
     if (tempSearchMode === 'users') {
       setUserSearchResults(results);
@@ -196,7 +196,7 @@ export default function Explore() {
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
       <SafeAreaView style={styles.container}>
-        <View style={styles.header}>
+        <View style={styles.header}> 
           <Text style={styles.title}>Explore</Text>
           <View style={styles.modeToggle}>
             <TouchableOpacity onPress={() => handleModeToggle('users')}>
@@ -221,14 +221,14 @@ export default function Explore() {
           </TouchableOpacity>
         </View>
 
-        <FlatList
+        <FlatList 
           ref={flatListRef}
           data={results}
           keyExtractor={(item) => item._id}
-          renderItem={({ item }) =>
-            searchMode === 'users'
-              ? renderUserItem(item)
-              : searchMode === 'restaurants'
+          renderItem={({ item }) => 
+            searchMode === 'users' 
+              ? renderUserItem(item) 
+              : searchMode === 'restaurants' 
                 ? renderRestaurantItem(item)
                 : renderPostItem(item)
           }
@@ -238,7 +238,7 @@ export default function Explore() {
           <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
             <SafeAreaView style={styles.container}>
               <View style={styles.modalContent}>
-                <View style={styles.modalHeader}>
+                <View style={styles.modalHeader}> 
                   <Text style={styles.modalTitle}>Restaurant Search Filters</Text>
                 </View>
                 <Text style={styles.label}>Min Rating</Text>
@@ -271,7 +271,7 @@ export default function Explore() {
           <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
             <SafeAreaView style={styles.container}>
               <View style={styles.modalContent}>
-                <View style={styles.modalHeader}>
+                <View style={styles.modalHeader}> 
                   <Text style={styles.modalTitle}>User Search Filters</Text>
                 </View>
                 <Text style={styles.label}>Min Followers</Text>
@@ -304,7 +304,7 @@ export default function Explore() {
             </SafeAreaView>
           </TouchableWithoutFeedback>
         </Modal>
-
+        
         <Modal visible={filtersVisible && searchMode === 'posts'} animationType="slide">
           <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
             <SafeAreaView style={styles.container}>
@@ -318,7 +318,7 @@ export default function Explore() {
                     <TextInput style={styles.input} placeholder={"0"} placeholderTextColor={'#A0A0A0'} keyboardType="numeric" value={minLikes} onChangeText={setMinLikes} />
                     <Text style={styles.label}>Max Likes</Text>
                     <TextInput style={styles.input} placeholder={"100"} placeholderTextColor={'#A0A0A0'} keyboardType="numeric" value={maxLikes} onChangeText={setMaxLikes} />
-                    <Text style={styles.label}>Min Comments</Text>
+                    <Text style={styles.label}>Min Comments</Text> 
                     <TextInput style={styles.input} placeholder={"0"} placeholderTextColor={'#A0A0A0'} keyboardType="numeric" value={minComments} onChangeText={setMinComments} />
                     <Text style={styles.label}>Max Comments</Text>
                     <TextInput style={styles.input} placeholder={"100"} placeholderTextColor={'#A0A0A0'} keyboardType="numeric" value={maxComments} onChangeText={setMaxComments} />
@@ -365,23 +365,23 @@ export default function Explore() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    padding: 10
+  container: { 
+    flex: 1, 
+    backgroundColor: '#fff', 
+    padding: 10 
   },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-end',
-    paddingVertical: 10,
+  header: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    alignItems: 'flex-end', 
+    paddingVertical: 10, 
     paddingHorizontal: 15,
     borderBottomWidth: 1,
     borderColor: '#ddd'
   },
-  title: {
-    fontSize: 32,
-    fontWeight: 'bold'
+  title: { 
+    fontSize: 32, 
+    fontWeight: 'bold' 
   },
   modeToggle: {
     flexDirection: 'row',
@@ -391,25 +391,25 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     flexShrink: 1,
   },
-  modeButton: {
-    fontSize: 16,
+  modeButton: { 
+    fontSize: 16, 
     textAlign: 'center',
-    color: '#666',
-    paddingVertical: 5,
-    paddingHorizontal: 10,
+    color: '#666', 
+    paddingVertical: 5, 
+    paddingHorizontal: 10, 
     borderRadius: 20,
-    flexShrink: 1
+    flexShrink: 1 
   },
-  activeMode: {
-    fontWeight: 'bold',
-    color: '#fff',
-    backgroundColor: '#007bff'
+  activeMode: { 
+    fontWeight: 'bold', 
+    color: '#fff', 
+    backgroundColor: '#007bff' 
   },
-  searchContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 10,
-    borderRadius: 10,
+  searchContainer: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    padding: 10, 
+    borderRadius: 10, 
     backgroundColor: '#f9f9f9',
     marginVertical: 10,
     shadowColor: '#000',
@@ -419,22 +419,22 @@ const styles = StyleSheet.create({
     elevation: 2,
     gap: 5
   },
-  searchInput: {
-    flex: 1,
-    padding: 10,
-    borderRadius: 8,
-    backgroundColor: '#fff',
-    borderWidth: 1,
+  searchInput: { 
+    flex: 1, 
+    padding: 10, 
+    borderRadius: 8, 
+    backgroundColor: '#fff', 
+    borderWidth: 1, 
     borderColor: '#ccc',
   },
-  resultCard: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    padding: 10,
-    borderBottomWidth: 1,
-    borderColor: '#eee',
-    backgroundColor: '#fff',
-    borderRadius: 10,
+  resultCard: { 
+    flexDirection: 'row', 
+    alignItems: 'flex-start', 
+    padding: 10, 
+    borderBottomWidth: 1, 
+    borderColor: '#eee', 
+    backgroundColor: '#fff', 
+    borderRadius: 10, 
     marginVertical: 5,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
@@ -450,15 +450,15 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
   },
   avatar: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    marginRight: 15,
-    borderWidth: 1,
-    borderColor: '#ccc'
+    width: 50, 
+    height: 50, 
+    borderRadius: 25, 
+    marginRight: 15, 
+    borderWidth: 1, 
+    borderColor: '#ccc' 
   },
   Rating: {
-    color: '#666',
+    color: '#666', 
     marginTop: 5,
     gap: 5,
     flexDirection: 'row',
@@ -466,43 +466,43 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-start',
     flexWrap: 'wrap',
   },
-  resultName: {
-    fontWeight: 'bold',
-    fontSize: 16
+  resultName: { 
+    fontWeight: 'bold', 
+    fontSize: 16 
   },
-  fullName: {
-    color: '#666'
+  fullName: { 
+    color: '#666' 
   },
-  resultDetails: {
-    color: '#666',
-    marginTop: 5
+  resultDetails: { 
+    color: '#666', 
+    marginTop: 5 
   },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'flex-end',
-    paddingVertical: 10,
+  modalHeader: { 
+    flexDirection: 'row', 
+    justifyContent: 'center', 
+    alignItems: 'flex-end', 
+    paddingVertical: 10, 
     paddingHorizontal: 15,
     borderBottomWidth: 1,
-    borderColor: '#ddd'
+    borderColor: '#ddd' 
   },
-  modalTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
+  modalTitle: { 
+    fontSize: 24, 
+    fontWeight: 'bold', 
     alignContent: 'center'
   },
   modalContent: {
-    flex: 1,
+    flex: 1, 
     padding: 10,
-    position: 'relative'
+    position: 'relative' 
   },
-  label: {
-    fontWeight: 'bold',
-    marginTop: 10
+  label: { 
+    fontWeight: 'bold', 
+    marginTop: 10 
   },
-  input: {
+  input: { 
     padding: 10,
-    marginTop: 10,
+    marginTop: 10, 
     backgroundColor: '#fff',
     borderWidth: 1,
     borderRadius: 10,
@@ -575,10 +575,10 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
   },
-  navbar: {
-    height: 60,
-    borderTopWidth: 1,
-    borderTopColor: '#ccc',
+  navbar: { 
+    height: 60, 
+    borderTopWidth: 1, 
+    borderTopColor: '#ccc', 
     backgroundColor: '#fff',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -2 },

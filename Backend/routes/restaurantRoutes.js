@@ -12,6 +12,58 @@ router.get("/", async (req, res) => {
   }
 });
 
+// Search for restaurants with filtering and sorting
+router.get('/search', async (req, res) => {
+  try {
+    const { query, minRating, maxRating, sortBy, sortOrder } = req.query;
+
+    console.log("restaurant route: ", req.query);
+
+    if (!query) {
+      const sortOptions = {};
+      if (sortBy) {
+        sortOptions[sortBy] = sortOrder === 'desc' ? -1 : 1;
+      }
+      else {
+        sortOptions.average_rating = -1;
+      }
+      // if no query return highest rated restaurants
+      const restaurants = await Restaurant.find().sort(sortOptions);
+      return res.status(200).json({ total: restaurants.length, restaurants });
+    }
+
+    // Build the filter
+    const filter = {
+      $or: [
+        { name: { $regex: query, $options: 'i' } },
+        { location: { $regex: query, $options: 'i' } },
+        { 'menu.name': { $regex: query, $options: 'i' } },
+        { 'menu.description': { $regex: query, $options: 'i' } },
+      ],
+    };
+
+    // Add rating filters
+    if (minRating || maxRating) {
+      filter.average_rating = {};
+      if (minRating) filter.average_rating.$gte = parseFloat(minRating);
+      if (maxRating) filter.average_rating.$lte = parseFloat(maxRating);
+    }
+
+    // Build sort options
+    const sortOptions = {};
+    if (sortBy) {
+      sortOptions[sortBy] = sortOrder === 'desc' ? -1 : 1;
+    }
+
+    // Query the database
+    const restaurants = await Restaurant.find(filter).sort(sortOptions);
+
+    res.status(200).json({ total: restaurants.length, restaurants });
+  } catch (err) {
+    res.status(500).json({ error: 'Internal server error', details: err.message });
+  }
+});
+
 router.get("/:id", async (req, res) => {
   const { id } = req.params;
 
