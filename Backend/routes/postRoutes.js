@@ -2,6 +2,7 @@ const express = require("express");
 const mongoose = require("mongoose");
 const Post = require("../data_schemas/post");
 const User = require("../data_schemas/users");
+const Restaurant = require("../data_schemas/restaurant");
 const getPresignedURL = require("../functions/s3PresignedURL.js");
 const router = express.Router();
 
@@ -202,9 +203,9 @@ router.get("/:user_id/user_feed", async (req, res) => {
       try {
         const restaurant = await Restaurant.findById(post.restaurant_id);
         const dish = restaurant?.menu?.find(d => d._id.toString() === post.dish_id.toString());
-        postObj.dishName = dish?.name || null;
+        postObj.dish_name = dish?.name || null;
       } catch (e) {
-        postObj.dishName = null;
+        postObj.dish_name = null;
       }
       return postObj;
     }));

@@ -8,7 +8,6 @@ import axios from 'axios';
 const { width } = Dimensions.get('window');
 
 const PostComponent = ({ userId, dish }) => {
-  console.log("Dish:", dish)
   const [likes, setLikes] = useState(dish.like_list.length);
   const [isLiked, setIsLiked] = useState(dish.like_list.includes(userId));
   const navigation = useNavigation();
@@ -70,7 +69,7 @@ const PostComponent = ({ userId, dish }) => {
       </View>
       <Image source={{ uri: dish.media_url }} style={styles.media} />
       {renderStars(dish.ratings)}
-      <Text style={styles.dishName}>{dish.dishName}</Text>
+      <Text style={styles.dishName}>{dish.dish_name}</Text>
       <Text style={styles.restaurantName}>{dish.restaurant_id.name}</Text>
       <View style={styles.descriptionContainer}>
         <Text style={styles.description}>
