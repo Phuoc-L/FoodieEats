@@ -177,8 +177,8 @@ router.get("/:user_id/user_feed", async (req, res) => {
   const { user_id } = req.params;
 
   if (!mongoose.Types.ObjectId.isValid(user_id)) {
-      return res.status(400).send('Invalid ObjectId');
-    }
+    return res.status(400).send('Invalid ObjectId');
+  }
 
   try {
     const active_user = await User.findById(user_id);
@@ -188,15 +188,28 @@ router.get("/:user_id/user_feed", async (req, res) => {
 
     const following = active_user.following
     if (!following || following.length === 0) {
-        return res.status(200).send([]);
+      return res.status(200).send([]);
     }
 
-    const posts = await Post.find({ user_id: { $in: following } })
-        .sort({ timestamp: -1 })
-        .populate("user_id", "username profile.avatar_url")
-        .exec();
+    const rawPosts = await Post.find({ user_id: { $in: following } })
+      .sort({ timestamp: -1 })
+      .populate("user_id", "username profile.avatar_url")
+      .populate("restaurant_id", "name")
+      .exec();
 
-    res.status(200).send(posts);
+    const enrichedPosts = await Promise.all(rawPosts.map(async (post) => {
+      const postObj = post.toObject();
+      try {
+        const restaurant = await Restaurant.findById(post.restaurant_id);
+        const dish = restaurant?.menu?.find(d => d._id.toString() === post.dish_id.toString());
+        postObj.dishName = dish?.name || null;
+      } catch (e) {
+        postObj.dishName = null;
+      }
+      return postObj;
+    }));
+
+    res.status(200).send(enrichedPosts);
   } catch (error) {
     res.status(500).send({ error: "Error retrieving posts" });
   }

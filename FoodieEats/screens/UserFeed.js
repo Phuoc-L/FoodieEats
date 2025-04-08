@@ -48,25 +48,7 @@ export default function UserFeed() {
 
       if (response.status === 200) {
         const postsData = response.data || [];
-
-        const postsWithMenu = await Promise.all(
-          postsData.map(async (post) => {
-            try {
-              const restaurantResponse = await axios.get(
-                process.env.EXPO_PUBLIC_API_URL + `/api/restaurants/${post.restaurant_id}`
-              );
-              const menuResponse = await axios.get(
-                process.env.EXPO_PUBLIC_API_URL + `/api/restaurants/${post.restaurant_id}/menu/${post.dish_id}`
-              );
-              return { ...post, dishName: menuResponse.data?.name || null, restaurant: restaurantResponse.data || null };
-            } catch (error) {
-              console.error(`Error fetching menu item for post ${post._id}:`, error);
-              return { ...post, dishName: null, restaurant: null };
-            }
-          })
-        );
-
-        setPosts(postsWithMenu);
+        setPosts(postsData);
       } else {
         console.error('Error fetching posts:', response.status);
       }
@@ -80,7 +62,7 @@ export default function UserFeed() {
       <FlatList
         data={posts}
         keyExtractor={(item) => item._id}
-        renderItem={({ item }) => <PostComponent userId={userId} item={item} />}
+        renderItem={({ item }) => <PostComponent userId={userId} dish={item} />}
         contentContainerStyle={posts.length === 0 ? styles.emptyContainer : styles.feed}
         ListEmptyComponent={<Text style={styles.emptyText}>No posts to show.</Text>}
       />

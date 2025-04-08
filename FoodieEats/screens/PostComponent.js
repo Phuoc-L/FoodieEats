@@ -7,9 +7,10 @@ import axios from 'axios';
 
 const { width } = Dimensions.get('window');
 
-const PostComponent = ({ userId, item }) => {
-  const [likes, setLikes] = useState(item.like_list.length);
-  const [isLiked, setIsLiked] = useState(item.like_list.includes(userId));
+const PostComponent = ({ userId, dish }) => {
+  console.log("Dish:", dish)
+  const [likes, setLikes] = useState(dish.like_list.length);
+  const [isLiked, setIsLiked] = useState(dish.like_list.includes(userId));
   const navigation = useNavigation();
 
   const handleLike = async () => {
@@ -18,19 +19,19 @@ const PostComponent = ({ userId, item }) => {
       setLikes(updatedLikes);
       setIsLiked(!isLiked);
 
-      const post_user_id = item.user_id._id;
+      const post_user_id = dish.user_id._id;
       await axios.post(
-        `${process.env.EXPO_PUBLIC_API_URL}/api/posts/${post_user_id}/posts/${item._id}/like/${userId}`
+        `${process.env.EXPO_PUBLIC_API_URL}/api/posts/${post_user_id}/posts/${dish._id}/like/${userId}`
       );
 
       try {
         if(!isLiked) {
           await axios.post(
-            `${process.env.EXPO_PUBLIC_API_URL}/api/users/${userId}/like/${item._id}`
+            `${process.env.EXPO_PUBLIC_API_URL}/api/users/${userId}/like/${dish._id}`
           );
         } else {
           await axios.post(
-            `${process.env.EXPO_PUBLIC_API_URL}/api/users/${userId}/unlike/${item._id}`
+            `${process.env.EXPO_PUBLIC_API_URL}/api/users/${userId}/unlike/${dish._id}`
           );
         }
       } catch (error) {
@@ -62,19 +63,19 @@ const PostComponent = ({ userId, item }) => {
     <View style={styles.postContainer}>
       <View style={styles.header}>
         <Image
-          source={{ uri: item.user_id.profile.avatar_url }}
+          source={{ uri: dish.user_id.profile.avatar_url }}
           style={styles.avatar}
         />
-        <Text style={styles.username}>@{item.user_id.username}</Text>
+        <Text style={styles.username}>@{dish.user_id.username}</Text>
       </View>
-      <Image source={{ uri: item.media_url }} style={styles.media} />
-      {renderStars(item.ratings)}
-      <Text style={styles.itemName}>{item.dishName}</Text>
-      <Text style={styles.restaurantName}>{item.restaurant.name}</Text>
+      <Image source={{ uri: dish.media_url }} style={styles.media} />
+      {renderStars(dish.ratings)}
+      <Text style={styles.dishName}>{dish.dishName}</Text>
+      <Text style={styles.restaurantName}>{dish.restaurant_id.name}</Text>
       <View style={styles.descriptionContainer}>
         <Text style={styles.description}>
-          <Text style={styles.title}>{item.title}  </Text>
-          {item.description}
+          <Text style={styles.title}>{dish.title}  </Text>
+          {dish.description}
         </Text>
       </View>
       <View style={styles.footer}>
@@ -83,11 +84,11 @@ const PostComponent = ({ userId, item }) => {
           <Text style={styles.likes}>{likes} {likes === 1 ? 'like' : 'likes'}</Text>
         </TouchableOpacity>
         <TouchableOpacity
-          onPress={() => navigation.navigate("CommentsPage", { postId: item._id, userId: userId })}
+          onPress={() => navigation.navigate("CommentsPage", { postId: dish._id, userId: userId })}
           style={styles.commentsButton}
         >
           <Text style={styles.commentsText}>
-            {item.comment_list.length} {item.comment_list.length === 1 ? "Comment" : "Comments"}
+            {dish.comment_list.length} {dish.comment_list.length === 1 ? "Comment" : "Comments"}
           </Text>
         </TouchableOpacity>
       </View>
@@ -130,7 +131,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginVertical: 5,
   },
-  itemName: {
+  dishName: {
     fontSize: width / 16,
     fontWeight: 'bold',
     textAlign: 'center',
