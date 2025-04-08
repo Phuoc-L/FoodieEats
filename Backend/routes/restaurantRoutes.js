@@ -186,18 +186,29 @@ router.get("/:dish_id/reviews", async (req, res) => {
     const { dish_id } = req.params;
 
     try {
-        const posts = await Posts.find({ dish_id: dish_id} )
+        const rawPosts = await Posts.find({ dish_id: dish_id} )
             .sort({ timestamp: -1 })
             .populate("user_id", "username profile.avatar_url")
             .populate("restaurant_id", "name")
             .exec();
 
+        const enrichedPosts = await Promise.all(rawPosts.map(async (post) => {
+            const postObj = post.toObject();
+            try {
+                const restaurant = await Restaurant.findById(post.restaurant_id);
+                const dish = restaurant?.menu?.find(d => d._id.toString() === post.dish_id.toString());
+                postObj.dish_name = dish?.name || null;
+            } catch (e) {
+                postObj.dish_name = null;
+            }
+            return postObj;
+        }));
 
-        if(!posts) {
+        if(!enrichedPosts) {
             return res.status(404).json({ error: "No reviews found" });
         }
 
-        res.status(200).json({ message: "Reviews found successfully", posts: posts });
+        res.status(200).json({ message: "Reviews found successfully", posts: enrichedPosts });
     } catch (error) {
         res.status(500).json({ error: "Error getting reviews" });
     }

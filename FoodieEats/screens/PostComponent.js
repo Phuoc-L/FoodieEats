@@ -69,7 +69,7 @@ const PostComponent = ({ userId, dish }) => {
       </View>
       <Image source={{ uri: dish.media_url }} style={styles.media} />
       {renderStars(dish.ratings)}
-      <Text style={styles.dishName}>{dish.dishName}</Text>
+      <Text style={styles.dishName}>{dish.dish_name}</Text>
       <Text style={styles.restaurantName}>{dish.restaurant_id.name}</Text>
       <View style={styles.descriptionContainer}>
         <Text style={styles.description}>
@@ -108,7 +108,7 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: 'row',
-    aligndishs: 'center',
+    alignItems: 'center',
     marginBottom: 5,
   },
   avatar: {
@@ -127,7 +127,7 @@ const styles = StyleSheet.create({
   media: {
     width: width,
     height: width,
-    aligndishs: 'center',
+    alignItems: 'center',
     marginVertical: 5,
   },
   dishName: {
@@ -150,7 +150,7 @@ const styles = StyleSheet.create({
   starContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
-    aligndishs: 'center',
+    alignItems: 'center',
     marginVertical: 5,
   },
   star: {
@@ -159,7 +159,7 @@ const styles = StyleSheet.create({
   footer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    aligndishs: 'center',
+    alignItems: 'center',
     width: '100%',
     paddingHorizontal: 10,
     marginTop: 10,
