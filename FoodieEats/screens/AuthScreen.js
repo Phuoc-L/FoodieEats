@@ -29,7 +29,7 @@ export default function AuthScreen(props) {
       const response = await axios.post(process.env.EXPO_PUBLIC_API_URL + '/api/users/login', credentials);
       const { user, token } = response.data;
       // save user data
-      await saveData("userID", user._id);
+      await saveData("user", user._id);
       await saveData("token", token);
       Keyboard.dismiss();
       props.navigation.navigate('Explore');
