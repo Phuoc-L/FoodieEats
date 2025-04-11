@@ -5,6 +5,7 @@ const userRoutes = require("./routes/userRoutes");
 const restaurantRoutes = require("./routes/restaurantRoutes");
 const postRoutes = require("./routes/postRoutes");
 const speechRoutes = require("./routes/speechRoutes");
+const commentRoutes = require("./routes/commentRoutes");
 require("dotenv").config({ path: "secrets.ini" });
 const cors = require('cors');
 
@@ -33,4 +34,5 @@ app.use("/api/users", userRoutes);
 app.use("/api/restaurants", restaurantRoutes);
 app.use("/api/posts", postRoutes);
 app.use("/api/speech", speechRoutes);
+app.use("/api/comments", commentRoutes);
 app.use(cors());
