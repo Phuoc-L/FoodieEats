@@ -17,6 +17,7 @@ export default function RestaurantPage({ route }) {
 
     useFocusEffect(
         useCallback(() => {
+          await getUser();
           fetchRestaurant();
         }, [])
       );
@@ -27,6 +28,21 @@ export default function RestaurantPage({ route }) {
         );
         setRestaurant(response.data);
     };
+
+    const getUser = async () => {
+        try {
+          const user_id = await AsyncStorage.getItem('user');
+          if (!user_id) {
+            console.error('User ID not found in AsyncStorage');
+            return;
+          }
+          setUserId(user_id);
+          const user = await axios.get(process.env.EXPO_PUBLIC_API_URL + '/api/users/' + user_id);
+          setCurrentUser(user.data);
+        } catch (e) {
+          console.error(e);
+        }
+      };
 
     const renderMenuItem = ({ item }) => {
         return (
