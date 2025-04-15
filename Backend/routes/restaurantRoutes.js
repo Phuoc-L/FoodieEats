@@ -2,6 +2,7 @@ const express = require("express");
 const mongoose = require("mongoose");
 const Restaurant = require("../data_schemas/restaurant");
 const Posts = require("../data_schemas/post");
+const Owner = require("../data_schemas/restaurant_owner");
 const router = express.Router();
 
 router.get("/", async (req, res) => {
@@ -249,6 +250,40 @@ router.put("/:id/menu/:dishId/rating", async (req, res) => {
     res.status(200).send({ message: "Dish rating updated successfully" });
   } catch (error) {
     res.status(500).send({ error: "Error updating dish rating" });
+  }
+});
+
+router.get("/:id/isOwner/:user_id", async (req, res) => {
+  const { id, user_id } = req.params;
+
+  try {
+    const user = await Owner.findById(user_id);
+    if (!user) return res.status(404).send({ error: "Restaurant owner user not found", result: false });
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).send({ error: "Invalid restaurant ID", result: false });
+    }
+
+    const isOwner = user.restaurant_id.equals(new mongoose.Types.ObjectId(id));
+    res.status(200).send({ message: "Restaurant owner found successfully.", result: isOwner});
+
+  } catch (error) {
+    console.error("Exception caught:", error);
+    res.status(500).send({ error: error.message || "Internal server error", result: false });
+  }
+});
+
+router.get("/owner/:user_id", async (req, res) => {
+  const { user_id } = req.params;
+
+  try {
+    const user = await Owner.findById(user_id);
+    if (!user) return res.status(404).json({ error: "User not found" });
+    res.json(user);
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Error getting user by ID" });
   }
 });
 
