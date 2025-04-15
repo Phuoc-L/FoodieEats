@@ -49,12 +49,16 @@ export default function RestaurantPage() {
             }
             setUserData({"id": user_id, "role": user_role});
 
-            const isOwnerResponse = await axios.get(
-                `${process.env.EXPO_PUBLIC_API_URL}/api/restaurants/${restaurantId}/isOwner/${userData.id}`
-            );
+            if (userData.role == "owner") {
+                const isOwnerResponse = await axios.get(
+                    `${process.env.EXPO_PUBLIC_API_URL}/api/restaurants/${restaurantId}/isOwner/${userData.id}`
+                );
 
-            if (isOwnerResponse.status == 200) {
-                setIsOwner(isOwnerResponse.data.result);
+                if (isOwnerResponse.status == 200) {
+                    setIsOwner(isOwnerResponse.data.result);
+                } else {
+                    setIsOwner(false);
+                }
             } else {
                 setIsOwner(false);
             }
