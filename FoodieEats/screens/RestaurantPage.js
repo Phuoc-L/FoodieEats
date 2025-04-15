@@ -8,17 +8,25 @@ import axios from 'axios';
 
 const { width } = Dimensions.get('window');
 
-export default function RestaurantPage({ route }) {
-    const { restaurantId } = route.params || {};
+//export default function RestaurantPage({ route }) {
+//    const { restaurantId } = route.params || {};
+
+export default function RestaurantPage() {
+    const restaurantId = '670373b1d9077967850ae902';
 
     const [restaurant, setRestaurant] = useState("");
+    const [isOwner, setIsOwner] = useState("");
+    const [userData, setUserData] = useState({});
 
     const navigation = useNavigation();
 
     useFocusEffect(
         useCallback(() => {
-          await getUser();
-          fetchRestaurant();
+          const initialize = async () => {
+            await getData();
+            fetchRestaurant();
+          };
+          initialize();
         }, [])
       );
 
@@ -29,18 +37,29 @@ export default function RestaurantPage({ route }) {
         setRestaurant(response.data);
     };
 
-    const getUser = async () => {
+    const getData = async () => {
         try {
-          const user_id = await AsyncStorage.getItem('user');
-          if (!user_id) {
-            console.error('User ID not found in AsyncStorage');
-            return;
-          }
-          setUserId(user_id);
-          const user = await axios.get(process.env.EXPO_PUBLIC_API_URL + '/api/users/' + user_id);
-          setCurrentUser(user.data);
+//          const user_id = await AsyncStorage.getItem('user');
+//          const user_role = await AsyncStorage.getItem('role');
+            const user_id = '670378a8d9077967850ae906';
+            const user_role = 'owner';
+            if (!user_id) {
+                console.error('User data not found in AsyncStorage');
+                return;
+            }
+            setUserData({"id": user_id, "role": user_role});
+
+            const isOwnerResponse = await axios.get(
+                `${process.env.EXPO_PUBLIC_API_URL}/api/restaurants/${restaurantId}/isOwner/${userData.id}`
+            );
+
+            if (isOwnerResponse.status == 200) {
+                setIsOwner(isOwnerResponse.data.result);
+            } else {
+                setIsOwner(false);
+            }
         } catch (e) {
-          console.error(e);
+            console.error(e);
         }
       };
 
@@ -117,6 +136,16 @@ export default function RestaurantPage({ route }) {
                 keyExtractor={(item) => item._id}
                 renderItem={renderMenuItem}
             />
+            {isOwner && (
+                <View style={styles.editButtonContainer}>
+                    <TouchableOpacity
+                        style={styles.editButton}
+                        onPress={() => console.log("Click!")}
+                    >
+                        <Text style={styles.editButtonText}>Edit</Text>
+                    </TouchableOpacity>
+                </View>
+            )}
         </View>
     );
 }
@@ -214,5 +243,28 @@ const styles = StyleSheet.create({
         flexWrap: 'wrap',
         fontSize: width / 25,
         color: '#555',
+    },
+    editButtonContainer: {
+        position: 'absolute',
+        bottom: 20,
+        left: 20,
+        right: 20,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+
+    editButton: {
+        backgroundColor: '#0080F0',
+        paddingVertical: 12,
+        paddingHorizontal: 30,
+        borderRadius: 25,
+        width: '100%',
+        alignItems: 'center',
+    },
+
+    editButtonText: {
+        color: 'white',
+        fontSize: width / 20,
+        fontWeight: 'bold',
     },
 });
