@@ -49,13 +49,12 @@ export default function DishReviews({ route }) {
 
 
     return (
-
         <View style={styles.container}>
             <FlatList
                 data={posts}
                 keyExtractor={(item) => item._id}
                 renderItem={({ item }) => <PostComponent
-                    userId={userId} dish={item}
+                    userId={userId} owner={true} dish={item}
                 />}
                 contentContainerStyle={styles.feed}
             />

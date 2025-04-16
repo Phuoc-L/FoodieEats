@@ -3,6 +3,7 @@ import { View, Text, FlatList, StyleSheet, Image, TouchableOpacity, Dimensions, 
 import { useFocusEffect } from '@react-navigation/native';
 import { FontAwesome } from '@expo/vector-icons';
 import { useNavigation } from "@react-navigation/native";
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import axios from 'axios';
 
 
@@ -42,7 +43,7 @@ export default function RestaurantPage() {
 //            const id = await AsyncStorage.getItem('user');
 //            const owner = await AsyncStorage.getItem('owner');
             const id   = "670378a8d9077967850ae906";
-            const owner = true;
+            const owner = false;
             setUserData({ id, owner });
         };
         readUser();
@@ -51,7 +52,7 @@ export default function RestaurantPage() {
 
     useEffect(() => {
         const checkOwner = async () => {
-            if (!userData || userData.owner) {
+            if (!userData || !userData.owner) {
                 setIsOwner(false);
                 return;
             }
@@ -102,10 +103,35 @@ export default function RestaurantPage() {
         );
     };
 
+    const LogoutButton = () => {
+        if (!isOwner) return null;
+
+        return (
+            <TouchableOpacity onPress={() => navigation.navigate('Auth')}>
+                <MaterialIcons name="logout" size={24} style={styles.logout} />
+            </TouchableOpacity>
+        );
+    };
+
     return(
         <View style={styles.container}>
             <View style={styles.titleContainer}>
-                <Text style={styles.title}>{restaurant.name}</Text>
+                {isOwner ? (
+                    <View style={styles.ownerTitleRow}>
+                      <View style={{ flex: 1 }}>
+                        <Text style={[styles.title, { textAlign: 'left' }]} numberOfLines={0}>
+                          {restaurant.name}
+                        </Text>
+                      </View>
+                      <TouchableOpacity onPress={() => navigation.navigate('Auth')}>
+                        <MaterialIcons name="logout" size={28} style={styles.logout} />
+                      </TouchableOpacity>
+                    </View>
+                ) : (
+                    <Text style={[styles.title, { textAlign: 'center' }]}>
+                        {restaurant.name}
+                    </Text>
+                )}
                 <View style={styles.restaurantInfo}>
                     <View style={styles.restaurantDetails}>
                         <View>
@@ -154,10 +180,12 @@ export default function RestaurantPage() {
                     </View>
                 </View>
             </View>
+            <Text style={[styles.title, { textAlign: 'center', marginTop: 20 }]}>Menu</Text>
             <FlatList
                 data={restaurant.menu}
                 keyExtractor={(item) => item._id}
                 renderItem={renderMenuItem}
+                contentContainerStyle={{ paddingBottom: isOwner ? 100 : 0 }}
             />
             {isOwner && (
                 <View style={styles.editButtonContainer}>
@@ -177,6 +205,7 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#fff',
+        padding: 20,
     },
     titleContainer: {
         backgroundColor: "fff",
@@ -185,12 +214,23 @@ const styles = StyleSheet.create({
         borderBottomWidth: 1,
         borderBottomColor: "#ccc",
     },
+    ownerTitleRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'flex-start',
+        width: '100%',
+        columnGap: 10,
+    },
     title: {
         fontSize: width / 12,
         color: "#000",
-        flexWrap: 'wrap',
         fontWeight: '600',
-        marginBottom: 12,
+        flex: 1,
+        flexWrap: 'wrap',
+    },
+    logout: {
+        color: '#000',
+        paddingLeft: 10,
     },
     restaurantInfo: {
         width: width-20,
