@@ -1,5 +1,16 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, FlatList, StyleSheet, Image, TouchableOpacity, Dimensions, Button, ScrollView, TextInput } from 'react-native';
+import {
+    View,
+    Text,
+    FlatList,
+    StyleSheet,
+    Image,
+    TouchableOpacity,
+    Dimensions,
+    Button,
+    ScrollView,
+    TextInput,
+    Alert } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { FontAwesome } from '@expo/vector-icons';
 import { useNavigation } from "@react-navigation/native";
@@ -66,19 +77,42 @@ export default function EditRestaurant({ route }) {
         setRestaurant({ ...restaurant, menu: updated });
     };
 
-    const saveChanges = async () => {
-        const cleanRestaurant = {
+    const cleanRestaurant = () => {
+        const location          = (restaurant.location        ?? "").trim();
+        const operating_hours   = (restaurant.operating_hours ?? "").trim();
+
+        if (location === "" || operating_hours === "") {
+            Alert.alert(
+                "Missing Required Info",
+                "Please fill in both Location and Operating Hours before saving."
+            );
+            return null;
+        }
+
+
+        return {
             ...restaurant,
-            menu: restaurant.menu.map(item => ({
-                ...item,
-                price: parseFloat(item.price) || 0,
+            location,
+            operating_hours,
+            contact_info: {
+                phone : (restaurant.contact_info?.phone  ?? "").trim(),
+                email : (restaurant.contact_info?.email  ?? "").trim(),
+            },
+            menu: restaurant.menu.map((m) => ({
+                ...m,
+                price: parseFloat(m.price) || 0,
             })),
         };
+    };
+
+    const saveChanges = async () => {
+        const payload = cleanRestaurant();
+        if (!payload) return;
 
         try {
             await axios.put(
                 `${process.env.EXPO_PUBLIC_API_URL}/api/restaurants/${restaurantId}`,
-                cleanRestaurant
+                payload
             );
             navigation.navigate("RestaurantPage", { restaurantId });
         } catch (err) {

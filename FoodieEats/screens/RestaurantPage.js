@@ -12,64 +12,61 @@ const { width } = Dimensions.get('window');
 //    const { restaurantId } = route.params || {};
 
 export default function RestaurantPage() {
-    const restaurantId = '670373b1d9077967850ae903';
+    const restaurantId = '670373b1d9077967850ae902';
 
     const [restaurant, setRestaurant] = useState("");
-    const [isOwner, setIsOwner] = useState("");
-    const [userData, setUserData] = useState({});
+    const [isOwner, setIsOwner] = useState(false);
+    const [userData, setUserData] = useState(null);
 
     const navigation = useNavigation();
 
     useFocusEffect(
         useCallback(() => {
-          const initialize = async () => {
-            await getData();
+            const fetchRestaurant = async () => {
+                try {
+                    const res = await axios.get(
+                        `${process.env.EXPO_PUBLIC_API_URL}/api/restaurants/${restaurantId}`
+                    );
+                setRestaurant(res.data);
+                } catch (err) {
+                    console.error("Error fetching restaurant:", err);
+                }
+            };
             fetchRestaurant();
-          };
-          initialize();
-        }, [])
-      );
+        }, [restaurantId])
+    );
 
-    const fetchRestaurant = async () => {
-        console.log("Loading!");
-        const response = await axios.get(
-            `${process.env.EXPO_PUBLIC_API_URL}/api/restaurants/${restaurantId}`
-        );
-        console.log("response.data", response.data);
-        setRestaurant(response.data);
-    };
 
-    const getData = async () => {
-        try {
-            const user_id = '670378a8d9077967850ae906';
-            const user_role = 'owner';
+    useEffect(() => {
+        const readUser = async () => {
+//            const id = await AsyncStorage.getItem('user');
+//            const owner = await AsyncStorage.getItem('owner');
+            const id   = "670378a8d9077967850ae906";
+            const owner = true;
+            setUserData({ id, owner });
+        };
+        readUser();
+    }, []);
 
-            if (!user_id) {
-                console.error('User data not found in AsyncStorage');
+
+    useEffect(() => {
+        const checkOwner = async () => {
+            if (!userData || userData.owner) {
+                setIsOwner(false);
                 return;
             }
-
-            const user = { id: user_id, role: user_role };
-            setUserData(user);
-            console.log("user Data:", user);
-
-            if (userData.role === "owner") {
-                const isOwnerResponse = await axios.get(
+            try {
+                const res = await axios.get(
                     `${process.env.EXPO_PUBLIC_API_URL}/api/restaurants/${restaurantId}/isOwner/${userData.id}`
                 );
-
-                if (isOwnerResponse.status === 200) {
-                    setIsOwner(isOwnerResponse.data.result);
-                } else {
-                    setIsOwner(false);
-                }
-            } else {
+                setIsOwner(res.status === 200 && res.data.result);
+            } catch (err) {
+                console.error("Error checking owner:", err);
                 setIsOwner(false);
             }
-        } catch (e) {
-            console.error(e);
-        }
-    };
+        };
+        checkOwner();
+    }, [userData, restaurantId]);
 
     const renderMenuItem = ({ item }) => {
         return (
@@ -112,22 +109,32 @@ export default function RestaurantPage() {
                 <View style={styles.restaurantInfo}>
                     <View style={styles.restaurantDetails}>
                         <View>
-                            <Text style={styles.detailsText}>
-                                <Text style={{ fontWeight: 'bold' }}>Location: </Text>
-                                {restaurant.location}
-                            </Text>
-                            <Text style={styles.detailsText}>
-                                <Text style={{ fontWeight: 'bold' }}>Hours: </Text>
-                                {restaurant.operating_hours}
-                            </Text>
-//                            <Text style={styles.detailsText}>
-//                                <Text style={{ fontWeight: 'bold' }}>Phone: </Text>
-//                                {restaurant.contact_info.phone}
-//                            </Text>
-//                            <Text style={styles.detailsText}>
-//                                <Text style={{ fontWeight: 'bold' }}>Email: </Text>
-//                                {restaurant.contact_info.email}
-//                            </Text>
+                            { (restaurant.location ?? "").trim() !== "" && (
+                                <Text style={styles.detailsText}>
+                                    <Text style={{ fontWeight: 'bold' }}>Location: </Text>
+                                    {restaurant.location}
+                                </Text>
+                            )}
+
+                            { (restaurant.operating_hours ?? "").trim() !== "" && (
+                                <Text style={styles.detailsText}>
+                                    <Text style={{ fontWeight: 'bold' }}>Hours: </Text>
+                                    {restaurant.operating_hours}
+                                </Text>
+                            )}
+
+                            { (restaurant.contact_info?.phone ?? "").trim() !== "" && (
+                                <Text style={styles.detailsText}>
+                                    <Text style={{ fontWeight: "bold" }}>Phone: </Text>
+                                    {restaurant.contact_info.phone}
+                                </Text>
+                            ) }
+                            { (restaurant.contact_info?.email ?? "").trim() !== "" && (
+                                <Text style={styles.detailsText}>
+                                    <Text style={{ fontWeight: "bold" }}>Email: </Text>
+                                    {restaurant.contact_info.email}
+                                </Text>
+                            ) }
                         </View>
                     </View>
                     <View style={styles.rating}>
