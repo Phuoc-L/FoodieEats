@@ -183,6 +183,15 @@ router.delete("/:id/menu/:dishId", async (req, res) => {
   }
 });
 
+router.put('/:restaurantId', async (req, res) => {
+    const updated = await Restaurant.findByIdAndUpdate(
+        req.params.restaurantId,
+        req.body,
+        { new: true }
+    );
+    res.json(updated);
+});
+
 router.get("/:dish_id/reviews", async (req, res) => {
     const { dish_id } = req.params;
 
