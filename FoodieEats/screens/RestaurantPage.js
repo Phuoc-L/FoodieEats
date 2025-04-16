@@ -12,7 +12,7 @@ const { width } = Dimensions.get('window');
 //    const { restaurantId } = route.params || {};
 
 export default function RestaurantPage() {
-    const restaurantId = '670373b1d9077967850ae902';
+    const restaurantId = '670373b1d9077967850ae903';
 
     const [restaurant, setRestaurant] = useState("");
     const [isOwner, setIsOwner] = useState("");
@@ -31,30 +31,34 @@ export default function RestaurantPage() {
       );
 
     const fetchRestaurant = async () => {
+        console.log("Loading!");
         const response = await axios.get(
             `${process.env.EXPO_PUBLIC_API_URL}/api/restaurants/${restaurantId}`
         );
+        console.log("response.data", response.data);
         setRestaurant(response.data);
     };
 
     const getData = async () => {
         try {
-//          const user_id = await AsyncStorage.getItem('user');
-//          const user_role = await AsyncStorage.getItem('role');
             const user_id = '670378a8d9077967850ae906';
             const user_role = 'owner';
+
             if (!user_id) {
                 console.error('User data not found in AsyncStorage');
                 return;
             }
-            setUserData({"id": user_id, "role": user_role});
 
-            if (userData.role == "owner") {
+            const user = { id: user_id, role: user_role };
+            setUserData(user);
+            console.log("user Data:", user);
+
+            if (userData.role === "owner") {
                 const isOwnerResponse = await axios.get(
                     `${process.env.EXPO_PUBLIC_API_URL}/api/restaurants/${restaurantId}/isOwner/${userData.id}`
                 );
 
-                if (isOwnerResponse.status == 200) {
+                if (isOwnerResponse.status === 200) {
                     setIsOwner(isOwnerResponse.data.result);
                 } else {
                     setIsOwner(false);
@@ -65,7 +69,7 @@ export default function RestaurantPage() {
         } catch (e) {
             console.error(e);
         }
-      };
+    };
 
     const renderMenuItem = ({ item }) => {
         return (
@@ -116,6 +120,14 @@ export default function RestaurantPage() {
                                 <Text style={{ fontWeight: 'bold' }}>Hours: </Text>
                                 {restaurant.operating_hours}
                             </Text>
+//                            <Text style={styles.detailsText}>
+//                                <Text style={{ fontWeight: 'bold' }}>Phone: </Text>
+//                                {restaurant.contact_info.phone}
+//                            </Text>
+//                            <Text style={styles.detailsText}>
+//                                <Text style={{ fontWeight: 'bold' }}>Email: </Text>
+//                                {restaurant.contact_info.email}
+//                            </Text>
                         </View>
                     </View>
                     <View style={styles.rating}>
@@ -144,7 +156,7 @@ export default function RestaurantPage() {
                 <View style={styles.editButtonContainer}>
                     <TouchableOpacity
                         style={styles.editButton}
-                        onPress={() => console.log("Click!")}
+                        onPress={() => navigation.navigate("EditRestaurant", { restaurantId: restaurantId })}
                     >
                         <Text style={styles.editButtonText}>Edit</Text>
                     </TouchableOpacity>
