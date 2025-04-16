@@ -9,13 +9,14 @@ import NewPost from './screens/NewPost';
 import RestaurantPage from './screens/RestaurantPage';
 import DishReviews from './screens/DishReviews';
 import CommentsPage from './screens/CommentsPage';
+import EditRestaurant from './screens/EditRestaurant';
 
 const Stack = createNativeStackNavigator();
 
 export default function App() {
   return (
     <NavigationContainer>
-      <Stack.Navigator initialRouteName="Auth">
+      <Stack.Navigator initialRouteName="RestaurantPage">
         <Stack.Screen name="Auth" component={AuthScreen} options={{ headerShown: false }} />
         <Stack.Screen name="UserFeed" component={UserFeed} options={{ headerShown: false }} />
         <Stack.Screen name="Explore" component={Explore} options={{ headerShown: false }} />
@@ -24,6 +25,7 @@ export default function App() {
         <Stack.Screen name="RestaurantPage" component={RestaurantPage} options={{ headerShown: false }} />
         <Stack.Screen name="DishReviews" component={DishReviews} options={{ headerShown: true }} />
         <Stack.Screen name="CommentsPage" component={CommentsPage} options={{ title: "Comments" }}/>
+        <Stack.Screen name="EditRestaurant" component={EditRestaurant} options={{ title: "Edit" }}/>
       </Stack.Navigator>
     </NavigationContainer>
   );
