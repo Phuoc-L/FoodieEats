@@ -15,7 +15,7 @@ const { width } = Dimensions.get('window');
 export default function RestaurantPage() {
     const restaurantId = '670373b1d9077967850ae902';
 
-    const [restaurant, setRestaurant] = useState("");
+    const [restaurant, setRestaurant] = useState({});
     const [isOwner, setIsOwner] = useState(false);
     const [userData, setUserData] = useState(null);
 
@@ -40,10 +40,8 @@ export default function RestaurantPage() {
 
     useEffect(() => {
         const readUser = async () => {
-//            const id = await AsyncStorage.getItem('user');
-//            const owner = await AsyncStorage.getItem('owner');
-            const id   = "670378a8d9077967850ae906";
-            const owner = false;
+            const id = await AsyncStorage.getItem('user');
+            const owner = await AsyncStorage.getItem('owner');
             setUserData({ id, owner });
         };
         readUser();
@@ -57,6 +55,7 @@ export default function RestaurantPage() {
                 return;
             }
             try {
+                const url = `${process.env.EXPO_PUBLIC_API_URL}/api/restaurants/${restaurantId}/isOwner/${userData.id}`;
                 const res = await axios.get(
                     `${process.env.EXPO_PUBLIC_API_URL}/api/restaurants/${restaurantId}/isOwner/${userData.id}`
                 );
@@ -112,6 +111,14 @@ export default function RestaurantPage() {
             </TouchableOpacity>
         );
     };
+
+    if (!restaurant || !restaurant.name) {
+        return (
+            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                <Text>Loading...</Text>
+            </View>
+        );
+    }
 
     return(
         <View style={styles.container}>
@@ -224,9 +231,8 @@ const styles = StyleSheet.create({
     title: {
         fontSize: width / 12,
         color: "#000",
-        fontWeight: '600',
-        flex: 1,
         flexWrap: 'wrap',
+        fontWeight: '600',
     },
     logout: {
         color: '#000',
@@ -237,6 +243,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: "space-between",
         alignItems: 'center',
+        marginTop: 12,
     },
     restaurantDetails: {
         flexShrink: 1,
