@@ -59,7 +59,7 @@ export default function NavigationBar() {
     if (userID !== null && isOwner !== null) {
       return (
         <View style={styles.navBar}>
-          {isOwner ? null : <TouchableOpacity onPress={() => navigation.reset({
+          {isOwner === true ? null : <TouchableOpacity onPress={() => navigation.reset({
             index: 0,
             routes: [{name: 'UserFeed'}],
             })}>
@@ -71,7 +71,7 @@ export default function NavigationBar() {
             })}>
             <FontAwesome name="globe" size={24} color="black" />
           </TouchableOpacity>
-          {isOwner ? null : <TouchableOpacity onPress={() => navigation.reset({
+          {isOwner === true ? null : <TouchableOpacity onPress={() => navigation.reset({
             index: 0,
             routes: [{name: 'NewPost'}],
             })}>
