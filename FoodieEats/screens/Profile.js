@@ -148,6 +148,9 @@ export default function Profile({route}) {
             <Text style={styles.textLeft}>Profile Description:</Text>
             <TextInput style={styles.inputMultiline} placeholder={'Description'} placeholderTextColor={'#A0A0A0'} defaultValue={user?.profile?.bio} scrollEnabled={true}
               multiline={true} maxLength={500} onChangeText={description => setProfileInfo({...profileInfo, bio: description})}/>
+            <TouchableOpacity style={styles.changeImgButton}>
+              <Text style={styles.buttonText}>Change Profile Picture</Text>
+            </TouchableOpacity>
 
             <View style={styles.editProfileBtnContainer}>
               <TouchableOpacity style={styles.profileButton} onPress={() => UpdateUserInfo()}>
@@ -463,6 +466,21 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  changeImgButton: {
+    margin: 10,
+    paddingVertical: 15,
+    paddingHorizontal: 30,
+    backgroundColor: '#FF6B00',
+    borderRadius: 10,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 5,
+    height: 50,
+    width: 270,
   },
 
   bioName: {
