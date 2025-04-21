@@ -13,7 +13,7 @@ const postSchema = new mongoose.Schema(
     like_list: [ mongoose.Schema.Types.ObjectId ],
     num_like: { type: Number, default: 0 },
 
-    comment_list: [ String ],
+    comment_list: [{ type: mongoose.Schema.Types.ObjectId, ref: "Comment" }],
     num_comments: { type: Number, default: 0 },
 
     ratings: { type: Number, required: true },

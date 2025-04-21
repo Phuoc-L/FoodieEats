@@ -2,6 +2,7 @@ const express = require("express");
 const mongoose = require("mongoose");
 const Post = require("../data_schemas/post");
 const User = require("../data_schemas/users");
+const Restaurant = require("../data_schemas/restaurant");
 const getPresignedURL = require("../functions/s3PresignedURL.js");
 const router = express.Router();
 
@@ -132,7 +133,7 @@ router.get('/search', async (req, res) => {
 // Create a new post
 router.post("/:user_id/create", async (req, res) => {
   try {
-    const { restaurant_id, dish_id, title, description, rating } = req.body;
+    const { restaurant_id, dish_id, title, description, ratings } = req.body;
     
     // Validate user exists
     const user = await User.findById(req.params.user_id);
@@ -147,7 +148,7 @@ router.post("/:user_id/create", async (req, res) => {
       dish_id,
       title,
       description,
-      rating
+      ratings
     });
 
     // Save post
@@ -181,13 +182,13 @@ router.post("/:user_id/posts/:post_id/image", verifyPostOwnership, async (req, r
     // Get presigned URL from S3
     const presignedURL = await getPresignedURL(fileName, fileType, uploadDir);
     
-    // Generate the final image URL
-    const image_url = `https://${process.env.BUCKET_NAME}.s3.${process.env.REGION}.amazonaws.com/${uploadDir}/${fileName}`;
+    // Generate the final image URL - use the correct S3 URL format without region in the hostname
+    const image_url = `https://${process.env.BUCKET_NAME}.s3.amazonaws.com/${uploadDir}/${fileName}`;
     
     // Update post with image URL
-    req.post.image_url = image_url;
+    req.post.media_url = image_url;
     await req.post.save();
-
+    console.log("Generated image URL:", image_url);
     res.status(200).json({ 
       presignedURL,
       image_url 
@@ -236,12 +237,12 @@ router.get("/:user_id/posts/:post_id", async (req, res) => {
 // Update post
 router.put("/:user_id/posts/:post_id", verifyPostOwnership, async (req, res) => {
   try {
-    const { title, description, rating } = req.body;
+    const { title, description, ratings } = req.body;
     
     // Update only provided fields
     if (title) req.post.title = title;
     if (description) req.post.description = description;
-    if (rating) req.post.rating = rating;
+    if (ratings) req.post.ratings = ratings;
 
     await req.post.save();
     res.status(200).json({ 
@@ -284,8 +285,8 @@ router.get("/:user_id/user_feed", async (req, res) => {
   const { user_id } = req.params;
 
   if (!mongoose.Types.ObjectId.isValid(user_id)) {
-      return res.status(400).send('Invalid ObjectId');
-    }
+    return res.status(400).send('Invalid ObjectId');
+  }
 
   try {
     const active_user = await User.findById(user_id);
@@ -295,17 +296,59 @@ router.get("/:user_id/user_feed", async (req, res) => {
 
     const following = active_user.following
     if (!following || following.length === 0) {
-        return res.status(200).send({ error: "No followed users found.", posts: [] });
+      return res.status(200).send([]);
     }
 
-    const posts = await Post.find({ user_id: { $in: following } })
-        .sort({ timestamp: -1 })
-        .populate("user_id", "username profile.avatar_url")
-        .exec();
+    const rawPosts = await Post.find({ user_id: { $in: following } })
+      .sort({ timestamp: -1 })
+      .populate("user_id", "username profile.avatar_url")
+      .populate("restaurant_id", "name")
+      .exec();
 
-    res.status(200).send(posts);
+    const enrichedPosts = await Promise.all(rawPosts.map(async (post) => {
+      const postObj = post.toObject();
+      try {
+        const restaurant = await Restaurant.findById(post.restaurant_id);
+        const dish = restaurant?.menu?.find(d => d._id.toString() === post.dish_id.toString());
+        postObj.dish_name = dish?.name || null;
+      } catch (e) {
+        postObj.dish_name = null;
+      }
+      return postObj;
+    }));
+
+    res.status(200).send(enrichedPosts);
   } catch (error) {
     res.status(500).send({ error: "Error retrieving posts" });
+  }
+});
+
+// Like/Unlike a Post
+router.post("/:post_user_id/posts/:post_id/like/:user_id", async (req, res) => {
+  try {
+    const { post_user_id, post_id, user_id } = req.params;
+    const post = await Post.findById(post_id);
+
+    if (!post) {
+      return res.status(404).json({ error: "Post not found" });
+    }
+
+    const userIndex = post.like_list.indexOf(user_id);
+
+    if (userIndex === -1) {
+      // User hasn't liked -> Add like
+      post.like_list.push(user_id);
+      post.num_like += 1;
+    } else {
+      // User has liked -> Remove like
+      post.like_list.splice(userIndex, 1);
+      post.num_like -= 1;
+    }
+
+    await post.save();
+    res.status(200).json({ message: "Like updated", post });
+  } catch (error) {
+    res.status(500).json({ error: "Error updating like", details: error.message });
   }
 });
 

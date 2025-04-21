@@ -71,6 +71,7 @@ export default function Profile({route}) {
 
         // Get logged-in user's posts
         const displayedUserPostResponse = await axios.get(`${process.env.EXPO_PUBLIC_API_URL}/api/posts/${userIdResponse}/posts`);
+        // console.log("Fetched Posts Data (Self):", JSON.stringify(displayedUserPostResponse.data, null, 2)); // Removed logging
         setPosts([...displayedUserPostResponse.data]);
 
         // Set button text
@@ -82,6 +83,7 @@ export default function Profile({route}) {
 
         // Get displayed user's posts
         const displayedUserPostResponse = await axios.get(`${process.env.EXPO_PUBLIC_API_URL}/api/posts/${displayedUserId}/posts`);
+        // console.log(`Fetched Posts Data (User ${displayedUserId}):`, JSON.stringify(displayedUserPostResponse.data, null, 2)); // Removed logging
         setPosts([...displayedUserPostResponse.data]);
 
         // Set button text to either 'follow' or 'unfollow'
@@ -292,6 +294,8 @@ export default function Profile({route}) {
   }
 
   const CreateCardPost = (post) => {
+    const imageUrl = GetPostImage(post); // Get the URL
+    // console.log(`Rendering post ${post?._id} with image URL: ${imageUrl}`); // Removed logging
     return (
       <TouchableOpacity key={post._id} onPress={() => navigation.navigate('Explore', { postID: post._id })}>
         <Card style={styles.postShape}>
@@ -315,6 +319,7 @@ export default function Profile({route}) {
       return require('../assets/defaultFoodIcon.png');
     }
   };
+  
 
   return (
     <SafeAreaProvider>
@@ -473,6 +478,14 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     alignSelf: 'center',
+  },
+  placeholderImage: {
+     // Specific styles for the placeholder View
+     backgroundColor: '#eee', // Placeholder background
+     justifyContent: 'center',
+     alignItems: 'center',
+     borderWidth: 1,
+     borderColor: '#ccc',
   },
   postShape: {
     width: 110,
