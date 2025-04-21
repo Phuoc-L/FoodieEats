@@ -65,7 +65,7 @@ export default function Explore() {
   const renderUserItem = (item) => (
     <TouchableOpacity onPress={() => navigation.push('Profile', { displayUserID: item._id })}>
       <View style={styles.resultCard}>
-        <Image source={{ uri: item.profile.avatar_url || 'https://via.placeholder.com/50' }} style={styles.avatar} />
+        <Image source={item.profile.avatar_url ? { uri: item.profile.avatar_url} : require('../assets/defaultUserIcon.png')} style={styles.avatar} />
         <View style={styles.resultDetailBox}>
           <Text style={styles.resultName}>@{item.username}</Text>
           <Text style={styles.fullName}>{item.first_name} {item.last_name}</Text>
@@ -96,7 +96,7 @@ export default function Explore() {
       <View style={styles.resultCard}>
         <View>
           <View style={{flexDirection: 'row', alignItems: 'center'}}>
-            <Image source={{ uri: item.user_id.profile.avatar_url || 'https://via.placeholder.com/50' }} style={styles.avatar} />
+            <Image source={item.user_id.profile.avatar_url ? {uri: item.user_id.profile.avatar_url} : require('../assets/defaultUserIcon.png')} style={styles.avatar} />
             <Text style={styles.resultName}>@{item.user_id.username}</Text>
           </View>
           <View style={styles.resultDetailBox}>
