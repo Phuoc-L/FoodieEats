@@ -136,16 +136,16 @@ export default function Profile({route}) {
             
             <Text style={styles.textLeft}>Username:</Text>
             <TextInput style={styles.input} placeholder={'Username'} placeholderTextColor={'#A0A0A0'} defaultValue={user?.username}
-              inputMode='text' clearButtonMode={'always'} maxLength={100} onEndEditing={name => setProfileInfo({...profileInfo, username: name})}/>           
+              inputMode='text' clearButtonMode={'always'} maxLength={100} onChangeText={name => setProfileInfo({...profileInfo, username: name})}/>           
             <Text style={styles.textLeft}>First Name:</Text>
             <TextInput style={styles.input} placeholder={'First Name'} placeholderTextColor={'#A0A0A0'} defaultValue={user?.first_name}
-              inputMode='text' clearButtonMode={'always'} maxLength={100} onEndEditing={name => setProfileInfo({...profileInfo, firstName: name})}/>
+              inputMode='text' clearButtonMode={'always'} maxLength={100} onChangeText={name => setProfileInfo({...profileInfo, firstName: name})}/>
             <Text style={styles.textLeft}>Last Name:</Text>
             <TextInput style={styles.input} placeholder={'Last Name'} placeholderTextColor={'#A0A0A0'} defaultValue={user?.last_name}
-              inputMode='text' clearButtonMode={'always'} maxLength={100} onEndEditing={name => setProfileInfo({...profileInfo, lastName: name})}/>
+              inputMode='text' clearButtonMode={'always'} maxLength={100} onChangeText={name => setProfileInfo({...profileInfo, lastName: name})}/>
             <Text style={styles.textLeft}>Profile Description:</Text>
             <TextInput style={styles.inputMultiline} placeholder={'Description'} placeholderTextColor={'#A0A0A0'} defaultValue={user?.profile?.bio} scrollEnabled={true}
-              multiline={true} maxLength={500} onEndEditing={description => setProfileInfo({...profileInfo, bio: description})}/>
+              multiline={true} maxLength={500} onChangeText={description => setProfileInfo({...profileInfo, bio: description})}/>
 
             <View style={styles.editProfileBtnContainer}>
               <TouchableOpacity style={styles.profileButton} onPress={() => UpdateUserInfo()}>
@@ -167,44 +167,64 @@ export default function Profile({route}) {
       let changeMsgs = '';
       let errorMsgs = '';
 
-      if (user?.username !== profileInfo.username) {
-        const response = await axios.put(`${process.env.EXPO_PUBLIC_API_URL}/api/users/${userId}/username`, `${profileInfo.username}`);
-        if (response.status === '400') {
-
+      if (profileInfo?.username !== '' && user?.username !== profileInfo?.username) {
+        const response = await axios.post(`${process.env.EXPO_PUBLIC_API_URL}/api/users/${userId}/username/${profileInfo?.username}`);
+        if (response.status === 200) {
+          changeMsgs += "- Username to " + profileInfo.username + "\n";
+        } else {
+          errorMsgs += "- Username to " + profileInfo.username + "\n";
         }
-        
-        //If axios successful
-        change = true;
       }
-      if (user?.first_name !== profileInfo.firstName) {
-        // update first name
 
-        //If axios successful
-        change = true;
+      if (profileInfo?.firstName !== '' && user?.first_name !== profileInfo?.firstName) {
+        const response = await axios.post(`${process.env.EXPO_PUBLIC_API_URL}/api/users/${userId}/first_name/${profileInfo?.firstName}`);
+        if (response.status === 200) {
+          changeMsgs += "- First name to " + profileInfo.firstName + "\n";
+        } else {
+          errorMsgs += "- First name to " + profileInfo.firstName + "\n";
+        }
       }
-      if (user?.last_name !== profileInfo.lastName) {
-        // update last name
 
-        //If axios successful
-        change = true;
+      if (profileInfo?.lastName !== '' && user?.last_name !== profileInfo?.lastName) {
+        const response = await axios.post(`${process.env.EXPO_PUBLIC_API_URL}/api/users/${userId}/last_name/${profileInfo?.lastName}`);
+        if (response.status === 200) {
+          changeMsgs += "- Last name to " + profileInfo.lastName + "\n";
+        } else {
+          errorMsgs += "Last name to " + profileInfo.lastName + "\n";
+        }
       }
-      if (user?.profile?.bio !== profileInfo.bio) {
-        // update description
 
-        //If axios successful
-        change = true;
+      if (profileInfo?.bio !== "" && user?.profile?.bio !== profileInfo?.bio) {
+        const response = await axios.post(`${process.env.EXPO_PUBLIC_API_URL}/api/users/${userId}/bio/${profileInfo?.bio}`);
+        if (response.status === 200) {
+          changeMsgs += "- Profile description\n";
+        } else {
+          errorMsgs += "- Profile description\n";
+        }
+      }
+
+      if (errorMsgs !== "") {
+        Alert.alert("Error Updating", errorMsgs);
       }
 
       if (changeMsgs !== "") {
+        Alert.alert("Successfully Updated", changeMsgs);
+
         setState(state + 1);
-        //Alert what has been updated
       } 
-      if (errorMsgs !== "") {
-        //Alert error messages
-      }
+
     } catch (error) {
       console.error('Error updating user info', error);
       Alert.alert('Error updating user info', error);
+    }
+    finally {
+      setProfileInfo({
+        username: '',
+        firstName: '',
+        lastName: '',
+        bio: '',
+        profilePic: '',
+      });
     }
   };
 

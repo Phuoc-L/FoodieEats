@@ -227,7 +227,7 @@ router.get("/:user_id", async (req, res) => {
 });
 
 // Update a user by ID
-router.put("/:user_id", async (req, res) => {
+router.post("/:user_id", async (req, res) => {
   try {
     // check if user exists
     let updatedUser = await User.findById(req.params.user_id);
@@ -453,13 +453,13 @@ router.get("/:user_id/profile", async (req, res) => {
 });
 
 // Update a user's username
-router.put("/:user_id/username", async (req, res) => {
+router.post("/:user_id/username/:newUserName", async (req, res) => {
   try {
     // Find the user
     let user = await User.findById(req.params.user_id);
     if (!user) return res.status(404).json({ error: "User not found" });
     // Get updated username
-    const newUsername = req.body;
+    const newUsername = req.params.newUserName;
     console.log(newUsername);
     // Update user's name
     user.username = newUsername;
@@ -472,13 +472,13 @@ router.put("/:user_id/username", async (req, res) => {
 });
 
 // Update a user's first name
-router.put("/:user_id/first_name", async (req, res) => {
+router.post("/:user_id/first_name/:newName", async (req, res) => {
   try {
     // Find the user
     let user = await User.findById(req.params.user_id);
     if (!user) return res.status(404).json({ error: "User not found" });
     // Get updated name
-    const newName = req.body;
+    const newName = req.params.newName;
     console.log(newName);
     // Update user's name
     user.first_name = newName;
@@ -491,13 +491,13 @@ router.put("/:user_id/first_name", async (req, res) => {
 });
 
 // Update a user's last name
-router.put("/:user_id/last_name", async (req, res) => {
+router.post("/:user_id/last_name/:newName", async (req, res) => {
   try {
     // Find the user
     let user = await User.findById(req.params.user_id);
     if (!user) return res.status(404).json({ error: "User not found" });
     // Get updated name
-    const newName = req.body;
+    const newName = req.params.newName;
     console.log(newName);
     // Update user's name
     user.last_name = newName;
@@ -511,13 +511,13 @@ router.put("/:user_id/last_name", async (req, res) => {
 
 
 // Update user's profile description
-router.put("/:user_id/bio", async (req, res) => {
+router.post("/:user_id/bio/:newBio", async (req, res) => {
   try {
     // Find the user
     let user = await User.findById(req.params.user_id);
     if (!user) return res.status(404).json({ error: "User not found" });
     // Get updated description
-    const newBio = req.body;
+    const newBio = req.params.newBio;
     console.log(newBio);
     // Update user's description
     user.profile.bio = newBio;
