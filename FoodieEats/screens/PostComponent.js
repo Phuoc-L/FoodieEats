@@ -7,12 +7,13 @@ import axios from 'axios';
 
 const { width } = Dimensions.get('window');
 
-const PostComponent = ({ userId, dish }) => {
+const PostComponent = ({ userId, owner, dish }) => {
   const [likes, setLikes] = useState(dish.like_list.length);
   const [isLiked, setIsLiked] = useState(dish.like_list.includes(userId));
   const navigation = useNavigation();
 
   const handleLike = async () => {
+    if (owner) return;
     try {
       const updatedLikes = isLiked ? likes - 1 : likes + 1;
       setLikes(updatedLikes);
@@ -40,6 +41,32 @@ const PostComponent = ({ userId, dish }) => {
     } catch (error) {
       console.error('Error updating like on post:', error);
     }
+  };
+
+  const renderLikeSection = () => {
+    const HeartIcon = (
+      <FontAwesome
+        name={owner ? "heart" : isLiked ? "heart" : "heart-o"}
+        size={30}
+        color={owner ? "#ababab" : "#0080F0"}
+      />
+    );
+
+    return owner ? (
+      <View style={styles.likeContainer}>
+        {HeartIcon}
+        <Text style={styles.likes}>
+          {likes} {likes === 1 ? "like" : "likes"}
+        </Text>
+      </View>
+    ) : (
+      <TouchableOpacity onPress={handleLike} style={styles.likeContainer}>
+        {HeartIcon}
+        <Text style={styles.likes}>
+          {likes} {likes === 1 ? "like" : "likes"}
+        </Text>
+      </TouchableOpacity>
+    );
   };
 
   const renderStars = (rating) => {
@@ -78,10 +105,7 @@ const PostComponent = ({ userId, dish }) => {
         </Text>
       </View>
       <View style={styles.footer}>
-        <TouchableOpacity onPress={handleLike} style={styles.likeContainer}>
-          <FontAwesome name={isLiked ? 'heart' : 'heart-o'} size={30} color='#0080F0' />
-          <Text style={styles.likes}>{likes} {likes === 1 ? 'like' : 'likes'}</Text>
-        </TouchableOpacity>
+        {renderLikeSection()}
         <TouchableOpacity
           onPress={() => navigation.navigate("CommentsPage", { postId: dish._id, userId: userId })}
           style={styles.commentsButton}
