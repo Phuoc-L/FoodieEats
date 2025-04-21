@@ -107,7 +107,10 @@ export default function Profile({route}) {
     if (userId === displayedUser._id) {
       return (
         <TouchableOpacity>
-          <MaterialIcons name="logout" size={24} style={styles.logout} onPress={() => navigation.navigate('Auth')}/>
+          <MaterialIcons name="logout" size={24} style={styles.logout} onPress={() => navigation.reset({
+            index: 0,
+            routes: [{name: 'Auth'}],
+            })}/>
         </TouchableOpacity>
     )}
   }

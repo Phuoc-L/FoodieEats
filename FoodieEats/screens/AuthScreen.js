@@ -32,7 +32,10 @@ export default function AuthScreen(props) {
       await saveData("user", user._id);
       await saveData("token", token);
       Keyboard.dismiss();
-      props.navigation.navigate('Explore');
+      props.navigation.reset({
+        index: 0,
+        routes: [{name: 'Explore'}],
+        });
     } catch (error) {
       console.error('Login error:', error.response ? error.response.data : error.message);
       Alert.alert("Login Error", error.response?.data?.error || "Something went wrong");
