@@ -374,7 +374,8 @@ export default function Profile({route}) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 10,
+    paddingTop: 10,
+    paddingHorizontal: 10,
     backgroundColor: "#fff",
     alignContent: 'center'
   },
