@@ -54,9 +54,9 @@ export default function Profile({route}) {
       }
       setUserId(userIdResponse);
 
-      const displayedUserId = route.params.displayUserID;
+      const displayedUserId = route.params.displayUserID;    
       // Get passed-in displayed user ID
-      if (route.params.displayUserId === null) {
+      if (displayedUserId=== null || typeof(displayedUserId) === 'undefined') {
         console.error('Error getting displayedUserId');
         return;
       }
@@ -65,7 +65,7 @@ export default function Profile({route}) {
       const userDataResponse = await axios.get(`${process.env.EXPO_PUBLIC_API_URL}/api/users/${userIdResponse}`);
       setUser(userDataResponse.data);
 
-      if (userIdResponse === route.params.displayUserId || route.params.displayUserId === DEFAULT_LOGGED_IN_USER_ID) {
+      if (userIdResponse === displayedUserId || displayedUserId === DEFAULT_LOGGED_IN_USER_ID) {
         // Logged-in user ID and displayed user ID is the same
         setDisplayedUser(userDataResponse.data);
 

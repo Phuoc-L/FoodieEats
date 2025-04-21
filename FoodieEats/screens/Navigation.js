@@ -47,7 +47,7 @@ export default function NavigationBar() {
       return (
         <TouchableOpacity onPress={() => navigation.reset({
           index: 0,
-          routes: [{name: 'Profile', params: { displayUserId: DEFAULT_LOGGED_IN_USER_ID}}],
+          routes: [{name: 'Profile', params: { displayUserID: DEFAULT_LOGGED_IN_USER_ID}}],
           })}>
           <FontAwesome name="user" size={24} color="black" />
         </TouchableOpacity>
@@ -56,7 +56,7 @@ export default function NavigationBar() {
   }
 
   const DisplayNavBar = () => {
-    if (userID !== null && isOwner !== null) {
+    if (userID !== null && typeof(userID) !== 'undefined' && isOwner !== null || typeof(isOwner) !== 'undefined') {
       return (
         <View style={styles.navBar}>
           {isOwner === true ? null : <TouchableOpacity onPress={() => navigation.reset({
