@@ -62,7 +62,7 @@ export default function UserFeed() {
       <FlatList
         data={posts}
         keyExtractor={(item) => item._id}
-        renderItem={({ item }) => <PostComponent userId={userId} owner={true} dish={item} />}
+        renderItem={({ item }) => <PostComponent userId={userId} owner={false} dish={item} />}
         contentContainerStyle={posts.length === 0 ? styles.emptyContainer : styles.feed}
         ListEmptyComponent={<Text style={styles.emptyText}>No posts to show.</Text>}
       />
