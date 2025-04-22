@@ -18,10 +18,8 @@ export default function UserFeed() {
     useCallback(() => {
       const getData = async () => {
         try {
-//          const id = await AsyncStorage.getItem('user');
-//          const owner = await AsyncStorage.getItem('owner');
-          const id = '67045cebfe84a164fa7085a9';
-          const owner = false;
+          const id = await AsyncStorage.getItem('user');
+          const owner = await AsyncStorage.getItem('owner');
           if (!id) {
             console.error('User ID not found in AsyncStorage');
             return;

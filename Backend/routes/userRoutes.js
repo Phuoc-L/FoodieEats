@@ -428,11 +428,11 @@ router.post("/:user_id/profile", async (req, res) => {
     // Get the presigned URL
     const presignedURL = await getPresignedURL(fileName, fileType, uploadDir);
     console.log(presignedURL);
-    // update user with the profile picture url
-    const image_url = "https://" + process.env.BUCKET_NAME + ".s3." + process.env.REGION + ".amazonaws.com/" + uploadDir + "/" + fileName;
+    // update user with the profile picture url - use the correct S3 URL format without region in the hostname
+    const image_url = "https://" + process.env.BUCKET_NAME + ".s3.amazonaws.com/" + uploadDir + "/" + fileName;
     user.profile.avatar_url = image_url;
     await user.save();
-    res.status(200).json({ presignedURL });
+    res.status(200).json({ image_url });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Error uploading profile picture" });
