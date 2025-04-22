@@ -11,58 +11,57 @@ const { width } = Dimensions.get('window');
 
 export default function UserFeed() {
   const [posts, setPosts] = useState([]);
-  const [currentUser, setCurrentUser] = useState("");
-  const [userId, setUserId] = useState("");
+  const [currentUser, setCurrentUser] = useState({});
+  const [userData, setUserData] = useState({});
 
   useFocusEffect(
     useCallback(() => {
-      const initialize = async () => {
-        await getUser();
-        fetchPosts(true);
+      const getData = async () => {
+        try {
+          const id = await AsyncStorage.getItem('user');
+          const owner = await AsyncStorage.getItem('owner');
+          if (!id) {
+            console.error('User ID not found in AsyncStorage');
+            return;
+          }
+          setUserData({ id, owner });
+          const user = await axios.get(`${process.env.EXPO_PUBLIC_API_URL}/api/users/${id}`);
+          setCurrentUser(user.data);
+        } catch (e) {
+          console.error(e);
+        }
       };
-      initialize();
+      getData();
     }, [])
   );
 
-  // Get user data
-  const getUser = async () => {
-    try {
-      const user_id = await AsyncStorage.getItem('user');
-      if (!user_id) {
-        console.error('User ID not found in AsyncStorage');
-        return;
+  useEffect(() => {
+    if (!userData) return;
+
+    const fetchPosts = async () => {
+      try {
+        const response = await axios.get(`${process.env.EXPO_PUBLIC_API_URL}/api/posts/${userData.id}/user_feed`);
+
+        if (response.status === 200) {
+          const postsData = response.data || [];
+          setPosts(postsData);
+        } else {
+          console.error('Error fetching posts:', response.status);
+        }
+      } catch (error) {
+        console.error('Error fetching posts (2):', error);
       }
-      setUserId(user_id);
-      const user = await axios.get(process.env.EXPO_PUBLIC_API_URL + '/api/users/' + user_id);
-      setCurrentUser(user.data);
-    } catch (e) {
-      console.error(e);
-    }
-  };
+    };
+    fetchPosts();
+  }, [userData]);
 
-  const fetchPosts = async (refresh = false) => {
-    try {
-      if (!userId) return;
-
-      const response = await axios.get(`${process.env.EXPO_PUBLIC_API_URL}/api/posts/${userId}/user_feed`);
-
-      if (response.status === 200) {
-        const postsData = response.data || [];
-        setPosts(postsData);
-      } else {
-        console.error('Error fetching posts:', response.status);
-      }
-    } catch (error) {
-      console.error('Error fetching posts (2):', error);
-    }
-  };
 
   return (
     <View style={styles.container}>
       <FlatList
         data={posts}
         keyExtractor={(item) => item._id}
-        renderItem={({ item }) => <PostComponent userId={userId} owner={false} dish={item} />}
+        renderItem={({ item }) => <PostComponent userId={userData.id} owner={userData.owner} dish={item} />}
         contentContainerStyle={posts.length === 0 ? styles.emptyContainer : styles.feed}
         ListEmptyComponent={<Text style={styles.emptyText}>No posts to show.</Text>}
       />
