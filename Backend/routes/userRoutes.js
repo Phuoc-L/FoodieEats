@@ -3,6 +3,8 @@ const mongoose = require("mongoose");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const User = require("../data_schemas/users");
+const Restaurant = require("../data_schemas/restaurant"); // Import Restaurant model
+
 const Post = require("../data_schemas/post");
 const getPresignedURL = require("../functions/s3PresignedURL.js");
 require("dotenv").config({ path: "secrets.ini" });
@@ -14,9 +16,44 @@ const router = express.Router();
 
 router.post("/signup", async (req, res) => {
   try {
-    const { password, ...userData } = req.body;
+    const { password, isOwner, ...userData } = req.body; // Extract isOwner flag
     const hashedPassword = await hashPassword(password);
-    const newUser = new User({ ...userData, password: hashedPassword });
+    let ownedRestaurantId = null;
+
+    // If signing up as an owner, create a placeholder restaurant first
+    if (isOwner) {
+      try {
+        const newRestaurant = new Restaurant({
+          name: `Restaurant for ${userData.username}`,
+          location: "Pending Setup",
+          operating_hours: "Pending Setup",
+          contact_info: {
+            phone: "000-000-0000",
+            email: "pending@setup.com",
+          },
+          coordinates: {
+            latitude: 0,
+            longitude: 0,
+          },
+          menu: [], // Start with an empty menu
+        });
+        const savedRestaurant = await newRestaurant.save();
+        ownedRestaurantId = savedRestaurant._id;
+        console.log(`Created placeholder restaurant with ID: ${ownedRestaurantId}`);
+      } catch (restaurantError) {
+        console.error("Error creating placeholder restaurant:", restaurantError);
+        // Decide how to handle this error - perhaps prevent user signup?
+        return res.status(500).json({ error: "Failed to create associated restaurant profile." });
+      }
+    }
+
+
+    const newUser = new User({
+      ...userData,
+      password: hashedPassword,
+      isOwner: isOwner || false, // Ensure isOwner is set
+      ownedRestaurantId: ownedRestaurantId // Will be null if not an owner
+    });
     await newUser.save();
 
     const token = jwt.sign({ id: newUser._id }, process.env.JWT_SECRET, { expiresIn: "1h" });

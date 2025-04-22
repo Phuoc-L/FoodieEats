@@ -93,12 +93,28 @@ export default function Profile({route}) {
     }
   }
 
+  // Add logout handler
+  const handleLogout = async () => {
+    try {
+      await AsyncStorage.removeItem('userID');
+      await AsyncStorage.removeItem('owner');
+      await AsyncStorage.removeItem('restaurantId'); // Attempt removal even if not owner
+      await AsyncStorage.removeItem('token');
+      navigation.reset({ index: 0, routes: [{ name: 'Auth' }] });
+    } catch (e) {
+      console.error("Error logging out:", e);
+      // Optionally show an error alert to the user
+      Alert.alert("Logout Error", "Could not clear session data.");
+    }
+  };
+
+
   const LogoutDisplay = () => {
     // If logged-in user ID and displayed user ID is the same, display a logout button
     if (userId === displayedUser._id) {
       return (
         <TouchableOpacity>
-          <MaterialIcons name="logout" size={24} style={styles.logout} onPress={() => navigation.navigate('Auth')}/>
+          <MaterialIcons name="logout" size={24} style={styles.logout} onPress={handleLogout}/>
         </TouchableOpacity>
     )}
   }

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { StyleSheet, View, Text, TextInput, TouchableOpacity, Alert, TouchableWithoutFeedback, Platform, Keyboard, KeyboardAvoidingView } from 'react-native';
+import { StyleSheet, View, Text, TextInput, TouchableOpacity, Alert, TouchableWithoutFeedback, Platform, Keyboard, KeyboardAvoidingView, Switch } from 'react-native';
 import axios from 'axios';
 import { Eye, EyeOff } from 'lucide-react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -7,6 +7,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 export default function AuthScreen(props) {
   const [isLogin, setIsLogin] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
+  const [isOwnerMode, setIsOwnerMode] = useState(false);
+
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -28,11 +30,21 @@ export default function AuthScreen(props) {
     try {
       const response = await axios.post(process.env.EXPO_PUBLIC_API_URL + '/api/users/login', credentials);
       const { user, token } = response.data;
-      // save user data
-      await saveData("user", user._id);
+      // Save user/owner data
+      await saveData("userID", user._id); // Use userID key
+      await saveData("owner", user.isOwner.toString()); // Save boolean as string
+      if (user.isOwner && user.ownedRestaurantId) {
+        await saveData("restaurantId", user.ownedRestaurantId);
+      } else {
+        // Ensure restaurantId is removed for non-owners
+        await AsyncStorage.removeItem("restaurantId");
+      }
       await saveData("token", token);
+      
       Keyboard.dismiss();
-      props.navigation.navigate('Explore');
+      // Navigate based on owner status? For now, just Explore.
+      // We might refine navigation later based on owner status.
+      props.navigation.reset({ index: 0, routes: [{ name: 'Explore' }] }); // Use reset to clear auth stack
     } catch (error) {
       console.error('Login error:', error.response ? error.response.data : error.message);
       Alert.alert("Login Error", error.response?.data?.error || "Something went wrong");
@@ -48,6 +60,7 @@ export default function AuthScreen(props) {
         email: userData.email,
         username: userData.username,
         password: userData.password,
+        isOwner: isOwnerMode, // Add the owner flag
       };
   
       const response = await axios.post(process.env.EXPO_PUBLIC_API_URL + '/api/users/signup', formattedData);
@@ -55,7 +68,21 @@ export default function AuthScreen(props) {
       const { user, token } = response.data;
       console.log('Signup successful:', user);
       console.log('Token:', token);
-      Alert.alert("Success", "Signed up successfully!");
+
+      // Save user/owner data after successful signup
+      await saveData("userID", user._id); // Use userID key
+      await saveData("owner", user.isOwner.toString()); // Save boolean as string
+      if (user.isOwner && user.ownedRestaurantId) {
+        await saveData("restaurantId", user.ownedRestaurantId);
+      } else {
+        // Ensure restaurantId is removed for non-owners
+        await AsyncStorage.removeItem("restaurantId");
+      }
+      await saveData("token", token);
+
+      Alert.alert("Success", "Signed up successfully! Please log in.");
+      // Optionally, switch to login view after successful signup
+      setIsLogin(true);
     } catch (error) {
       console.error('Signup error:', error.response ? error.response.data : error.message);
       Alert.alert("Signup Error", error.response?.data?.error || "Something went wrong");
@@ -101,6 +128,20 @@ export default function AuthScreen(props) {
                 !isLogin ? styles.activeButtonText : styles.inactiveButtonText
               ]}>Sign Up</Text>
             </TouchableOpacity>
+          </View>
+
+          {/* Moved Switch Container Here */}
+          <View style={styles.switchContainer}>
+            <Text style={styles.switchLabel}>Account Type:</Text>
+            <Text style={styles.switchText}>Personal</Text>
+            <Switch
+              trackColor={{ false: "#767577", true: "#81b0ff" }}
+              thumbColor={isOwnerMode ? "#007AFF" : "#f4f3f4"}
+              ios_backgroundColor="#3e3e3e"
+              onValueChange={() => setIsOwnerMode(previousState => !previousState)}
+              value={isOwnerMode}
+            />
+            <Text style={styles.switchText}>Owner</Text>
           </View>
 
           <View style={styles.form}>
@@ -213,6 +254,23 @@ const styles = StyleSheet.create({
   inactiveButtonText: {
     color: '#007AFF',
   },
+  switchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 20,
+    width: '100%',
+  },
+  switchLabel: {
+    marginRight: 10,
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  switchText: {
+    fontSize: 16,
+    marginHorizontal: 5,
+  },
+
   form: {
     width: '100%',
     gap: 15,
