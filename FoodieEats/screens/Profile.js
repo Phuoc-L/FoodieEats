@@ -315,7 +315,7 @@ export default function Profile({route}) {
     const imageUrl = GetPostImage(post); // Get the URL
     // console.log(`Rendering post ${post?._id} with image URL: ${imageUrl}`); // Removed logging
     return (
-      <TouchableOpacity key={post._id} onPress={() => navigation.navigate('Explore', { postID: post._id })}>
+      <TouchableOpacity key={post._id} onPress={() => navigation.navigate('ProfilePostFeed', { userId: displayedUser._id, initialPostId: post._id })}>
         <Card style={styles.postShape}>
           <Card.Content style={{height: 60}}>
             <Paragraph numberOfLines={2} style={{fontWeight: 'bold'}}>{post?.title}</Paragraph>
