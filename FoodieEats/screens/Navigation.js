@@ -67,7 +67,7 @@ export default function NavigationBar() {
       return (
         <TouchableOpacity onPress={() => navigation.reset({
           index: 0,
-          routes: [{ name: 'Profile', params: { displayUserId: userID } }], // Use fetched userID
+          routes: [{ name: 'Profile', params: { displayUserID: userID } }], // Use fetched userID
         })}>
           <FontAwesome name="user" size={24} color="black" />
         </TouchableOpacity>
@@ -79,7 +79,7 @@ export default function NavigationBar() {
        return (
         <TouchableOpacity onPress={() => navigation.reset({
           index: 0,
-          routes: [{ name: 'Profile', params: { displayUserId: userID } }],
+          routes: [{ name: 'Profile', params: { displayUserID: userID } }],
         })}>
           <FontAwesome name="user" size={24} color="black" />
         </TouchableOpacity>
@@ -88,11 +88,10 @@ export default function NavigationBar() {
   };
 
   const DisplayNavBar = () => {
-    // Display the nav bar only if the user is logged in (userID is available)
-    if (userID !== null) {
+    if (userID !== null && typeof(userID) !== 'undefined' && isOwner !== null || typeof(isOwner) !== 'undefined') {
       return (
         <View style={styles.navBar}>
-          {isOwner ? null : <TouchableOpacity onPress={() => navigation.reset({
+          {isOwner === true ? null : <TouchableOpacity onPress={() => navigation.reset({
             index: 0,
             routes: [{name: 'UserFeed'}],
             })}>
@@ -104,7 +103,7 @@ export default function NavigationBar() {
             })}>
             <FontAwesome name="globe" size={24} color="black" />
           </TouchableOpacity>
-          {isOwner ? null : <TouchableOpacity onPress={() => navigation.reset({
+          {isOwner === true ? null : <TouchableOpacity onPress={() => navigation.reset({
             index: 0,
             routes: [{name: 'NewPost'}],
             })}>

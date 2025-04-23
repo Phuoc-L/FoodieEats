@@ -264,7 +264,7 @@ router.get("/:user_id", async (req, res) => {
 });
 
 // Update a user by ID
-router.put("/:user_id", async (req, res) => {
+router.post("/:user_id", async (req, res) => {
   try {
     // check if user exists
     let updatedUser = await User.findById(req.params.user_id);
@@ -486,6 +486,83 @@ router.get("/:user_id/profile", async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Error getting profile picture" });
+  }
+});
+
+// Update a user's username
+router.post("/:user_id/username/:newUserName", async (req, res) => {
+  try {
+    // Find the user
+    let user = await User.findById(req.params.user_id);
+    if (!user) return res.status(404).json({ error: "User not found" });
+    // Get updated username
+    const newUsername = req.params.newUserName;
+    console.log(newUsername);
+    // Update user's name
+    user.username = newUsername;
+    await user.save();
+    res.status(200).json({message: "User's username successfully updated" });
+  } catch (error) {
+    console.error(error);
+    res.status(400).json({ error: "Error updating user's username" });
+  }
+});
+
+// Update a user's first name
+router.post("/:user_id/first_name/:newName", async (req, res) => {
+  try {
+    // Find the user
+    let user = await User.findById(req.params.user_id);
+    if (!user) return res.status(404).json({ error: "User not found" });
+    // Get updated name
+    const newName = req.params.newName;
+    console.log(newName);
+    // Update user's name
+    user.first_name = newName;
+    await user.save();
+    res.status(200).json({message: "User's first name successfully updated" });
+  } catch (error) {
+    console.error(error);
+    res.status(400).json({ error: "Error updating user's first name" });
+  }
+});
+
+// Update a user's last name
+router.post("/:user_id/last_name/:newName", async (req, res) => {
+  try {
+    // Find the user
+    let user = await User.findById(req.params.user_id);
+    if (!user) return res.status(404).json({ error: "User not found" });
+    // Get updated name
+    const newName = req.params.newName;
+    console.log(newName);
+    // Update user's name
+    user.last_name = newName;
+    await user.save();
+    res.status(200).json({message: "User's last name successfully updated" });
+  } catch (error) {
+    console.error(error);
+    res.status(400).json({ error: "Error updating user's last name" });
+  }
+});
+
+
+// Update user's profile description
+router.post("/:user_id/bio/:newBio", async (req, res) => {
+  try {
+    // Find the user
+    let user = await User.findById(req.params.user_id);
+    if (!user) return res.status(404).json({ error: "User not found" });
+    // Get updated description
+    const newBio = req.params.newBio;
+    console.log(newBio);
+    // Update user's description
+    user.profile.bio = newBio;
+    await user.save();
+    res.status(200).json({message: "User's profile description successfully updated" });
+  } catch (error) {
+    console.error(error);
+    res.status(400).json({ error: "Error updating user's profile description" });
   }
 });
 
