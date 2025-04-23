@@ -566,6 +566,31 @@ router.post("/:user_id/bio/:newBio", async (req, res) => {
   }
 });
 
+// Update user's post visibility setting
+router.post("/:user_id/privacy/post_visibility", async (req, res) => {
+  try {
+    // Find the user
+    const user = await User.findById(req.params.user_id);
+    if (!user) return res.status(404).json({ error: "User not found" });
+
+    // Get the new visibility setting from the request body
+    const { post_visibility } = req.body;
+    if (typeof post_visibility !== 'boolean') {
+      return res.status(400).json({ error: "Invalid value for post_visibility. Must be true or false." });
+    }
+
+    // Update the user's privacy setting
+    user.privacy_settings.post_visibility = post_visibility;
+    await user.save();
+
+    res.status(200).json({ message: "User's post visibility successfully updated", post_visibility: user.privacy_settings.post_visibility });
+  } catch (error) {
+    console.error("Error updating post visibility:", error);
+    res.status(500).json({ error: "Error updating user's post visibility setting" });
+  }
+});
+
+
 // -----------------------------------------
 // Helper Functions
 // -----------------------------------------

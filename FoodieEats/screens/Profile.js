@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, View, Text, Image, TouchableOpacity, ScrollView, Modal, TextInput, Alert } from 'react-native';
+import { StyleSheet, View, Text, Image, TouchableOpacity, ScrollView, Modal, TextInput, Alert, Switch } from 'react-native';
 import { useIsFocused, useNavigation } from '@react-navigation/native';
 import {Card, Paragraph } from 'react-native-paper';
 import axios from 'axios';
@@ -18,6 +18,7 @@ export default function Profile({route}) {
   const [posts, setPosts] = useState([]);
   const [state, setState] = useState(0);
   const [modalVisible, setModalVisible] = useState(false);
+  const [isPostPrivate, setIsPostPrivate] = useState(false);
   const [profileInfo, setProfileInfo] = useState({
       username: '',
       firstName: '',
@@ -64,6 +65,8 @@ export default function Profile({route}) {
       if (userIdResponse === displayedUserId || displayedUserId === DEFAULT_LOGGED_IN_USER_ID) {
         // Logged-in user ID and displayed user ID is the same
         setDisplayedUser(userDataResponse.data);
+        // Initialize toggle state based on fetched data (inverted logic for 'private' toggle)
+        setIsPostPrivate(!(userDataResponse.data?.privacy_settings?.post_visibility ?? true));
 
         // Get logged-in user's posts
         const displayedUserPostResponse = await axios.get(`${process.env.EXPO_PUBLIC_API_URL}/api/posts/${userIdResponse}/posts`);
@@ -160,6 +163,17 @@ export default function Profile({route}) {
             <Text style={styles.textLeft}>Last Name:</Text>
             <TextInput style={styles.input} placeholder={'Last Name'} placeholderTextColor={'#A0A0A0'} defaultValue={user?.last_name}
               inputMode='text' clearButtonMode={'always'} maxLength={100} onChangeText={name => setProfileInfo({...profileInfo, lastName: name})}/>
+            {/* Moved Switch component here */}
+            <View style={styles.toggleContainer}>
+              <Text style={styles.textLeft}>Make Posts Private:</Text>
+              <Switch
+                  trackColor={{ false: "#767577", true: "#81b0ff" }}
+                  thumbColor={isPostPrivate ? "#f5dd4b" : "#f4f3f4"}
+                  ios_backgroundColor="#3e3e3e"
+                  onValueChange={setIsPostPrivate}
+                  value={isPostPrivate}
+              />
+            </View>
             <Text style={styles.textLeft}>Profile Description:</Text>
             <TextInput style={styles.inputMultiline} placeholder={'Description'} placeholderTextColor={'#A0A0A0'} defaultValue={user?.profile?.bio} scrollEnabled={true}
               multiline={true} maxLength={500} onChangeText={description => setProfileInfo({...profileInfo, bio: description})}/>
@@ -222,6 +236,25 @@ export default function Profile({route}) {
           errorMsgs += "- Profile description\n";
         }
       }
+
+      // Check and update post visibility setting
+      const originalPostVisibility = user?.privacy_settings?.post_visibility;
+      if (typeof originalPostVisibility !== 'undefined' && isPostPrivate !== !originalPostVisibility) {
+          try {
+              const response = await axios.post(`${process.env.EXPO_PUBLIC_API_URL}/api/users/${userId}/privacy/post_visibility`, {
+                  post_visibility: !isPostPrivate // Send the actual visibility value (inverted from the 'private' toggle)
+              });
+              if (response.status === 200) {
+                  changeMsgs += "- Post visibility setting\n";
+              } else {
+                  errorMsgs += "- Post visibility setting\n";
+              }
+          } catch (privacyError) {
+               console.error('Error updating post visibility', privacyError);
+               errorMsgs += "- Post visibility setting (API error)\n";
+          }
+      }
+
 
       if (errorMsgs !== "") {
         Alert.alert("Error Updating", errorMsgs);
@@ -297,19 +330,33 @@ export default function Profile({route}) {
   };
 
   const DisplayPosts = () => {
-    // Testing: For testing multiple posts
-    // let a = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
-    // return a.map(post => CreateCardPost(post));
-
-    if (posts.length === 0) {
-      return <View style={styles.emptyContainer}>
-        <Text style={styles.emptyPostText}>No Posts</Text>
-      </View>
-    } else {
-      // Create a card component for each displayed user's post
-      return posts?.map(post => CreateCardPost(post));
+    // Ensure necessary data is available before checks
+    if (!displayedUser || !user) {
+        // Return a loading indicator or null while data is fetching
+        return <View style={styles.emptyContainer}><Text style={styles.emptyPostText}>Loading profile...</Text></View>;
     }
-  }
+
+    const isOwnProfile = userId === displayedUser._id;
+    // Defensive check for user.following array and displayedUser._id
+    const isFollowing = user?.following && displayedUser?._id && user.following.includes(displayedUser._id);
+    // Defensive check for privacy_settings object and post_visibility field, default to true if missing
+    const isPublic = displayedUser?.privacy_settings?.post_visibility !== false; // Treat missing as public
+
+    const canViewPosts = isPublic || isOwnProfile || isFollowing;
+
+    if (canViewPosts) {
+        if (!posts || posts.length === 0) {
+            // Show "No Posts Yet" if the user can view but there are no posts
+            return <View style={styles.emptyContainer}><Text style={styles.emptyPostText}>No Posts Yet</Text></View>;
+        } else {
+            // Map posts to cards (existing logic)
+            return posts.map(post => CreateCardPost(post));
+        }
+    } else {
+        // Display private message
+        return <View style={styles.emptyContainer}><Text style={styles.emptyPostText}>This user's posts are private.</Text></View>;
+    }
+  };
 
   const CreateCardPost = (post) => {
     const imageUrl = GetPostImage(post); // Get the URL
@@ -568,6 +615,15 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#000',
     padding: 15,
+  toggleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between', // Pushes label and switch apart
+    width: '100%', // Ensure it takes full width within modal padding
+    marginBottom: 15, // Add some space below
+    paddingHorizontal: 5, // Optional padding
+  },
+
     borderRadius: 5,
     width: 300,
     height: 100,
