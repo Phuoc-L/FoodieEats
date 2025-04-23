@@ -67,7 +67,7 @@ export default function NavigationBar() {
       return (
         <TouchableOpacity onPress={() => navigation.reset({
           index: 0,
-          routes: [{ name: 'Profile', params: { displayUserId: userID } }], // Use fetched userID
+          routes: [{ name: 'Profile', params: { displayUserID: userID } }], // Use fetched userID
         })}>
           <FontAwesome name="user" size={24} color="black" />
         </TouchableOpacity>
@@ -79,7 +79,7 @@ export default function NavigationBar() {
        return (
         <TouchableOpacity onPress={() => navigation.reset({
           index: 0,
-          routes: [{ name: 'Profile', params: { displayUserId: userID } }],
+          routes: [{ name: 'Profile', params: { displayUserID: userID } }],
         })}>
           <FontAwesome name="user" size={24} color="black" />
         </TouchableOpacity>

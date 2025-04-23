@@ -31,10 +31,6 @@ export default function Profile({route}) {
   const FOLLOW_MSG = "Follow";
   const DEFAULT_LOGGED_IN_USER_ID = 0;
 
-  // const userIdResponse = '670372a5d9077967850ae900'; // Test: Logged In user ID
-  // const displayedUserId = '673026985ab6f593df4682d7'; // Test: User ID
-  // const displayedUserId = '670372a5d9077967850ae901'; // Test: Displayed user ID
-
   const navigation = useNavigation();
   const isFocused = useIsFocused();
 

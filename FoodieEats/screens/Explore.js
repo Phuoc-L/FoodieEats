@@ -76,7 +76,7 @@ export default function Explore() {
   );
   
   const renderRestaurantItem = (item) => (
-    <TouchableOpacity onPress={() => navigation.navigate('Restaurant', { restaurantID: item._id })}>
+    <TouchableOpacity onPress={() => navigation.navigate('RestaurantPage', { restaurantId: item._id })}>
       <View style={styles.resultCard}>
         <View style={styles.resultDetailBox}>
           <View style={styles.Rating}>
@@ -92,7 +92,7 @@ export default function Explore() {
   );
 
   const renderPostItem = (item) => (
-    <TouchableOpacity onPress={() => navigation.navigate('Post', { postID: item_id })}>
+    <TouchableOpacity onPress={() => navigation.navigate('Post', { postID: item._id })}>
       <View style={styles.resultCard}>
         <View>
           <View style={{flexDirection: 'row', alignItems: 'center'}}>
