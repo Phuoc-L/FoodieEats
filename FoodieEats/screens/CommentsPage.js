@@ -3,21 +3,33 @@ import { useFocusEffect } from '@react-navigation/native';
 import { View, Text, TextInput, Button, FlatList, TouchableOpacity, StyleSheet, Image, Dimensions } from "react-native";
 import axios from 'axios';
 import { FontAwesome } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage'; // Import AsyncStorage
 
 
 const { width } = Dimensions.get('window');
 
 const CommentsPage = ({ route }) => {
-    const { postId, userId } = route.params;
-
+    const { postID: postId } = route.params; // Only get postId from params
+ 
     const [comments, setComments] = useState([]);
     const [newComment, setNewComment] = useState("");
+    const [loggedInUserId, setLoggedInUserId] = useState(null); // State for logged-in user
 
     useFocusEffect(
         useCallback(() => {
+            fetchLoggedInUser(); // Fetch user ID on focus
             fetchComments();
-        }, [])
+        }, [postId]) // Add postId dependency if fetchComments uses it directly
     );
+
+    const fetchLoggedInUser = async () => {
+        try {
+          const id = await AsyncStorage.getItem('userID');
+          setLoggedInUserId(id);
+        } catch (e) {
+          console.error("Failed to fetch logged-in user ID from storage", e);
+        }
+      };
 
     const fetchComments = async () => {
         try {
@@ -35,7 +47,7 @@ const CommentsPage = ({ route }) => {
 
         try {
             const response = await axios.post(
-                `${process.env.EXPO_PUBLIC_API_URL}/api/comments/${postId}/comment/${userId}`,
+                `${process.env.EXPO_PUBLIC_API_URL}/api/comments/${postId}/comment/${loggedInUserId}`, // Use loggedInUserId state
             {
                 comment: newComment,
             });
@@ -52,7 +64,7 @@ const CommentsPage = ({ route }) => {
     const handleLike = async (commentId) => {
         try {
             const response = await axios.post(
-                `${process.env.EXPO_PUBLIC_API_URL}/api/comments/${commentId}/like/${userId}`
+                `${process.env.EXPO_PUBLIC_API_URL}/api/comments/${commentId}/like/${loggedInUserId}` // Use loggedInUserId state
             );
 
             if (response.status === 200) {
@@ -72,7 +84,7 @@ const CommentsPage = ({ route }) => {
     const handleDeleteComment = async (commentId) => {
         try {
             const response = await axios.delete(
-                `${process.env.EXPO_PUBLIC_API_URL}/api/comments/${postId}/comment/${commentId}/user/${userId}`
+                `${process.env.EXPO_PUBLIC_API_URL}/api/comments/${postId}/comment/${commentId}/user/${loggedInUserId}` // Use loggedInUserId state
             );
 
             if (response.status === 200) {
@@ -84,8 +96,8 @@ const CommentsPage = ({ route }) => {
     };
 
     const renderComment = ({ item }) => {
-        const hasLiked = item.like_list.includes(userId);
-        const isCurrentUser = item.user_id._id === userId;
+        const hasLiked = item.like_list.includes(loggedInUserId); // Use loggedInUserId state
+        const isCurrentUser = item.user_id._id === loggedInUserId; // Use loggedInUserId state
 
         return (
             <View style={styles.commentContainer}>

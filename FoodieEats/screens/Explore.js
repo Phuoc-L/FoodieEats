@@ -62,21 +62,28 @@ export default function Explore() {
     }
   };
 
-  const renderUserItem = (item) => (
-    <TouchableOpacity onPress={() => navigation.push('Profile', { displayUserID: item._id })}>
-      <View style={styles.resultCard}>
-        <Image source={{ uri: item.profile.avatar_url || 'https://via.placeholder.com/50' }} style={styles.avatar} />
-        <View style={styles.resultDetailBox}>
-          <Text style={styles.resultName}>@{item.username}</Text>
-          <Text style={styles.fullName}>{item.first_name} {item.last_name}</Text>
-          <Text style={styles.resultDetails}>{item.profile.bio}</Text>
+  const renderUserItem = (item) => { // Changed to block body {}
+    console.log('Rendering User Item:', JSON.stringify(item)); // Log user item data
+    // Added optional chaining for safety
+    const avatarUrl = item?.profile?.avatar_url;
+    const bio = item?.profile?.bio;
+
+    return ( // Added explicit return
+      <TouchableOpacity onPress={() => navigation.push('Profile', { displayUserID: item?._id })}>
+        <View style={styles.resultCard}>
+          <Image source={avatarUrl ? { uri: avatarUrl} : require('../assets/defaultUserIcon.png')} style={styles.avatar} />
+          <View style={styles.resultDetailBox}>
+            <Text style={styles.resultName}>@{item?.username}</Text>
+            <Text style={styles.fullName}>{item?.first_name} {item?.last_name}</Text>
+            <Text style={styles.resultDetails}>{bio}</Text>
+          </View>
         </View>
-      </View>
-    </TouchableOpacity>
-  );
+      </TouchableOpacity>
+    ); // Closing parenthesis for return
+  }; // Closing brace for function body
   
   const renderRestaurantItem = (item) => (
-    <TouchableOpacity onPress={() => navigation.navigate('Restaurant', { restaurantID: item._id })}>
+    <TouchableOpacity onPress={() => navigation.navigate('RestaurantPage', { restaurantId: item._id })}>
       <View style={styles.resultCard}>
         <View style={styles.resultDetailBox}>
           <View style={styles.Rating}>
@@ -91,42 +98,50 @@ export default function Explore() {
     </TouchableOpacity>
   );
 
-  const renderPostItem = (item) => (
-    <TouchableOpacity onPress={() => navigation.navigate('Post', { postID: item_id })}>
-      <View style={styles.resultCard}>
-        <View>
-          <View style={{flexDirection: 'row', alignItems: 'center'}}>
-            <Image source={{ uri: item.user_id.profile.avatar_url || 'https://via.placeholder.com/50' }} style={styles.avatar} />
-            <Text style={styles.resultName}>@{item.user_id.username}</Text>
-          </View>
-          <View style={styles.resultDetailBox}>
-            <View style={styles.Rating}>
-              <Text style={styles.resultName}>Location:</Text>
-              <Text style={styles.resultDetails}>{item.restaurant_id ? item.restaurant_id.name : "N/A"}</Text>
-              <Text style={styles.resultName}>Dish:</Text>
-              <Text style={styles.resultDetails}>{item.dish_id ? getDishNameByDishId(item.restaurant_id, item.dish_id) : "N/A"}</Text>
+  const renderPostItem = (item) => { // Changed to block body {}
+    console.log('Rendering Post Item:', JSON.stringify(item)); // Log post item data
+    // Added optional chaining for safety
+    const avatarUrl = item?.user_id?.profile?.avatar_url;
+    const restaurantName = item?.restaurant_id?.name;
+    const dishName = item?.restaurant_id && item?.dish_id ? getDishNameByDishId(item.restaurant_id, item.dish_id) : "N/A";
+  
+    return ( // Added explicit return
+      <TouchableOpacity onPress={() => navigation.navigate('Post', { postID: item._id })}>
+        <View style={styles.resultCard}>
+          <View>
+            <View style={{flexDirection: 'row', alignItems: 'center'}}>
+              <Image source={avatarUrl ? {uri: avatarUrl} : require('../assets/defaultUserIcon.png')} style={styles.avatar} />
+              <Text style={styles.resultName}>@{item?.user_id?.username || 'Unknown User'}</Text>
             </View>
-            <View style={styles.Rating}>
-              <Text style={styles.resultName}>{item.title}</Text>
-              <Text> {item.ratings?.toFixed(1) || 'N/A'} <Ionicons name="star" size={16} color="gold" /> </Text>
-            </View>
-            <Text style={styles.resultDetails}>{item.description.length > 100 ? item.description.slice(0, 100) + '...' : item.description}</Text>
-            {item.media_url && <Image source={{ uri: item.media_url }} style={styles.menuMedia} />}
-            <View style={styles.actionContainer}>
-              <TouchableOpacity style={styles.actionButton} onPress={() => console.log('Liked!')}>
-                <Ionicons name="heart" size={16} color="red" />
-                <Text style={styles.actionText}>{item.num_like}</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.actionButton} onPress={() => console.log('Commented!')}>
-                <Ionicons name="chatbubble" size={16} color="blue" />
-                <Text style={styles.actionText}>{item.num_comments}</Text>
-              </TouchableOpacity>
+            <View style={styles.resultDetailBox}>
+              <View style={styles.Rating}>
+                <Text style={styles.resultName}>Location:</Text>
+                <Text style={styles.resultDetails}>{restaurantName || "N/A"}</Text>
+                <Text style={styles.resultName}>Dish:</Text>
+                <Text style={styles.resultDetails}>{dishName}</Text>
+              </View>
+              <View style={styles.Rating}>
+                <Text style={styles.resultName}>{item?.title}</Text>
+                <Text> {item?.ratings?.toFixed(1) || 'N/A'} <Ionicons name="star" size={16} color="gold" /> </Text>
+              </View>
+              <Text style={styles.resultDetails}>{item?.description?.length > 100 ? item.description.slice(0, 100) + '...' : item.description}</Text>
+              {item?.media_url && <Image source={{ uri: item.media_url }} style={styles.menuMedia} />}
+              <View style={styles.actionContainer}>
+                <TouchableOpacity style={styles.actionButton} onPress={() => console.log('Liked!')}>
+                  <Ionicons name="heart" size={16} color="red" />
+                  <Text style={styles.actionText}>{item?.num_like}</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.actionButton} onPress={() => console.log('Commented!')}>
+                  <Ionicons name="chatbubble" size={16} color="blue" />
+                  <Text style={styles.actionText}>{item?.num_comments}</Text>
+                </TouchableOpacity>
+              </View>
             </View>
           </View>
         </View>
-      </View>
-    </TouchableOpacity>
-  );
+      </TouchableOpacity>
+    ); // Closing parenthesis for return
+  }; // Closing brace for function body
 
   const handleSearch = async () => {
     try {

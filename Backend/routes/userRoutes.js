@@ -3,6 +3,8 @@ const mongoose = require("mongoose");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const User = require("../data_schemas/users");
+const Restaurant = require("../data_schemas/restaurant"); // Import Restaurant model
+
 const Post = require("../data_schemas/post");
 const getPresignedURL = require("../functions/s3PresignedURL.js");
 require("dotenv").config({ path: "secrets.ini" });
@@ -14,9 +16,44 @@ const router = express.Router();
 
 router.post("/signup", async (req, res) => {
   try {
-    const { password, ...userData } = req.body;
+    const { password, isOwner, ...userData } = req.body; // Extract isOwner flag
     const hashedPassword = await hashPassword(password);
-    const newUser = new User({ ...userData, password: hashedPassword });
+    let ownedRestaurantId = null;
+
+    // If signing up as an owner, create a placeholder restaurant first
+    if (isOwner) {
+      try {
+        const newRestaurant = new Restaurant({
+          name: `Restaurant for ${userData.username}`,
+          location: "Pending Setup",
+          operating_hours: "Pending Setup",
+          contact_info: {
+            phone: "000-000-0000",
+            email: "pending@setup.com",
+          },
+          coordinates: {
+            latitude: 0,
+            longitude: 0,
+          },
+          menu: [], // Start with an empty menu
+        });
+        const savedRestaurant = await newRestaurant.save();
+        ownedRestaurantId = savedRestaurant._id;
+        console.log(`Created placeholder restaurant with ID: ${ownedRestaurantId}`);
+      } catch (restaurantError) {
+        console.error("Error creating placeholder restaurant:", restaurantError);
+        // Decide how to handle this error - perhaps prevent user signup?
+        return res.status(500).json({ error: "Failed to create associated restaurant profile." });
+      }
+    }
+
+
+    const newUser = new User({
+      ...userData,
+      password: hashedPassword,
+      isOwner: isOwner || false, // Ensure isOwner is set
+      ownedRestaurantId: ownedRestaurantId // Will be null if not an owner
+    });
     await newUser.save();
 
     const token = jwt.sign({ id: newUser._id }, process.env.JWT_SECRET, { expiresIn: "1h" });
@@ -227,7 +264,7 @@ router.get("/:user_id", async (req, res) => {
 });
 
 // Update a user by ID
-router.put("/:user_id", async (req, res) => {
+router.post("/:user_id", async (req, res) => {
   try {
     // check if user exists
     let updatedUser = await User.findById(req.params.user_id);
@@ -428,11 +465,11 @@ router.post("/:user_id/profile", async (req, res) => {
     // Get the presigned URL
     const presignedURL = await getPresignedURL(fileName, fileType, uploadDir);
     console.log(presignedURL);
-    // update user with the profile picture url
-    const image_url = "https://" + process.env.BUCKET_NAME + ".s3." + process.env.REGION + ".amazonaws.com/" + uploadDir + "/" + fileName;
+    // update user with the profile picture url - use the correct S3 URL format without region in the hostname
+    const image_url = "https://" + process.env.BUCKET_NAME + ".s3.amazonaws.com/" + uploadDir + "/" + fileName;
     user.profile.avatar_url = image_url;
     await user.save();
-    res.status(200).json({ presignedURL });
+    res.status(200).json({ image_url });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Error uploading profile picture" });
@@ -451,6 +488,108 @@ router.get("/:user_id/profile", async (req, res) => {
     res.status(500).json({ error: "Error getting profile picture" });
   }
 });
+
+// Update a user's username
+router.post("/:user_id/username/:newUserName", async (req, res) => {
+  try {
+    // Find the user
+    let user = await User.findById(req.params.user_id);
+    if (!user) return res.status(404).json({ error: "User not found" });
+    // Get updated username
+    const newUsername = req.params.newUserName;
+    console.log(newUsername);
+    // Update user's name
+    user.username = newUsername;
+    await user.save();
+    res.status(200).json({message: "User's username successfully updated" });
+  } catch (error) {
+    console.error(error);
+    res.status(400).json({ error: "Error updating user's username" });
+  }
+});
+
+// Update a user's first name
+router.post("/:user_id/first_name/:newName", async (req, res) => {
+  try {
+    // Find the user
+    let user = await User.findById(req.params.user_id);
+    if (!user) return res.status(404).json({ error: "User not found" });
+    // Get updated name
+    const newName = req.params.newName;
+    console.log(newName);
+    // Update user's name
+    user.first_name = newName;
+    await user.save();
+    res.status(200).json({message: "User's first name successfully updated" });
+  } catch (error) {
+    console.error(error);
+    res.status(400).json({ error: "Error updating user's first name" });
+  }
+});
+
+// Update a user's last name
+router.post("/:user_id/last_name/:newName", async (req, res) => {
+  try {
+    // Find the user
+    let user = await User.findById(req.params.user_id);
+    if (!user) return res.status(404).json({ error: "User not found" });
+    // Get updated name
+    const newName = req.params.newName;
+    console.log(newName);
+    // Update user's name
+    user.last_name = newName;
+    await user.save();
+    res.status(200).json({message: "User's last name successfully updated" });
+  } catch (error) {
+    console.error(error);
+    res.status(400).json({ error: "Error updating user's last name" });
+  }
+});
+
+
+// Update user's profile description
+router.post("/:user_id/bio/:newBio", async (req, res) => {
+  try {
+    // Find the user
+    let user = await User.findById(req.params.user_id);
+    if (!user) return res.status(404).json({ error: "User not found" });
+    // Get updated description
+    const newBio = req.params.newBio;
+    console.log(newBio);
+    // Update user's description
+    user.profile.bio = newBio;
+    await user.save();
+    res.status(200).json({message: "User's profile description successfully updated" });
+  } catch (error) {
+    console.error(error);
+    res.status(400).json({ error: "Error updating user's profile description" });
+  }
+});
+
+// Update user's post visibility setting
+router.post("/:user_id/privacy/post_visibility", async (req, res) => {
+  try {
+    // Find the user
+    const user = await User.findById(req.params.user_id);
+    if (!user) return res.status(404).json({ error: "User not found" });
+
+    // Get the new visibility setting from the request body
+    const { post_visibility } = req.body;
+    if (typeof post_visibility !== 'boolean') {
+      return res.status(400).json({ error: "Invalid value for post_visibility. Must be true or false." });
+    }
+
+    // Update the user's privacy setting
+    user.privacy_settings.post_visibility = post_visibility;
+    await user.save();
+
+    res.status(200).json({ message: "User's post visibility successfully updated", post_visibility: user.privacy_settings.post_visibility });
+  } catch (error) {
+    console.error("Error updating post visibility:", error);
+    res.status(500).json({ error: "Error updating user's post visibility setting" });
+  }
+});
+
 
 // -----------------------------------------
 // Helper Functions
