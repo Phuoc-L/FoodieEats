@@ -92,7 +92,11 @@ const PostComponent = ({ userId, owner, dish }) => {
           source={{ uri: dish.user_id.profile.avatar_url }}
           style={styles.avatar}
         />
-        <Text style={styles.username}>@{dish.user_id.username}</Text>
+        <TouchableOpacity
+            onPress={() => navigation.navigate("Profile", { displayUserID: dish.user_id._id })}
+        >
+            <Text style={styles.username}>@{dish.user_id.username}</Text>
+        </TouchableOpacity>
       </View>
       <Image source={{ uri: dish.media_url }} style={styles.media} />
       {renderStars(dish.ratings)}
