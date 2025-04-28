@@ -9,11 +9,12 @@ import AsyncStorage from '@react-native-async-storage/async-storage'; // Import 
 const { width } = Dimensions.get('window');
 
 const CommentsPage = ({ route }) => {
-    const { postID: postId } = route.params; // Only get postId from params
+    const { postId } = route.params; // Only get postId from params
  
     const [comments, setComments] = useState([]);
     const [newComment, setNewComment] = useState("");
-    const [loggedInUserId, setLoggedInUserId] = useState(null); // State for logged-in user
+    const [loggedInUserId, setLoggedInUserId] = useState(null);
+    const [isOwner, setIsOwner] = useState(true);
 
     useFocusEffect(
         useCallback(() => {
@@ -25,7 +26,10 @@ const CommentsPage = ({ route }) => {
     const fetchLoggedInUser = async () => {
         try {
           const id = await AsyncStorage.getItem('userID');
+          const owner = await AsyncStorage.getItem('owner');
+          console.log('owner:', owner);
           setLoggedInUserId(id);
+          setIsOwner(owner.toLowerCase() === "true");
         } catch (e) {
           console.error("Failed to fetch logged-in user ID from storage", e);
         }
@@ -33,6 +37,7 @@ const CommentsPage = ({ route }) => {
 
     const fetchComments = async () => {
         try {
+            console.log(`${process.env.EXPO_PUBLIC_API_URL}/api/comments/${postId}/comments`);
             const response = await axios.get(
                 `${process.env.EXPO_PUBLIC_API_URL}/api/comments/${postId}/comments`
             );
@@ -62,6 +67,8 @@ const CommentsPage = ({ route }) => {
     };
 
     const handleLike = async (commentId) => {
+        if (isOwner) return;
+
         try {
             const response = await axios.post(
                 `${process.env.EXPO_PUBLIC_API_URL}/api/comments/${commentId}/like/${loggedInUserId}` // Use loggedInUserId state
@@ -81,10 +88,32 @@ const CommentsPage = ({ route }) => {
         }
     };
 
+    const renderLikeSection = (item) => {
+        const HeartIcon = (
+            <FontAwesome
+                name={isOwner ? "heart" : isLiked ? "heart" : "heart-o"}
+                size={20}
+                color={isOwner ? "#ababab" : "#0080F0"}
+            />
+        );
+
+        return isOwner ? (
+            <View style={styles.likeContainer}>
+                <Text style={styles.likeCount}>{item.num_likes}</Text>
+                {HeartIcon}
+            </View>
+        ) : (
+            <TouchableOpacity onPress={handleLike} style={styles.likeContainer}>
+                <Text style={styles.likeCount}>{item.num_likes}</Text>
+                {HeartIcon}
+            </TouchableOpacity>
+        );
+    };
+
     const handleDeleteComment = async (commentId) => {
         try {
             const response = await axios.delete(
-                `${process.env.EXPO_PUBLIC_API_URL}/api/comments/${postId}/comment/${commentId}/user/${loggedInUserId}` // Use loggedInUserId state
+                `${process.env.EXPO_PUBLIC_API_URL}/api/comments/${postId}/comment/${commentId}/user/${loggedInUserId}`
             );
 
             if (response.status === 200) {
@@ -107,14 +136,7 @@ const CommentsPage = ({ route }) => {
                         <Text style={styles.username}>@{item.user_id.username}</Text>
                     </View>
 
-                    <TouchableOpacity onPress={() => handleLike(item._id)} style={styles.likeContainer}>
-                        <Text style={styles.likeCount}>{item.num_likes}</Text>
-                        <FontAwesome
-                            name={hasLiked ? "heart" : "heart-o"}
-                            size={20}
-                            color={hasLiked ? 'red' : '#000'}
-                        />
-                    </TouchableOpacity>
+                    {renderLikeSection(item)}
                 </View>
 
                 <View style={styles.commentRow}>
@@ -137,19 +159,36 @@ const CommentsPage = ({ route }) => {
                 data={comments}
                 keyExtractor={(item) => item._id}
                 renderItem={renderComment}
+                contentContainerStyle={comments.length === 0 ? styles.emptyContainer : styles.feed}
+                ListEmptyComponent={<Text style={styles.emptyText}>No comments to show.</Text>}
             />
 
             <TextInput
-                style={styles.input}
-                placeholder="Add a comment..."
+                style={[
+                    styles.input,
+                    isOwner && styles.disabledInput
+                ]}
+                placeholder={isOwner ? "Commenting unavailable" : "Add a comment..."}
                 value={newComment}
+                editable={!isOwner}
                 onChangeText={setNewComment}
             />
 
 
-            <TouchableOpacity style={styles.button} onPress={handleCommentSubmit}>
-                <Text style={styles.buttonText}>Submit</Text>
-            </TouchableOpacity>
+            {!isOwner && (
+                <TouchableOpacity
+                    style={[
+                        styles.button,
+                        isOwner && styles.disabledButton  // ← visually gray out button too
+                    ]}
+                    onPress={handleCommentSubmit}
+                    disabled={isOwner}                 // ← prevent pressing if owner
+                >
+                    <Text style={styles.buttonText}>
+                        Submit
+                    </Text>
+                </TouchableOpacity>
+            )}
         </View>
     );
 };
@@ -162,6 +201,11 @@ const styles = StyleSheet.create({
     },
     commentContainer: {
         paddingVertical: 8,
+    },
+    emptyContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
     },
     header: {
         flexDirection: "row",
@@ -184,6 +228,10 @@ const styles = StyleSheet.create({
         borderBottomColor: "#ccc",
         paddingVertical: 8,
     },
+    disabledInput: {
+        backgroundColor: "#eee",
+        color: "#aaa",
+    },
     username: {
         fontWeight: "bold",
     },
@@ -203,6 +251,9 @@ const styles = StyleSheet.create({
         borderRadius: 5,
         alignItems: "center",
         marginTop: 10,
+    },
+    disabledButton: {
+        backgroundColor: "#ccc",
     },
     buttonText: {
         color: "#fff",

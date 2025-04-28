@@ -18,13 +18,14 @@ export default function UserFeed() {
     useCallback(() => {
       const getData = async () => {
         try {
-          const id = await AsyncStorage.getItem('user');
+          const id = await AsyncStorage.getItem('userID');
           const owner = await AsyncStorage.getItem('owner');
+          const isOwner = owner.toLowerCase() ? true : false;
           if (!id) {
             console.error('User ID not found in AsyncStorage');
             return;
           }
-          setUserData({ id, owner });
+          setUserData({ id, isOwner });
           const user = await axios.get(`${process.env.EXPO_PUBLIC_API_URL}/api/users/${id}`);
           setCurrentUser(user.data);
         } catch (e) {
@@ -61,7 +62,7 @@ export default function UserFeed() {
       <FlatList
         data={posts}
         keyExtractor={(item) => item._id}
-        renderItem={({ item }) => <PostComponent userId={userData.id} owner={userData.owner} dish={item} />}
+        renderItem={({ item }) => <PostComponent userId={userData.id} owner={userData.isOwner} dish={item} />}
         contentContainerStyle={posts.length === 0 ? styles.emptyContainer : styles.feed}
         ListEmptyComponent={<Text style={styles.emptyText}>No posts to show.</Text>}
       />

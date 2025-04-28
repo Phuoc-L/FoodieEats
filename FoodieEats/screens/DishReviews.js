@@ -10,8 +10,7 @@ export default function DishReviews({ route }) {
     const { dish } = route.params || {};
 
     const [posts, setPosts] = useState([]);
-    const [currentUser, setCurrentUser] = useState("");
-    const [userId, setUserId] = useState("");
+    const [userData, setUserData] = useState("");
 
     useFocusEffect(
         useCallback(() => {
@@ -22,14 +21,15 @@ export default function DishReviews({ route }) {
 
     const getUser = async () => {
         try {
-            const user_id = await AsyncStorage.getItem('user');
-            if (!user_id) {
+            const id = await AsyncStorage.getItem('userID');
+            const owner = await AsyncStorage.getItem('owner');
+
+            const isOwner = owner.toLowerCase() === "true" ? true : false;
+            if (!id) {
                 console.error('User ID not found in AsyncStorage');
                 return;
             }
-            setUserId(user_id);
-            const user = await axios.get(process.env.EXPO_PUBLIC_API_URL + '/api/users/' + user_id);
-            setCurrentUser(user.data);
+            setUserData({ id, isOwner });
         } catch (e) {
             console.error(e);
         }
@@ -54,7 +54,7 @@ export default function DishReviews({ route }) {
                 data={posts}
                 keyExtractor={(item) => item._id}
                 renderItem={({ item }) => <PostComponent
-                    userId={userId} owner={true} dish={item}
+                    userId={userData.id} owner={userData.isOwner} dish={item}
                 />}
                 contentContainerStyle={styles.feed}
             />

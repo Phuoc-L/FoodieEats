@@ -4,16 +4,14 @@ import { useFocusEffect } from '@react-navigation/native';
 import { FontAwesome } from '@expo/vector-icons';
 import { useNavigation } from "@react-navigation/native";
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 
 
 const { width } = Dimensions.get('window');
 
-//export default function RestaurantPage({ route }) {
-//    const { restaurantId } = route.params || {};
-
-export default function RestaurantPage() {
-    const restaurantId = '670373b1d9077967850ae902';
+export default function RestaurantPage({ route }) {
+    const { restaurantId } = route.params || {};
 
     const [restaurant, setRestaurant] = useState({});
     const [isOwner, setIsOwner] = useState(false);
@@ -40,9 +38,11 @@ export default function RestaurantPage() {
 
     useEffect(() => {
         const readUser = async () => {
-            const id = await AsyncStorage.getItem('user');
+            const id = await AsyncStorage.getItem('userID');
             const owner = await AsyncStorage.getItem('owner');
-            setUserData({ id, owner });
+            const restaurant_id = await AsyncStorage.getItem('restaurantID');
+
+            setUserData({ id, owner, restaurant_id });
         };
         readUser();
     }, []);
@@ -55,11 +55,7 @@ export default function RestaurantPage() {
                 return;
             }
             try {
-                const url = `${process.env.EXPO_PUBLIC_API_URL}/api/restaurants/${restaurantId}/isOwner/${userData.id}`;
-                const res = await axios.get(
-                    `${process.env.EXPO_PUBLIC_API_URL}/api/restaurants/${restaurantId}/isOwner/${userData.id}`
-                );
-                setIsOwner(res.status === 200 && res.data.result);
+                setIsOwner(userData.restaurant_id === restaurantId);
             } catch (err) {
                 console.error("Error checking owner:", err);
                 setIsOwner(false);
