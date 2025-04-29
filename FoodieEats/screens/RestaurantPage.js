@@ -39,8 +39,10 @@ export default function RestaurantPage({ route }) {
     useEffect(() => {
         const readUser = async () => {
             const id = await AsyncStorage.getItem('userID');
-            const owner = await AsyncStorage.getItem('owner');
+            const owner_string = await AsyncStorage.getItem('owner');
             const restaurant_id = await AsyncStorage.getItem('restaurantID');
+
+            const owner = (owner_string.toLowerCase() === "true");
 
             setUserData({ id, owner, restaurant_id });
         };
