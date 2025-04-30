@@ -206,6 +206,7 @@ router.post("/:user_id/posts/:post_id/image", verifyPostOwnership, async (req, r
 router.get("/:user_id/posts", async (req, res) => {
   try {
     const posts = await Post.find({ user_id: req.params.user_id })
+      .populate("user_id", "username profile.avatar_url")
       .populate('restaurant_id', 'name') // Populate restaurant name
       .sort({ timestamp: -1 });
     res.status(200).json(posts);

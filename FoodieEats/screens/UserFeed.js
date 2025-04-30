@@ -20,7 +20,7 @@ export default function UserFeed() {
         try {
           const id = await AsyncStorage.getItem('userID');
           const owner = await AsyncStorage.getItem('owner');
-          const isOwner = owner.toLowerCase() ? true : false;
+          const isOwner = (owner.toLowerCase() === "true");
           if (!id) {
             console.error('User ID not found in AsyncStorage');
             return;

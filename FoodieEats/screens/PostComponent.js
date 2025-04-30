@@ -1,8 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, Image, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
 import { useNavigation } from "@react-navigation/native";
-import { FontAwesome } from '@expo/vector-icons';
+import { FontAwesome, AntDesign } from '@expo/vector-icons';
+import { Alert } from 'react-native';
 import axios from 'axios';
+import { ALERT_TYPE, Dialog } from 'react-native-alert-notification';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 
 const { width } = Dimensions.get('window');
@@ -10,10 +13,92 @@ const { width } = Dimensions.get('window');
 const PostComponent = ({ userId, owner, dish }) => {
   const [likes, setLikes] = useState(dish.like_list.length);
   const [isLiked, setIsLiked] = useState(dish.like_list.includes(userId));
+  const [userData, setUserData] = useState({});
+
   const navigation = useNavigation();
+  const isCurrentUserPost = userData.id === dish.user_id._id
+
+  useEffect(() => {
+    const getData = async () => {
+      try {
+        const id = await AsyncStorage.getItem('userID');
+        const owner = await AsyncStorage.getItem('owner');
+        const isOwner = (owner.toLowerCase() === "true");
+        if (!id) {
+          console.error('User ID not found in AsyncStorage');
+          return;
+        }
+
+        setUserData({ id, isOwner });
+
+      } catch (e) {
+        console.error(e);
+      }
+    };
+    getData();
+  }, []);
+
+  const handleDeletePost = async () => {
+    try {
+      const loggedInUserId = await AsyncStorage.getItem('userID');
+      if (!loggedInUserId || loggedInUserId !== dish.user_id._id) {
+        Dialog.show({
+          type: ALERT_TYPE.WARNING,
+          title: 'Unauthorized',
+          textBody: 'You can only delete your own posts.',
+          button: 'Close',
+        });
+        return;
+      }
+
+      Alert.alert(
+        "Delete Post",
+        "Are you sure you want to delete this post? This action cannot be undone.",
+        [
+          { text: "Cancel", style: "cancel" },
+          {
+            text: "Delete",
+            style: "destructive",
+            onPress: async () => {
+              try {
+                const res = await axios.delete(
+                  `${process.env.EXPO_PUBLIC_API_URL}/api/posts/${loggedInUserId}/posts/${dish._id}`
+                );
+
+                if (res.status === 200) {
+                  Dialog.show({
+                    type: ALERT_TYPE.SUCCESS,
+                    title: 'Deleted',
+                    textBody: 'Post deleted successfully.',
+                    button: 'Close',
+                  });
+
+                  // Optional: Let parent know to remove this post from the feed
+                  if (onDeleteSuccess) onDeleteSuccess(dish._id);
+                } else {
+                  throw new Error('Delete failed');
+                }
+              } catch (err) {
+                console.error("Delete failed:", err);
+                Dialog.show({
+                  type: ALERT_TYPE.DANGER,
+                  title: 'Error',
+                  textBody: 'Something went wrong while deleting.',
+                  button: 'Close',
+                });
+              }
+            },
+          },
+        ]
+      );
+    } catch (e) {
+      console.error("Error deleting post:", e);
+    }
+  };
+
 
   const handleLike = async () => {
-    if (owner) return;
+    if (userData.isOwner) return;
     try {
       const updatedLikes = isLiked ? likes - 1 : likes + 1;
       setLikes(updatedLikes);
@@ -46,13 +131,13 @@ const PostComponent = ({ userId, owner, dish }) => {
   const renderLikeSection = () => {
     const HeartIcon = (
       <FontAwesome
-        name={owner ? "heart" : isLiked ? "heart" : "heart-o"}
+        name={userData.isOwner ? "heart" : isLiked ? "heart" : "heart-o"}
         size={30}
-        color={owner ? "#ababab" : "#0080F0"}
+        color={userData.isOwner ? "#ababab" : "#0080F0"}
       />
     );
 
-    return owner ? (
+    return userData.isOwner ? (
       <View style={styles.likeContainer}>
         {HeartIcon}
         <Text style={styles.likes}>
@@ -88,16 +173,25 @@ const PostComponent = ({ userId, owner, dish }) => {
   return (
     <View style={styles.postContainer}>
       <View style={styles.header}>
-        <Image
-          source={{ uri: dish.user_id.profile.avatar_url }}
-          style={styles.avatar}
-        />
-        <TouchableOpacity
+        <View style={styles.userInfo}>
+          <Image
+            source={{ uri: dish.user_id.profile.avatar_url }}
+            style={styles.avatar}
+          />
+          <TouchableOpacity
             onPress={() => navigation.navigate("Profile", { displayUserID: dish.user_id._id })}
-        >
+          >
             <Text style={styles.username}>@{dish.user_id.username}</Text>
-        </TouchableOpacity>
+          </TouchableOpacity>
+        </View>
+
+        {isCurrentUserPost && (
+          <TouchableOpacity onPress={() => handleDeletePost()}>
+            <AntDesign name="delete" size={30} color="red" />
+          </TouchableOpacity>
+        )}
       </View>
+
       <Image source={{ uri: dish.media_url }} style={styles.media} />
       {renderStars(dish.ratings)}
       <Text style={styles.dishName}>{dish.dish_name}</Text>
@@ -136,8 +230,14 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: 'row',
+    justifyContent: 'space-between', // avatar+username on left, trash icon on right
     alignItems: 'center',
+    paddingHorizontal: 10,
     marginBottom: 5,
+  },
+  userInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   avatar: {
     width: width / 7,
@@ -208,6 +308,15 @@ const styles = StyleSheet.create({
     color: '#0080F0',
     fontSize: 15,
     fontWeight: 'bold',
+  },
+  trashIcon: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    backgroundColor: 'red',
+    borderRadius: 20,
+    padding: 6,
+    zIndex: 1,
   },
 });
 

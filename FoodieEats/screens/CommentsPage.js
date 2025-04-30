@@ -18,34 +18,24 @@ const CommentsPage = ({ route }) => {
 
     useFocusEffect(
         useCallback(() => {
-            fetchLoggedInUser(); // Fetch user ID on focus
-            fetchComments();
-        }, [postId]) // Add postId dependency if fetchComments uses it directly
+            const initialize = async () => {
+                try {
+                    const id = await AsyncStorage.getItem('userID');
+                    const owner = await AsyncStorage.getItem('owner');
+                    setLoggedInUserId(id);
+                    setIsOwner(owner.toLowerCase() === "true");
+
+                    // Only call fetchComments *after* user ID is available
+                    const response = await axios.get(`${process.env.EXPO_PUBLIC_API_URL}/api/comments/${postId}/comments`);
+                    setComments(response.data);
+                } catch (e) {
+                    console.error("Initialization error:", e);
+                }
+            };
+
+            initialize();
+        }, [postId])
     );
-
-    const fetchLoggedInUser = async () => {
-        try {
-          const id = await AsyncStorage.getItem('userID');
-          const owner = await AsyncStorage.getItem('owner');
-          console.log('owner:', owner);
-          setLoggedInUserId(id);
-          setIsOwner(owner.toLowerCase() === "true");
-        } catch (e) {
-          console.error("Failed to fetch logged-in user ID from storage", e);
-        }
-      };
-
-    const fetchComments = async () => {
-        try {
-            console.log(`${process.env.EXPO_PUBLIC_API_URL}/api/comments/${postId}/comments`);
-            const response = await axios.get(
-                `${process.env.EXPO_PUBLIC_API_URL}/api/comments/${postId}/comments`
-            );
-            setComments(response.data);
-        } catch (error) {
-            console.error("Error fetching comments:", error);
-        }
-    };
 
     const handleCommentSubmit = async () => {
         if (!newComment.trim()) return;
@@ -69,26 +59,41 @@ const CommentsPage = ({ route }) => {
     const handleLike = async (commentId) => {
         if (isOwner) return;
 
+        if (!commentId || !loggedInUserId) {
+            console.error("Missing commentId or loggedInUserId", commentId, loggedInUserId);
+            return;
+        }
+
+        const targetComment = comments.find(c => c._id === commentId);
+        const alreadyLiked = targetComment?.like_list?.includes(loggedInUserId);
+
+        setComments(prevComments =>
+            prevComments.map(comment =>
+                comment._id === commentId
+                    ? {
+            ...comment,
+                  num_likes: alreadyLiked
+                    ? Math.max(0, comment.num_likes - 1)
+                    : comment.num_likes + 1,
+                  like_list: alreadyLiked
+                    ? comment.like_list.filter(id => id !== loggedInUserId)
+                    : [...comment.like_list, loggedInUserId]
+                }
+              : comment
+          )
+        );
+
         try {
-            const response = await axios.post(
-                `${process.env.EXPO_PUBLIC_API_URL}/api/comments/${commentId}/like/${loggedInUserId}` // Use loggedInUserId state
-            );
-
-            if (response.status === 200) {
-                const updatedComment = response.data.comment;
-
-                setComments(comments.map(comment =>
-                    comment._id === commentId
-                        ? { ...comment, num_likes: updatedComment.num_likes, like_list: updatedComment.like_list }
-                        : comment
-                ));
-            }
+            await axios.post(`${process.env.EXPO_PUBLIC_API_URL}/api/comments/${commentId}/like/${loggedInUserId}`);
         } catch (error) {
-            console.error('Error updating like on post:', error);
+            console.error('Error updating like on comment:', error);
         }
     };
 
+
     const renderLikeSection = (item) => {
+        const isLiked = item.like_list.includes(loggedInUserId);
+
         const HeartIcon = (
             <FontAwesome
                 name={isOwner ? "heart" : isLiked ? "heart" : "heart-o"}
@@ -103,7 +108,7 @@ const CommentsPage = ({ route }) => {
                 {HeartIcon}
             </View>
         ) : (
-            <TouchableOpacity onPress={handleLike} style={styles.likeContainer}>
+            <TouchableOpacity onPress={() => handleLike(item._id)} style={styles.likeContainer}>
                 <Text style={styles.likeCount}>{item.num_likes}</Text>
                 {HeartIcon}
             </TouchableOpacity>

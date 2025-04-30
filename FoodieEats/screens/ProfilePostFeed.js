@@ -6,6 +6,7 @@ import { useRoute, useNavigation, useFocusEffect } from '@react-navigation/nativ
 import { Ionicons } from '@expo/vector-icons';
 import { ALERT_TYPE, Dialog, AlertNotificationRoot } from 'react-native-alert-notification';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import PostComponent from './PostComponent';
 
 export default function ProfilePostFeed() {
   const route = useRoute();
@@ -53,13 +54,15 @@ export default function ProfilePostFeed() {
     setError(null);
     try {
       const response = await axios.get(`${process.env.EXPO_PUBLIC_API_URL}/api/posts/${userId}/posts`);
-      console.log(`Fetched ${response.data.length} posts.`); // Log number of posts fetched
-      // Add user_id to each post object client-side as the API doesn't populate it
-      const postsWithUserId = response.data.map(post => ({
-          ...post,
-          user_id: userId // Add the profile owner's ID here
-      }));
-      setPosts(postsWithUserId);
+//      console.log(`Fetched ${response.data.length} posts.`); // Log number of posts fetched
+//      // Add user_id to each post object client-side as the API doesn't populate it
+//      const postsWithUserId = response.data.map(post => ({
+//          ...post,
+//          user_id: userId // Add the profile owner's ID here
+//      }));
+//      setPosts(postsWithUserId);
+      console.log("Response:", response.data);
+      setPosts(response.data);
       // Reset scroll flag only when posts are successfully fetched for a *new* user
       // This prevents resetting if fetchPosts runs on focus for the same user
       setInitialScrollDone(false); 
@@ -166,61 +169,72 @@ export default function ProfilePostFeed() {
     }
   };
 
-  // --- Post Rendering ---
   const renderFullPostItem = ({ item }) => {
-    const postOwnerId = item.user_id; // Get owner ID from post data
-    const isOwner = loggedInUserId === userId; // Check if logged-in user owns the profile (not necessarily the post)
-
     return (
-      <View style={styles.postContainer}>
-        {/* Post Header */}
-        <View style={styles.postHeader}>
-           <Text style={styles.postTitle}>{item.title}</Text>
-           {isOwner && ( // Only profile owner can delete posts from their feed view
-             <TouchableOpacity onPress={() => { setSelectedPostId(item._id); setActionSheetVisible(true); }} style={styles.deleteButton}>
-               <Ionicons name="ellipsis-vertical" size={24} color="black" />
-             </TouchableOpacity>
-           )}
-        </View>
-
-        {/* Post Image */}
-        {item.media_url && <Image source={{ uri: item.media_url }} style={styles.postImage} />}
-
-        {/* Post Details */}
-        <View style={styles.postContent}>
-          <Text style={styles.description}>{item.description}</Text>
-          {/* Location */}
-          {item.restaurant_id?.name && (
-            <Text style={styles.locationText}>
-              <Ionicons name="location-sharp" size={16} color="#555" /> {item.restaurant_id.name}
-            </Text>
-          )}
-          {/* Footer with Rating, Likes, Comments */}
-          <View style={styles.postFooter}>
-             {/* Rating */}
-             <View style={styles.footerStat}>
-                <Ionicons name="star" size={18} color="gold" />
-                <Text style={styles.footerStatText}>{item.ratings?.toFixed(1) || 'N/A'}</Text>
-             </View>
-             {/* Likes */}
-             <TouchableOpacity style={styles.footerAction} onPress={() => handleLikeToggle(item._id, postOwnerId)}>
-                <Ionicons
-                    name={item.like_list?.includes(loggedInUserId) ? "heart" : "heart-outline"}
-                    size={20}
-                    color={item.like_list?.includes(loggedInUserId) ? "red" : "black"}
-                />
-                <Text style={styles.footerActionText}>{item.num_like || 0}</Text>
-             </TouchableOpacity>
-             {/* Comments */}
-             <TouchableOpacity style={styles.footerAction} onPress={() => navigation.navigate('CommentsPage', { postID: item._id })}>
-                <Ionicons name="chatbubble-outline" size={20} color="black" />
-                <Text style={styles.footerActionText}>{item.num_comments || 0}</Text>
-             </TouchableOpacity>
-          </View>
-        </View>
-      </View>
+      <PostComponent
+        userId={loggedInUserId}
+        owner={loggedInUserId === userId}
+        dish={item}
+      />
     );
   };
+
+
+//  // --- Post Rendering ---
+//  const renderFullPostItem = ({ item }) => {
+//    const postOwnerId = item.user_id; // Get owner ID from post data
+//    const isOwner = loggedInUserId === userId; // Check if logged-in user owns the profile (not necessarily the post)
+//
+//    return (
+//      <View style={styles.postContainer}>
+//        {/* Post Header */}
+//        <View style={styles.postHeader}>
+//           <Text style={styles.postTitle}>{item.title}</Text>
+//           {isOwner && ( // Only profile owner can delete posts from their feed view
+//             <TouchableOpacity onPress={() => { setSelectedPostId(item._id); setActionSheetVisible(true); }} style={styles.deleteButton}>
+//               <Ionicons name="ellipsis-vertical" size={24} color="black" />
+//             </TouchableOpacity>
+//           )}
+//        </View>
+//
+//        {/* Post Image */}
+//        {item.media_url && <Image source={{ uri: item.media_url }} style={styles.postImage} />}
+//
+//        {/* Post Details */}
+//        <View style={styles.postContent}>
+//          <Text style={styles.description}>{item.description}</Text>
+//          {/* Location */}
+//          {item.restaurant_id?.name && (
+//            <Text style={styles.locationText}>
+//              <Ionicons name="location-sharp" size={16} color="#555" /> {item.restaurant_id.name}
+//            </Text>
+//          )}
+//          {/* Footer with Rating, Likes, Comments */}
+//          <View style={styles.postFooter}>
+//             {/* Rating */}
+//             <View style={styles.footerStat}>
+//                <Ionicons name="star" size={18} color="gold" />
+//                <Text style={styles.footerStatText}>{item.ratings?.toFixed(1) || 'N/A'}</Text>
+//             </View>
+//             {/* Likes */}
+//             <TouchableOpacity style={styles.footerAction} onPress={() => handleLikeToggle(item._id, postOwnerId)}>
+//                <Ionicons
+//                    name={item.like_list?.includes(loggedInUserId) ? "heart" : "heart-outline"}
+//                    size={20}
+//                    color={item.like_list?.includes(loggedInUserId) ? "red" : "black"}
+//                />
+//                <Text style={styles.footerActionText}>{item.num_like || 0}</Text>
+//             </TouchableOpacity>
+//             {/* Comments */}
+//             <TouchableOpacity style={styles.footerAction} onPress={() => navigation.navigate('CommentsPage', { postID: item._id })}>
+//                <Ionicons name="chatbubble-outline" size={20} color="black" />
+//                <Text style={styles.footerActionText}>{item.num_comments || 0}</Text>
+//             </TouchableOpacity>
+//          </View>
+//        </View>
+//      </View>
+//    );
+//  };
 
   // --- Scroll to initial post (run only once after posts are loaded) ---
   useEffect(() => {
@@ -315,7 +329,7 @@ export default function ProfilePostFeed() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f8f8',
+    backgroundColor: '#fff',
   },
   listContentContainer: {
     paddingBottom: 20,
