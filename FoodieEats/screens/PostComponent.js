@@ -10,13 +10,13 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const { width } = Dimensions.get('window');
 
-const PostComponent = ({ userId, owner, dish }) => {
-  const [likes, setLikes] = useState(dish.like_list.length);
-  const [isLiked, setIsLiked] = useState(dish.like_list.includes(userId));
+const PostComponent = ({ post }) => {
+  const [likes, setLikes] = useState(post.like_list.length);
+  const [isLiked, setIsLiked] = useState(false);
   const [userData, setUserData] = useState({});
 
   const navigation = useNavigation();
-  const isCurrentUserPost = userData.id === dish.user_id._id
+  const isCurrentUserPost = userData.id === post.user_id._id
 
   useEffect(() => {
     const getData = async () => {
@@ -29,6 +29,7 @@ const PostComponent = ({ userId, owner, dish }) => {
           return;
         }
 
+        setIsLiked(post.like_list.includes(id));
         setUserData({ id, isOwner });
 
       } catch (e) {
@@ -40,8 +41,7 @@ const PostComponent = ({ userId, owner, dish }) => {
 
   const handleDeletePost = async () => {
     try {
-      const loggedInUserId = await AsyncStorage.getItem('userID');
-      if (!loggedInUserId || loggedInUserId !== dish.user_id._id) {
+      if (!userData.id || userData.id !== post.user_id._id) {
         Dialog.show({
           type: ALERT_TYPE.WARNING,
           title: 'Unauthorized',
@@ -62,7 +62,7 @@ const PostComponent = ({ userId, owner, dish }) => {
             onPress: async () => {
               try {
                 const res = await axios.delete(
-                  `${process.env.EXPO_PUBLIC_API_URL}/api/posts/${loggedInUserId}/posts/${dish._id}`
+                  `${process.env.EXPO_PUBLIC_API_URL}/api/posts/${userData.id}/posts/${post._id}`
                 );
 
                 if (res.status === 200) {
@@ -74,7 +74,7 @@ const PostComponent = ({ userId, owner, dish }) => {
                   });
 
                   // Optional: Let parent know to remove this post from the feed
-                  if (onDeleteSuccess) onDeleteSuccess(dish._id);
+                  if (onDeleteSuccess) onDeleteSuccess(post._id);
                 } else {
                   throw new Error('Delete failed');
                 }
@@ -104,19 +104,19 @@ const PostComponent = ({ userId, owner, dish }) => {
       setLikes(updatedLikes);
       setIsLiked(!isLiked);
 
-      const post_user_id = dish.user_id._id;
+      const post_user_id = post.user_id._id;
       await axios.post(
-        `${process.env.EXPO_PUBLIC_API_URL}/api/posts/${post_user_id}/posts/${dish._id}/like/${userId}`
+        `${process.env.EXPO_PUBLIC_API_URL}/api/posts/${post_user_id}/posts/${post._id}/like/${userData.id}`
       );
 
       try {
         if(!isLiked) {
           await axios.post(
-            `${process.env.EXPO_PUBLIC_API_URL}/api/users/${userId}/like/${dish._id}`
+            `${process.env.EXPO_PUBLIC_API_URL}/api/users/${userData.id}/like/${post._id}`
           );
         } else {
           await axios.post(
-            `${process.env.EXPO_PUBLIC_API_URL}/api/users/${userId}/unlike/${dish._id}`
+            `${process.env.EXPO_PUBLIC_API_URL}/api/users/${userData.id}/unlike/${post._id}`
           );
         }
       } catch (error) {
@@ -175,41 +175,58 @@ const PostComponent = ({ userId, owner, dish }) => {
       <View style={styles.header}>
         <View style={styles.userInfo}>
           <Image
-            source={{ uri: dish.user_id.profile.avatar_url }}
+            source={{ uri: post.user_id.profile.avatar_url }}
             style={styles.avatar}
           />
           <TouchableOpacity
-            onPress={() => navigation.navigate("Profile", { displayUserID: dish.user_id._id })}
+            onPress={() => navigation.navigate("Profile", { displayUserID: post.user_id._id })}
+            style={styles.usernameContainer}
           >
-            <Text style={styles.username}>@{dish.user_id.username}</Text>
+            <Text
+              style={styles.username}
+              numberOfLines={1}
+              ellipsizeMode="tail"
+            >
+              @{post.user_id.username}
+            </Text>
           </TouchableOpacity>
         </View>
 
         {isCurrentUserPost && (
-          <TouchableOpacity onPress={() => handleDeletePost()}>
+          <TouchableOpacity
+            onPress={handleDeletePost}
+            style={styles.deleteButton}
+          >
             <AntDesign name="delete" size={30} color="red" />
           </TouchableOpacity>
         )}
       </View>
 
-      <Image source={{ uri: dish.media_url }} style={styles.media} />
-      {renderStars(dish.ratings)}
-      <Text style={styles.dishName}>{dish.dish_name}</Text>
-      <Text style={styles.restaurantName}>{dish.restaurant_id.name}</Text>
+      <Image source={{ uri: post.media_url }} style={styles.media} />
+
+      {renderStars(post.ratings)}
+
+      <TouchableOpacity onPress={() => navigation.navigate("DishReviews", { dish: post })}>
+        <Text style={styles.dishName}>{post.dish_name}</Text>
+      </TouchableOpacity>
+
+      <Text style={styles.restaurantName}>{post.restaurant_id.name}</Text>
+
       <View style={styles.descriptionContainer}>
         <Text style={styles.description}>
-          <Text style={styles.title}>{dish.title}  </Text>
-          {dish.description}
+          <Text style={styles.title}>{post.title}  </Text>
+          {post.description}
         </Text>
       </View>
+
       <View style={styles.footer}>
         {renderLikeSection()}
         <TouchableOpacity
-          onPress={() => navigation.navigate("CommentsPage", { postId: dish._id, userId: userId })}
+          onPress={() => navigation.navigate("CommentsPage", { postId: post._id })}
           style={styles.commentsButton}
         >
           <Text style={styles.commentsText}>
-            {dish.comment_list.length} {dish.comment_list.length === 1 ? "Comment" : "Comments"}
+            {post.comment_list.length} {post.comment_list.length === 1 ? "Comment" : "Comments"}
           </Text>
         </TouchableOpacity>
       </View>
@@ -221,6 +238,15 @@ const styles = StyleSheet.create({
   postContainer: {
     marginTop: 10,
     marginBottom: 25,
+    marginHorizontal: 15,
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3, // for Android shadow
   },
   descriptionContainer: {
     padding: 10,
@@ -230,33 +256,45 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: 'row',
-    justifyContent: 'space-between', // avatar+username on left, trash icon on right
     alignItems: 'center',
     paddingHorizontal: 10,
     marginBottom: 5,
+    justifyContent: 'space-between',
+    position: 'relative',
+    paddingRight: 45,
   },
   userInfo: {
     flexDirection: 'row',
     alignItems: 'center',
   },
+  usernameContainer: {
+    flex: 1,
+    marginLeft: width / 40,
+  },
   avatar: {
     width: width / 7,
     height: width / 7,
     borderRadius: 100,
-    marginRight: width / 40,
-    marginLeft: 10
   },
   username: {
+    flexShrink: 1,
     color: "#000",
     fontSize: width / 20,
-    fontWeight: 700,
+    fontWeight: "700",
     letterSpacing: 0.5,
+    overflow: "hidden",
   },
   media: {
-    width: width,
-    height: width,
+    width: width-50,
+    height: width-50,
     alignItems: 'center',
     marginVertical: 5,
+  },
+  deleteButton: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    zIndex: 2,
   },
   dishName: {
     fontSize: width / 16,
@@ -264,7 +302,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   restaurantName: {
-    fontSize: width / 25,
+    fontSize: width / 18,
     color: '#555',
     textAlign: 'center',
   },
@@ -308,15 +346,6 @@ const styles = StyleSheet.create({
     color: '#0080F0',
     fontSize: 15,
     fontWeight: 'bold',
-  },
-  trashIcon: {
-    position: 'absolute',
-    top: 8,
-    right: 8,
-    backgroundColor: 'red',
-    borderRadius: 20,
-    padding: 6,
-    zIndex: 1,
   },
 });
 

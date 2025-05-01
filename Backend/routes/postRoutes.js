@@ -209,7 +209,20 @@ router.get("/:user_id/posts", async (req, res) => {
       .populate("user_id", "username profile.avatar_url")
       .populate('restaurant_id', 'name') // Populate restaurant name
       .sort({ timestamp: -1 });
-    res.status(200).json(posts);
+
+    const enrichedPosts = await Promise.all(posts.map(async (post) => {
+      const postObj = post.toObject();
+      try {
+        const restaurant = await Restaurant.findById(post.restaurant_id);
+        const dish = restaurant?.menu?.find(d => d._id.toString() === post.dish_id.toString());
+        postObj.dish_name = dish?.name || null;
+      } catch (e) {
+        postObj.dish_name = null;
+      }
+      return postObj;
+    }));
+
+    res.status(200).send(enrichedPosts);
   } catch (error) {
     console.error("Get posts error:", error);
     res.status(500).json({ 

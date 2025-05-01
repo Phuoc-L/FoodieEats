@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, FlatList, StyleSheet, Text, Dimensions } from 'react-native';
+import { View, FlatList, StyleSheet, Text, Dimensions, SafeAreaView, ActivityIndicator } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import NavigationBar from './Navigation';
@@ -10,6 +10,9 @@ import PostComponent from './PostComponent';
 const { width } = Dimensions.get('window');
 
 export default function UserFeed() {
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
   const [posts, setPosts] = useState([]);
   const [currentUser, setCurrentUser] = useState({});
   const [userData, setUserData] = useState({});
@@ -37,9 +40,11 @@ export default function UserFeed() {
   );
 
   useEffect(() => {
-    if (!userData) return;
+    if (!userData.id) return;
 
     const fetchPosts = async () => {
+      setLoading(true);
+      setError(null);
       try {
         const response = await axios.get(`${process.env.EXPO_PUBLIC_API_URL}/api/posts/${userData.id}/user_feed`);
 
@@ -48,26 +53,43 @@ export default function UserFeed() {
           setPosts(postsData);
         } else {
           console.error('Error fetching posts:', response.status);
+          setError('Failed to load posts.');
         }
       } catch (error) {
         console.error('Error fetching posts (2):', error);
+        setError('Something went wrong loading your feed.');
+      } finally {
+        setLoading(false);
       }
     };
     fetchPosts();
-  }, [userData]);
-
+  }, [userData.id]);
 
   return (
-    <View style={styles.container}>
-      <FlatList
-        data={posts}
-        keyExtractor={(item) => item._id}
-        renderItem={({ item }) => <PostComponent userId={userData.id} owner={userData.isOwner} dish={item} />}
-        contentContainerStyle={posts.length === 0 ? styles.emptyContainer : styles.feed}
-        ListEmptyComponent={<Text style={styles.emptyText}>No posts to show.</Text>}
-      />
+    <SafeAreaView style={styles.container}>
+      <Text style={styles.title}>FoodieEats</Text>
+
+      {loading ? (
+        <View style={styles.center}>
+          <ActivityIndicator size="large" />
+        </View>
+      ) : error ? (
+        <View style={styles.center}>
+          <Text style={styles.errorText}>{error}</Text>
+        </View>
+      ) : (
+        <FlatList
+          data={posts}
+          keyExtractor={(item) => item._id}
+          renderItem={({ item }) => <PostComponent post={item} />}
+          contentContainerStyle={posts.length === 0 ? styles.emptyContainer : styles.feed}
+          ListEmptyComponent={<Text style={styles.emptyText}>No posts to show.</Text>}
+        />
+      )}
+
       <NavigationBar />
-    </View>
+    </SafeAreaView>
+
   );
 }
 
@@ -81,6 +103,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  title: {
+    fontSize: width/8,
+    fontWeight: 800,
+    textAlign: 'center',
+    marginTop: 30,
+    color: '#FF8000',
+  },
   feed: {
     paddingBottom: 60,
   },
@@ -89,5 +118,15 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: 'gray',
     marginBottom: 60,
+  },
+  center: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  errorText: {
+    color: 'red',
+    fontSize: 16,
   },
 });

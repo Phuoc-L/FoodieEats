@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
-import { View, Text, TextInput, Button, FlatList, TouchableOpacity, StyleSheet, Image, Dimensions } from "react-native";
+import { View, Text, TextInput, Button, FlatList, TouchableOpacity, StyleSheet, Image, Dimensions, ActivityIndicator } from "react-native";
 import axios from 'axios';
 import { FontAwesome } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage'; // Import AsyncStorage
@@ -9,8 +9,11 @@ import AsyncStorage from '@react-native-async-storage/async-storage'; // Import 
 const { width } = Dimensions.get('window');
 
 const CommentsPage = ({ route }) => {
-    const { postId } = route.params; // Only get postId from params
- 
+    const { postId } = route.params;
+
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+
     const [comments, setComments] = useState([]);
     const [newComment, setNewComment] = useState("");
     const [loggedInUserId, setLoggedInUserId] = useState(null);
@@ -25,17 +28,34 @@ const CommentsPage = ({ route }) => {
                     setLoggedInUserId(id);
                     setIsOwner(owner.toLowerCase() === "true");
 
-                    // Only call fetchComments *after* user ID is available
-                    const response = await axios.get(`${process.env.EXPO_PUBLIC_API_URL}/api/comments/${postId}/comments`);
-                    setComments(response.data);
                 } catch (e) {
                     console.error("Initialization error:", e);
+                    setError('Could not find an active user information. Please log in again.');
                 }
             };
 
             initialize();
         }, [postId])
     );
+
+    useEffect(() => {
+        const fetchComments = async () => {
+            setLoading(true);
+            setError(null);
+
+            try {
+                const response = await axios.get(`${process.env.EXPO_PUBLIC_API_URL}/api/comments/${postId}/comments`);
+                setComments(response.data);
+            } catch (e) {
+                console.error("Unable to fetch comments:", e);
+                setError('Could not fetch comments on this post.');
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchComments();
+    }, [loggedInUserId, isOwner]);
 
     const handleCommentSubmit = async () => {
         if (!newComment.trim()) return;
@@ -156,6 +176,22 @@ const CommentsPage = ({ route }) => {
             </View>
         )
     };
+
+    if (loading) {
+        return (
+            <View style={styles.center}>
+                <ActivityIndicator size="large" />
+            </View>
+        );
+    }
+
+    if (error) {
+        return (
+            <View style={styles.center}>
+                <Text style={styles.errorText}>{error}</Text>
+            </View>
+        );
+    }
 
     return (
         <View style={styles.container}>
@@ -294,6 +330,16 @@ const styles = StyleSheet.create({
     deleteButtonText: {
         color: "red",
         fontWeight: "bold",
+    },
+    center: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 20,
+    },
+    errorText: {
+        color: 'red',
+        fontSize: 16,
     },
 });
 

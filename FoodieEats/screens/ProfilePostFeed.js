@@ -17,8 +17,6 @@ export default function ProfilePostFeed() {
   const [loggedInUserId, setLoggedInUserId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [actionSheetVisible, setActionSheetVisible] = useState(false);
-  const [selectedPostId, setSelectedPostId] = useState(null);
   const [initialScrollDone, setInitialScrollDone] = useState(false); // Track if initial scroll happened
   const flatListRef = useRef(null);
 
@@ -54,14 +52,7 @@ export default function ProfilePostFeed() {
     setError(null);
     try {
       const response = await axios.get(`${process.env.EXPO_PUBLIC_API_URL}/api/posts/${userId}/posts`);
-//      console.log(`Fetched ${response.data.length} posts.`); // Log number of posts fetched
-//      // Add user_id to each post object client-side as the API doesn't populate it
-//      const postsWithUserId = response.data.map(post => ({
-//          ...post,
-//          user_id: userId // Add the profile owner's ID here
-//      }));
-//      setPosts(postsWithUserId);
-      console.log("Response:", response.data);
+
       setPosts(response.data);
       // Reset scroll flag only when posts are successfully fetched for a *new* user
       // This prevents resetting if fetchPosts runs on focus for the same user
@@ -80,161 +71,67 @@ export default function ProfilePostFeed() {
     }
   };
 
-  // --- Delete Handler ---
-  const handleDeletePost = async (postIdToDelete) => {
-    if (!loggedInUserId || loggedInUserId !== userId) { // Double check ownership
-      console.error("Delete attempt failed: User does not own this post or is not logged in.");
-      Dialog.show({ type: ALERT_TYPE.WARNING, title: 'Error', textBody: 'You can only delete your own posts.', button: 'Close' });
-      return;
-    }
-
-    Alert.alert(
-      "Delete Post",
-      "Are you sure you want to delete this post? This action cannot be undone.",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete",
-          onPress: async () => {
-            console.log(`Attempting delete: User ${loggedInUserId}, Post ${postIdToDelete}`);
-            try {
-              const response = await axios.delete(`${process.env.EXPO_PUBLIC_API_URL}/api/posts/${loggedInUserId}/posts/${postIdToDelete}`);
-              if (response.status === 200) {
-                setPosts(currentPosts => currentPosts.filter(post => post._id !== postIdToDelete));
-                Dialog.show({ type: ALERT_TYPE.SUCCESS, title: 'Success', textBody: 'Post deleted successfully.', button: 'Close' });
-              } else {
-                 throw new Error(response.data.message || 'Failed to delete post');
-              }
-            } catch (err) {
-              console.error('Error deleting post:', err.response?.data || err.message);
-              Dialog.show({ type: ALERT_TYPE.DANGER, title: 'Error', textBody: err.response?.data?.error || 'Could not delete post.', button: 'Close' });
-            }
-          },
-          style: "destructive"
-        }
-      ]
-    );
-  };
-
-  // --- Like Handler ---
-  const handleLikeToggle = async (postId, postOwnerId) => {
-    if (!loggedInUserId) {
-      Dialog.show({ type: ALERT_TYPE.WARNING, title: 'Login Required', textBody: 'You must be logged in to like posts.', button: 'Close' });
-      return;
-    }
-    if (!postOwnerId) {
-        console.error("Cannot like post: Owner ID is missing from post data.");
-        Dialog.show({ type: ALERT_TYPE.DANGER, title: 'Error', textBody: 'Cannot like post due to missing data.', button: 'Close' });
-        return;
-    }
-
-    // Optimistic UI Update
-    setPosts(currentPosts =>
-      currentPosts.map(post => {
-        if (post._id === postId) {
-          const alreadyLiked = post.like_list?.includes(loggedInUserId);
-          const newLikeCount = alreadyLiked ? (post.num_like || 1) - 1 : (post.num_like || 0) + 1;
-          const newLikeList = alreadyLiked
-            ? post.like_list.filter(id => id !== loggedInUserId)
-            : [...(post.like_list || []), loggedInUserId];
-          console.log(`Optimistic like update for post ${postId}: Liked: ${!alreadyLiked}, Count: ${newLikeCount}`);
-          return { ...post, num_like: newLikeCount, like_list: newLikeList };
-        }
-        return post;
-      })
-    );
-
-    try {
-      console.log(`API Like Toggle: User ${loggedInUserId}, Post ${postId}, Owner ${postOwnerId}`);
-      await axios.post(`${process.env.EXPO_PUBLIC_API_URL}/api/posts/${postOwnerId}/posts/${postId}/like/${loggedInUserId}`);
-      // Success - UI already updated
-    } catch (err) {
-      console.error('Error toggling like:', err.response?.data || err.message);
-      // Revert optimistic update on error
-      setPosts(currentPosts =>
-        currentPosts.map(post => {
-          if (post._id === postId) {
-             const originallyLiked = !post.like_list?.includes(loggedInUserId); // State *after* optimistic update, so flip
-             const originalLikeCount = originallyLiked ? (post.num_like || 1) - 1 : (post.num_like || 0) + 1;
-             const originalLikeList = originallyLiked
-               ? post.like_list.filter(id => id !== loggedInUserId)
-               : [...(post.like_list || []), loggedInUserId];
-             console.log(`Reverting like update for post ${postId}: Liked: ${originallyLiked}, Count: ${originalLikeCount}`);
-             return { ...post, num_like: originalLikeCount, like_list: originalLikeList };
-          }
-          return post;
-        })
-      );
-      Dialog.show({ type: ALERT_TYPE.DANGER, title: 'Error', textBody: 'Could not update like status.', button: 'Close' });
-    }
-  };
+//  // --- Delete Handler ---
+//
+//  // --- Like Handler ---
+//  const handleLikeToggle = async (postId, postOwnerId) => {
+//    if (!loggedInUserId) {
+//      Dialog.show({ type: ALERT_TYPE.WARNING, title: 'Login Required', textBody: 'You must be logged in to like posts.', button: 'Close' });
+//      return;
+//    }
+//    if (!postOwnerId) {
+//        console.error("Cannot like post: Owner ID is missing from post data.");
+//        Dialog.show({ type: ALERT_TYPE.DANGER, title: 'Error', textBody: 'Cannot like post due to missing data.', button: 'Close' });
+//        return;
+//    }
+//
+//    // Optimistic UI Update
+//    setPosts(currentPosts =>
+//      currentPosts.map(post => {
+//        if (post._id === postId) {
+//          const alreadyLiked = post.like_list?.includes(loggedInUserId);
+//          const newLikeCount = alreadyLiked ? (post.num_like || 1) - 1 : (post.num_like || 0) + 1;
+//          const newLikeList = alreadyLiked
+//            ? post.like_list.filter(id => id !== loggedInUserId)
+//            : [...(post.like_list || []), loggedInUserId];
+//          console.log(`Optimistic like update for post ${postId}: Liked: ${!alreadyLiked}, Count: ${newLikeCount}`);
+//          return { ...post, num_like: newLikeCount, like_list: newLikeList };
+//        }
+//        return post;
+//      })
+//    );
+//
+//    try {
+//      console.log(`API Like Toggle: User ${loggedInUserId}, Post ${postId}, Owner ${postOwnerId}`);
+//      await axios.post(`${process.env.EXPO_PUBLIC_API_URL}/api/posts/${postOwnerId}/posts/${postId}/like/${loggedInUserId}`);
+//      // Success - UI already updated
+//    } catch (err) {
+//      console.error('Error toggling like:', err.response?.data || err.message);
+//      // Revert optimistic update on error
+//      setPosts(currentPosts =>
+//        currentPosts.map(post => {
+//          if (post._id === postId) {
+//             const originallyLiked = !post.like_list?.includes(loggedInUserId); // State *after* optimistic update, so flip
+//             const originalLikeCount = originallyLiked ? (post.num_like || 1) - 1 : (post.num_like || 0) + 1;
+//             const originalLikeList = originallyLiked
+//               ? post.like_list.filter(id => id !== loggedInUserId)
+//               : [...(post.like_list || []), loggedInUserId];
+//             console.log(`Reverting like update for post ${postId}: Liked: ${originallyLiked}, Count: ${originalLikeCount}`);
+//             return { ...post, num_like: originalLikeCount, like_list: originalLikeList };
+//          }
+//          return post;
+//        })
+//      );
+//      Dialog.show({ type: ALERT_TYPE.DANGER, title: 'Error', textBody: 'Could not update like status.', button: 'Close' });
+//    }
+//  };
 
   const renderFullPostItem = ({ item }) => {
     return (
-      <PostComponent
-        userId={loggedInUserId}
-        owner={loggedInUserId === userId}
-        dish={item}
-      />
+      <PostComponent post={item} />
     );
   };
 
-
-//  // --- Post Rendering ---
-//  const renderFullPostItem = ({ item }) => {
-//    const postOwnerId = item.user_id; // Get owner ID from post data
-//    const isOwner = loggedInUserId === userId; // Check if logged-in user owns the profile (not necessarily the post)
-//
-//    return (
-//      <View style={styles.postContainer}>
-//        {/* Post Header */}
-//        <View style={styles.postHeader}>
-//           <Text style={styles.postTitle}>{item.title}</Text>
-//           {isOwner && ( // Only profile owner can delete posts from their feed view
-//             <TouchableOpacity onPress={() => { setSelectedPostId(item._id); setActionSheetVisible(true); }} style={styles.deleteButton}>
-//               <Ionicons name="ellipsis-vertical" size={24} color="black" />
-//             </TouchableOpacity>
-//           )}
-//        </View>
-//
-//        {/* Post Image */}
-//        {item.media_url && <Image source={{ uri: item.media_url }} style={styles.postImage} />}
-//
-//        {/* Post Details */}
-//        <View style={styles.postContent}>
-//          <Text style={styles.description}>{item.description}</Text>
-//          {/* Location */}
-//          {item.restaurant_id?.name && (
-//            <Text style={styles.locationText}>
-//              <Ionicons name="location-sharp" size={16} color="#555" /> {item.restaurant_id.name}
-//            </Text>
-//          )}
-//          {/* Footer with Rating, Likes, Comments */}
-//          <View style={styles.postFooter}>
-//             {/* Rating */}
-//             <View style={styles.footerStat}>
-//                <Ionicons name="star" size={18} color="gold" />
-//                <Text style={styles.footerStatText}>{item.ratings?.toFixed(1) || 'N/A'}</Text>
-//             </View>
-//             {/* Likes */}
-//             <TouchableOpacity style={styles.footerAction} onPress={() => handleLikeToggle(item._id, postOwnerId)}>
-//                <Ionicons
-//                    name={item.like_list?.includes(loggedInUserId) ? "heart" : "heart-outline"}
-//                    size={20}
-//                    color={item.like_list?.includes(loggedInUserId) ? "red" : "black"}
-//                />
-//                <Text style={styles.footerActionText}>{item.num_like || 0}</Text>
-//             </TouchableOpacity>
-//             {/* Comments */}
-//             <TouchableOpacity style={styles.footerAction} onPress={() => navigation.navigate('CommentsPage', { postID: item._id })}>
-//                <Ionicons name="chatbubble-outline" size={20} color="black" />
-//                <Text style={styles.footerActionText}>{item.num_comments || 0}</Text>
-//             </TouchableOpacity>
-//          </View>
-//        </View>
-//      </View>
-//    );
-//  };
 
   // --- Scroll to initial post (run only once after posts are loaded) ---
   useEffect(() => {
@@ -283,44 +180,6 @@ export default function ProfilePostFeed() {
             { length: 500, offset: 500 * index, index } // Estimate height
           )}
         />
-
-        {/* Action Sheet Modal */}
-        <Modal
-          transparent={true}
-          visible={actionSheetVisible}
-          animationType="fade"
-          onRequestClose={() => setActionSheetVisible(false)}
-        >
-          <TouchableWithoutFeedback onPress={() => setActionSheetVisible(false)}>
-            <View style={styles.modalOverlay}>
-              <TouchableWithoutFeedback>
-                <View style={styles.actionSheetContainer}>
-                  <TouchableOpacity
-                    style={[styles.actionSheetButton, styles.actionSheetButtonDestructive]}
-                    onPress={() => {
-                      setActionSheetVisible(false);
-                      if (selectedPostId) {
-                        handleDeletePost(selectedPostId);
-                      } else {
-                        console.error("No post selected for deletion");
-                        Dialog.show({ type: ALERT_TYPE.WARNING, title: 'Error', textBody: 'No post selected.', button: 'Close' });
-                      }
-                    }}
-                  >
-                    <Text style={styles.actionSheetButtonTextDestructive}>Delete Post</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={styles.actionSheetButton}
-                    onPress={() => setActionSheetVisible(false)}
-                  >
-                    <Text style={styles.actionSheetButtonText}>Cancel</Text>
-                  </TouchableOpacity>
-                </View>
-              </TouchableWithoutFeedback>
-            </View>
-          </TouchableWithoutFeedback>
-        </Modal>
-
       </SafeAreaView>
     </AlertNotificationRoot>
   );
@@ -333,7 +192,7 @@ const styles = StyleSheet.create({
   },
   listContentContainer: {
     paddingBottom: 20,
-    paddingTop: 10,
+//    paddingTop: 10,
   },
   center: {
     flex: 1,

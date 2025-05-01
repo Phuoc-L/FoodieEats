@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, FlatList, StyleSheet, Image, TouchableOpacity, Dimensions, Button } from 'react-native';
+import { View, Text, FlatList, StyleSheet, Image, TouchableOpacity, Dimensions, Button, ActivityIndicator } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { FontAwesome } from '@expo/vector-icons';
 import { useNavigation } from "@react-navigation/native";
@@ -13,27 +13,35 @@ const { width } = Dimensions.get('window');
 export default function RestaurantPage({ route }) {
     const { restaurantId } = route.params || {};
 
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+
     const [restaurant, setRestaurant] = useState({});
     const [isOwner, setIsOwner] = useState(false);
     const [userData, setUserData] = useState(null);
 
     const navigation = useNavigation();
 
-    useFocusEffect(
-        useCallback(() => {
-            const fetchRestaurant = async () => {
-                try {
-                    const res = await axios.get(
-                        `${process.env.EXPO_PUBLIC_API_URL}/api/restaurants/${restaurantId}`
-                    );
-                setRestaurant(res.data);
-                } catch (err) {
-                    console.error("Error fetching restaurant:", err);
-                }
-            };
-            fetchRestaurant();
-        }, [restaurantId])
-    );
+
+    useEffect(() => {
+        const fetchRestaurant = async () => {
+            setLoading(true);
+            setError(null);
+
+            try {
+                const res = await axios.get(
+                    `${process.env.EXPO_PUBLIC_API_URL}/api/restaurants/${restaurantId}`
+                );
+            setRestaurant(res.data);
+            } catch (err) {
+                console.error("Error fetching restaurant:", err);
+                setError("Unable to load this restaurant page.");
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchRestaurant();
+    }, [restaurantId]);
 
 
     useEffect(() => {
@@ -110,10 +118,18 @@ export default function RestaurantPage({ route }) {
         );
     };
 
-    if (!restaurant || !restaurant.name) {
+    if (loading || !restaurant || !restaurant.name) {
         return (
-            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-                <Text>Loading...</Text>
+            <View style={styles.center}>
+                <ActivityIndicator size="large" />
+            </View>
+        );
+    }
+
+    if (error) {
+        return (
+            <View style={styles.center}>
+                <Text style={styles.errorText}>{error}</Text>
             </View>
         );
     }
@@ -185,7 +201,7 @@ export default function RestaurantPage({ route }) {
                     </View>
                 </View>
             </View>
-            <Text style={[styles.title, { textAlign: 'center', marginTop: 20 }]}>Menu</Text>
+            <Text style={[styles.menuTitle, { textAlign: 'center', marginVertical: 20 }]}>Menu</Text>
             <FlatList
                 data={restaurant.menu}
                 keyExtractor={(item) => item._id}
@@ -215,7 +231,6 @@ const styles = StyleSheet.create({
     titleContainer: {
         backgroundColor: "fff",
         alignItems: 'center',
-        padding: 20,
         borderBottomWidth: 1,
         borderBottomColor: "#ccc",
     },
@@ -227,6 +242,12 @@ const styles = StyleSheet.create({
         columnGap: 10,
     },
     title: {
+        fontSize: width / 10,
+        color: "#FF8000",
+        flexWrap: 'wrap',
+        fontWeight: '800',
+    },
+    menuTitle: {
         fontSize: width / 12,
         color: "#000",
         flexWrap: 'wrap',
@@ -242,6 +263,7 @@ const styles = StyleSheet.create({
         justifyContent: "space-between",
         alignItems: 'center',
         marginTop: 12,
+        marginBottom: 12,
     },
     restaurantDetails: {
         flexShrink: 1,
@@ -334,5 +356,15 @@ const styles = StyleSheet.create({
         color: 'white',
         fontSize: width / 20,
         fontWeight: 'bold',
+    },
+    center: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 20,
+    },
+    errorText: {
+        color: 'red',
+        fontSize: 16,
     },
 });
