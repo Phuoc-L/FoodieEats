@@ -38,7 +38,7 @@ router.get('/search', async (req, res) => {
       } else {
         sortOptions.timestamp = -1; // Default sort by latest posts
       }
-      const posts = await Post.find().sort(sortOptions)
+      const rawPosts = await Post.find().sort(sortOptions)
       .populate({
         path: 'user_id',
         match: { 
@@ -47,7 +47,13 @@ router.get('/search', async (req, res) => {
         }
       })
       .populate('restaurant_id');
-      return res.status(200).json({ total: posts.length, posts });
+
+      const postsWithoutObjectIdRestaurantId = rawPosts.filter(post => typeof post.restaurant_id !== 'object')
+      console.log("Posts without object ID for restaurant_id:", postsWithoutObjectIdRestaurantId);
+
+      const posts = rawPosts.filter(post => post.user_id !== null);
+
+      return res.status(200).send({ total: posts.length, posts });
     }
 
     const filter = {
@@ -112,7 +118,7 @@ router.get('/search', async (req, res) => {
       sortOptions.timestamp = -1; // Default sort by latest posts
     }
 
-    const posts = await Post.find(filter).sort(sortOptions)
+    const rawPosts = await Post.find(filter).sort(sortOptions)
     .populate({
       path: 'user_id',
       match: { 
@@ -122,7 +128,9 @@ router.get('/search', async (req, res) => {
     })
     .populate('restaurant_id');
 
-    res.status(200).json({ total: posts.length, posts });
+    const posts = rawPosts.filter(post => post.user_id !== null);
+
+    res.status(200).send({ total: posts.length, posts });
 
   } catch (err) {
     res.status(500).json({ error: 'Internal server error', details: err.message });
