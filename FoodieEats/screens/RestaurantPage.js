@@ -17,7 +17,7 @@ export default function RestaurantPage({ route }) {
     const [error, setError] = useState(null);
 
     const [restaurant, setRestaurant] = useState({});
-    const [isOwner, setIsOwner] = useState(false);
+    const [isOwner, setIsOwner] = useState(null);
     const [userData, setUserData] = useState(null);
 
     const navigation = useNavigation();
@@ -32,7 +32,7 @@ export default function RestaurantPage({ route }) {
                 const res = await axios.get(
                     `${process.env.EXPO_PUBLIC_API_URL}/api/restaurants/${restaurantId}`
                 );
-            setRestaurant(res.data);
+                setRestaurant(res.data);
             } catch (err) {
                 console.error("Error fetching restaurant:", err);
                 setError("Unable to load this restaurant page.");
@@ -118,7 +118,14 @@ export default function RestaurantPage({ route }) {
         );
     };
 
-    if (loading || !restaurant || !restaurant.name) {
+    const isRestaurantInfoEmpty =
+        (restaurant.location ?? "").trim() === "" &&
+        (restaurant.operating_hours ?? "").trim() === "" &&
+        (restaurant.contact_info?.phone ?? "").trim() === "" &&
+        (restaurant.contact_info?.email ?? "").trim() === "";
+
+
+    if (loading || (restaurant?.name === "" && isOwner === null)) {
         return (
             <View style={styles.center}>
                 <ActivityIndicator size="large" />
@@ -134,79 +141,126 @@ export default function RestaurantPage({ route }) {
         );
     }
 
+    if (restaurant.name === "" && isOwner === false) {
+        return (
+            <View style={styles.center}>
+                <Text style={styles.errorText}>
+                    You are not permitted to view this restaurant.
+                </Text>
+            </View>
+        );
+    }
+
     return(
         <View style={styles.container}>
             <View style={styles.titleContainer}>
                 {isOwner ? (
                     <View style={styles.ownerTitleRow}>
-                      <View style={{ flex: 1 }}>
-                        <Text style={[styles.title, { textAlign: 'left' }]} numberOfLines={0}>
-                          {restaurant.name}
-                        </Text>
-                      </View>
-                      <TouchableOpacity onPress={() => navigation.navigate('Auth')}>
-                        <MaterialIcons name="logout" size={28} style={styles.logout} />
-                      </TouchableOpacity>
+                        <View style={{ flex: 1 }}>
+                            {restaurant.name === "" ? (
+                                <Text style={[styles.title, { textAlign: 'left', color: 'gray' }]} numberOfLines={0}>
+                                    Pending Setup
+                                </Text>
+                            ) : (
+                                <Text style={[styles.title, { textAlign: 'left' }]} numberOfLines={0}>
+                                    {restaurant.name}
+                                </Text>
+                            )}
+                        </View>
+                        <TouchableOpacity onPress={() => navigation.navigate('Auth')}>
+                            <MaterialIcons name="logout" size={28} style={styles.logout} />
+                        </TouchableOpacity>
                     </View>
                 ) : (
                     <Text style={[styles.title, { textAlign: 'center' }]}>
                         {restaurant.name}
                     </Text>
                 )}
-                <View style={styles.restaurantInfo}>
-                    <View style={styles.restaurantDetails}>
-                        <View>
-                            { (restaurant.location ?? "").trim() !== "" && (
-                                <Text style={styles.detailsText}>
-                                    <Text style={{ fontWeight: 'bold' }}>Location: </Text>
-                                    {restaurant.location}
-                                </Text>
-                            )}
 
-                            { (restaurant.operating_hours ?? "").trim() !== "" && (
-                                <Text style={styles.detailsText}>
-                                    <Text style={{ fontWeight: 'bold' }}>Hours: </Text>
-                                    {restaurant.operating_hours}
-                                </Text>
-                            )}
-
-                            { (restaurant.contact_info?.phone ?? "").trim() !== "" && (
-                                <Text style={styles.detailsText}>
-                                    <Text style={{ fontWeight: "bold" }}>Phone: </Text>
-                                    {restaurant.contact_info.phone}
-                                </Text>
-                            ) }
-                            { (restaurant.contact_info?.email ?? "").trim() !== "" && (
-                                <Text style={styles.detailsText}>
-                                    <Text style={{ fontWeight: "bold" }}>Email: </Text>
-                                    {restaurant.contact_info.email}
-                                </Text>
-                            ) }
-                        </View>
-                    </View>
-                    <View style={styles.rating}>
+                {isRestaurantInfoEmpty ? (
+                    <View style={{ alignItems: 'center', padding: 20 }}>
                         <View style={styles.starRating}>
-                            <Text style={styles.restaurantRatingValue}>{parseFloat(restaurant.average_rating).toFixed(1)}</Text>
+                            <Text style={[styles.restaurantRatingValue, { fontSize: width / 15 }]}>
+                                {parseFloat(restaurant.average_rating).toFixed(1)}
+                            </Text>
                             <FontAwesome
-                                name={"star"}
-                                size={width / 13}
+                                name="star"
+                                size={width / 12}
                                 color="#0080F0"
                                 style={{ paddingHorizontal: 3 }}
                             />
                         </View>
-                        <Text style={styles.restaurantNumRatings}>
-                            ({restaurant.num_posts}
-                            {restaurant.num_posts === 1 ? " review" : " reviews"})
+                        <Text style={[styles.restaurantNumRatings, { fontSize: width / 26 }]}>
+                            ({
+                                restaurant.num_posts ?? restaurant.posts?.length ?? 0
+                            }
+                            {(restaurant.num_posts ?? restaurant.posts?.length ?? 0) === 1 ? " review" : " reviews"})
                         </Text>
                     </View>
-                </View>
+                ) : (
+                    <View style={styles.restaurantInfo}>
+                        <View style={styles.restaurantDetails}>
+                            <View>
+                                { (restaurant.location ?? "").trim() !== "" && (
+                                    <Text style={styles.detailsText}>
+                                        <Text style={{ fontWeight: 'bold' }}>Location: </Text>
+                                        {restaurant.location}
+                                    </Text>
+                                )}
+
+                                { (restaurant.operating_hours ?? "").trim() !== "" && (
+                                    <Text style={styles.detailsText}>
+                                        <Text style={{ fontWeight: 'bold' }}>Hours: </Text>
+                                        {restaurant.operating_hours}
+                                    </Text>
+                                )}
+
+                                { (restaurant.contact_info?.phone ?? "").trim() !== "" && (
+                                    <Text style={styles.detailsText}>
+                                        <Text style={{ fontWeight: "bold" }}>Phone: </Text>
+                                        {restaurant.contact_info.phone}
+                                    </Text>
+                                ) }
+                                { (restaurant.contact_info?.email ?? "").trim() !== "" && (
+                                    <Text style={styles.detailsText}>
+                                        <Text style={{ fontWeight: "bold" }}>Email: </Text>
+                                        {restaurant.contact_info.email}
+                                    </Text>
+                                ) }
+                            </View>
+                        </View>
+                        <View style={styles.rating}>
+                            <View style={styles.starRating}>
+                                <Text style={styles.restaurantRatingValue}>{parseFloat(restaurant.average_rating).toFixed(1)}</Text>
+                                <FontAwesome
+                                    name={"star"}
+                                    size={width / 13}
+                                    color="#0080F0"
+                                    style={{ paddingHorizontal: 3 }}
+                                />
+                            </View>
+
+                            <Text style={styles.restaurantNumRatings}>
+                                ({
+                                    restaurant.num_posts ?? restaurant.posts?.length ?? 0
+                                }
+                                {(restaurant.num_posts ?? restaurant.posts?.length ?? 0) === 1 ? " review" : " reviews"})
+                            </Text>
+                        </View>
+                    </View>
+                )}
             </View>
             <Text style={[styles.menuTitle, { textAlign: 'center', marginVertical: 20 }]}>Menu</Text>
             <FlatList
                 data={restaurant.menu}
                 keyExtractor={(item) => item._id}
                 renderItem={renderMenuItem}
-                contentContainerStyle={{ paddingBottom: isOwner ? 100 : 0 }}
+                contentContainerStyle={
+                    restaurant.menu.length === 0
+                    ? [styles.emptyContainer, { paddingBottom: isOwner ? 100 : 0 }]
+                    : { paddingBottom: isOwner ? 100 : 0 }
+                }
+                ListEmptyComponent={<Text style={styles.emptyText}>No menu items to show.</Text>}
             />
             {isOwner && (
                 <View style={styles.editButtonContainer}>
@@ -366,5 +420,19 @@ const styles = StyleSheet.create({
     errorText: {
         color: 'red',
         fontSize: 16,
+    },
+    emptyContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    feed: {
+        paddingBottom: 60,
+    },
+    emptyText: {
+        textAlign: 'center',
+        fontSize: 18,
+        color: 'gray',
+        marginBottom: 60,
     },
 });
