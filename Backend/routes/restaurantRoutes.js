@@ -30,12 +30,13 @@ router.get('/search', async (req, res) => {
         sortOptions.average_rating = -1;
       }
       // if no query return highest rated restaurants
-      const restaurants = await Restaurant.find().sort(sortOptions);
+      const restaurants = await Restaurant.find({ name: { $ne: "" } }).sort(sortOptions);
       return res.status(200).json({ total: restaurants.length, restaurants });
     }
 
     // Build the filter
     const filter = {
+      name: { $ne: "" }, // Exclude restaurants with empty names
       $or: [
         { name: { $regex: query, $options: 'i' } },
         { location: { $regex: query, $options: 'i' } },
