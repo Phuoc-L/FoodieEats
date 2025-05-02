@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, FlatList, Image, StyleSheet, Modal, TouchableWithoutFeedback, Keyboard, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -6,7 +6,7 @@ import { useNavigation } from '@react-navigation/native';
 import axios from 'axios';
 import NavigationBar from './Navigation';
 import DropDownPicker from 'react-native-dropdown-picker';
-import { useEffect } from 'react';
+import PostComponent from './PostComponent';
 
 export default function Explore() {
   // const user = props.route.params.user;
@@ -99,48 +99,60 @@ export default function Explore() {
   );
 
   const renderPostItem = (item) => { // Changed to block body {}
-    console.log('Rendering Post Item:', JSON.stringify(item)); // Log post item data
+//    console.log('Rendering Post Item:', JSON.stringify(item)); // Log post item data
     // Added optional chaining for safety
     const avatarUrl = item?.user_id?.profile?.avatar_url;
-    const restaurantName = item?.restaurant_id?.name;
+    const restaurantName = item?.restaurant_id?.name ? item.restaurant_id.name : item?.restaurant_id ? item.restaurant_id : "No restaurantID.";
     const dishName = item?.restaurant_id && item?.dish_id ? getDishNameByDishId(item.restaurant_id, item.dish_id) : "N/A";
+    const username = item?.user_id?.username;
+
+    const restaurantExists = item?.restaurant_id?.name ? true : item?.restaurant_id ? true : false;
+
+    console.log("restaurantName:", restaurantName);
+//    console.log("User ID:", item.user_id);
+    const data = restaurantExists ? {...item, dish_name: dishName} : {...item, dish_name: dishName, restaurant_id: {name: "No name."}};
+    console.log("Post:", data);
+
+    return (
+      <PostComponent post={data} />
+    );
   
-    return ( // Added explicit return
-      <TouchableOpacity onPress={() => navigation.navigate('Post', { postID: item._id })}>
-        <View style={styles.resultCard}>
-          <View>
-            <View style={{flexDirection: 'row', alignItems: 'center'}}>
-              <Image source={avatarUrl ? {uri: avatarUrl} : require('../assets/defaultUserIcon.png')} style={styles.avatar} />
-              <Text style={styles.resultName}>@{item?.user_id?.username || 'Unknown User'}</Text>
-            </View>
-            <View style={styles.resultDetailBox}>
-              <View style={styles.Rating}>
-                <Text style={styles.resultName}>Location:</Text>
-                <Text style={styles.resultDetails}>{restaurantName || "N/A"}</Text>
-                <Text style={styles.resultName}>Dish:</Text>
-                <Text style={styles.resultDetails}>{dishName}</Text>
-              </View>
-              <View style={styles.Rating}>
-                <Text style={styles.resultName}>{item?.title}</Text>
-                <Text> {item?.ratings?.toFixed(1) || 'N/A'} <Ionicons name="star" size={16} color="gold" /> </Text>
-              </View>
-              <Text style={styles.resultDetails}>{item?.description?.length > 100 ? item.description.slice(0, 100) + '...' : item.description}</Text>
-              {item?.media_url && <Image source={{ uri: item.media_url }} style={styles.menuMedia} />}
-              <View style={styles.actionContainer}>
-                <TouchableOpacity style={styles.actionButton} onPress={() => console.log('Liked!')}>
-                  <Ionicons name="heart" size={16} color="red" />
-                  <Text style={styles.actionText}>{item?.num_like}</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.actionButton} onPress={() => console.log('Commented!')}>
-                  <Ionicons name="chatbubble" size={16} color="blue" />
-                  <Text style={styles.actionText}>{item?.num_comments}</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </View>
-        </View>
-      </TouchableOpacity>
-    ); // Closing parenthesis for return
+//    return ( // Added explicit return/
+//      <TouchableOpacity onPress={() => navigation.navigate('Post', { postID: item._id })}>
+//        <View style={styles.resultCard}>
+//          <View>
+//            <View style={{flexDirection: 'row', alignItems: 'center'}}>
+//              <Image source={avatarUrl ? {uri: avatarUrl} : require('../assets/defaultUserIcon.png')} style={styles.avatar} />
+//              <Text style={styles.resultName}>@{item?.user_id?.username || 'Unknown User'}</Text>
+//            </View>
+//            <View style={styles.resultDetailBox}>
+//              <View style={styles.Rating}>
+//                <Text style={styles.resultName}>Location:</Text>
+//                <Text style={styles.resultDetails}>{restaurantName || "N/A"}</Text>
+//                <Text style={styles.resultName}>Dish:</Text>
+//                <Text style={styles.resultDetails}>{dishName}</Text>
+//              </View>
+//              <View style={styles.Rating}>
+//                <Text style={styles.resultName}>{item?.title}</Text>
+//                <Text> {item?.ratings?.toFixed(1) || 'N/A'} <Ionicons name="star" size={16} color="gold" /> </Text>
+//              </View>
+//              <Text style={styles.resultDetails}>{item?.description?.length > 100 ? item.description.slice(0, 100) + '...' : item.description}</Text>
+//              {item?.media_url && <Image source={{ uri: item.media_url }} style={styles.menuMedia} />}
+//              <View style={styles.actionContainer}>
+//                <TouchableOpacity style={styles.actionButton} onPress={() => console.log('Liked!')}>
+//                  <Ionicons name="heart" size={16} color="red" />
+//                  <Text style={styles.actionText}>{item?.num_like}</Text>
+//                </TouchableOpacity>
+//                <TouchableOpacity style={styles.actionButton} onPress={() => console.log('Commented!')}>
+//                  <Ionicons name="chatbubble" size={16} color="blue" />
+//                  <Text style={styles.actionText}>{item?.num_comments}</Text>
+//                </TouchableOpacity>
+//              </View>
+//            </View>
+//          </View>
+//        </View>
+//      </TouchableOpacity>
+//    ); // Closing parenthesis for return
   }; // Closing brace for function body
 
   const handleSearch = async () => {
@@ -170,8 +182,11 @@ export default function Explore() {
         } : {})
       };
 
+      console.log(process.env.EXPO_PUBLIC_API_URL + endpoint);
       const response = await axios.get(process.env.EXPO_PUBLIC_API_URL + endpoint, { params });
+
       setResults(response.data.restaurants || response.data.users || response.data.posts);
+      console.log("results.length:", response.data.posts.length);
       Keyboard.dismiss();
       flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
     } catch (error) {
@@ -209,7 +224,7 @@ export default function Explore() {
   };
 
   return (
-    <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+//    <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
       <SafeAreaView style={styles.container}>
         <View style={styles.header}> 
           <Text style={styles.title}>Explore</Text>
@@ -226,14 +241,16 @@ export default function Explore() {
           </View>
         </View>
 
-        <View style={styles.searchContainer}>
-          <TextInput style={styles.searchInput} placeholder={`Search ${searchMode}...`} value={searchQuery} onChangeText={setSearchQuery}/>
-          <TouchableOpacity onPress={() => { setFiltersVisible(true); Keyboard.dismiss(); }}>
-            <Ionicons name="options" size={30} color="black" />
-          </TouchableOpacity>
-          <TouchableOpacity onPress={handleSearch}>
-            <Ionicons name="search" size={30} color="black" />
-          </TouchableOpacity>
+        <View style={{ padding: 10 }}>
+          <View style={styles.searchContainer}>
+            <TextInput style={styles.searchInput} placeholder={`Search ${searchMode}...`} value={searchQuery} onChangeText={setSearchQuery}/>
+            <TouchableOpacity onPress={() => { setFiltersVisible(true); Keyboard.dismiss(); }}>
+              <Ionicons name="options" size={30} color="black" />
+            </TouchableOpacity>
+            <TouchableOpacity onPress={handleSearch}>
+              <Ionicons name="search" size={30} color="black" />
+            </TouchableOpacity>
+          </View>
         </View>
 
         <FlatList 
@@ -371,11 +388,9 @@ export default function Explore() {
           </TouchableWithoutFeedback>
         </Modal>
 
-        <View style={styles.navbar}>
-          <NavigationBar />
-        </View>
+        <NavigationBar />
       </SafeAreaView>
-    </TouchableWithoutFeedback>
+//    </TouchableWithoutFeedback>
   );
 }
 
@@ -383,7 +398,7 @@ const styles = StyleSheet.create({
   container: { 
     flex: 1, 
     backgroundColor: '#fff', 
-    padding: 10 
+//    padding: 10,
   },
   header: { 
     flexDirection: 'row', 
@@ -423,7 +438,7 @@ const styles = StyleSheet.create({
   searchContainer: { 
     flexDirection: 'row', 
     alignItems: 'center', 
-    padding: 10, 
+    padding: 10,
     borderRadius: 10, 
     backgroundColor: '#f9f9f9',
     marginVertical: 10,
