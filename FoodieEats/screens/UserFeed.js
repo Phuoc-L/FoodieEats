@@ -81,7 +81,7 @@ export default function UserFeed() {
         <FlatList
           data={posts}
           keyExtractor={(item) => item._id}
-          renderItem={({ item }) => <PostComponent post={item} />}
+          renderItem={({ item }) => <PostComponent post={item} onDeleteSuccess={(deletedPostId) => {setPosts(current => current.filter(post => post._id !== deletedPostId));}}/>}
           contentContainerStyle={posts.length === 0 ? styles.emptyContainer : styles.feed}
           ListEmptyComponent={<Text style={styles.emptyText}>No posts to show.</Text>}
         />
