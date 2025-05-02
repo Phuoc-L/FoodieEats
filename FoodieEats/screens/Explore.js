@@ -7,6 +7,10 @@ import axios from 'axios';
 import NavigationBar from './Navigation';
 import DropDownPicker from 'react-native-dropdown-picker';
 import PostComponent from './PostComponent';
+import { Dimensions } from 'react-native';
+
+
+const { width } = Dimensions.get('window');
 
 export default function Explore() {
   // const user = props.route.params.user;
@@ -69,33 +73,51 @@ export default function Explore() {
     const bio = item?.profile?.bio;
 
     return ( // Added explicit return
-      <TouchableOpacity onPress={() => navigation.push('Profile', { displayUserID: item?._id })}>
-        <View style={styles.resultCard}>
-          <Image source={avatarUrl ? { uri: avatarUrl} : require('../assets/defaultUserIcon.png')} style={styles.avatar} />
-          <View style={styles.resultDetailBox}>
-            <Text style={styles.resultName}>@{item?.username}</Text>
-            <Text style={styles.fullName}>{item?.first_name} {item?.last_name}</Text>
-            <Text style={styles.resultDetails}>{bio}</Text>
-          </View>
-        </View>
-      </TouchableOpacity>
+      <View style={{paddingHorizontal: 10}}>
+          <TouchableOpacity onPress={() => navigation.push('Profile', { displayUserID: item?._id })}>
+            <View style={styles.userResultCard}>
+              <Image source={avatarUrl ? { uri: avatarUrl} : require('../assets/defaultUserIcon.png')} style={styles.avatar} />
+              <View style={styles.userResultDetailBox}>
+                <Text style={styles.resultName}>@{item?.username}</Text>
+                <Text style={styles.fullName}>{item?.first_name} {item?.last_name}</Text>
+                <Text style={styles.resultDetails}>{bio}</Text>
+              </View>
+            </View>
+          </TouchableOpacity>
+      </View>
     ); // Closing parenthesis for return
   }; // Closing brace for function body
   
   const renderRestaurantItem = (item) => (
-    <TouchableOpacity onPress={() => navigation.navigate('RestaurantPage', { restaurantId: item._id })}>
-      <View style={styles.resultCard}>
-        <View style={styles.resultDetailBox}>
-          <View style={styles.Rating}>
-            <Text style={styles.resultName}>{item.name}</Text>
-            <Text>
-              {item.average_rating?.toFixed(1) || 'N/A'} <Ionicons name="star" size={16} color="gold" /> 
-            </Text>
+      <View style={{paddingHorizontal: 10}}>
+        <TouchableOpacity onPress={() => navigation.navigate('RestaurantPage', { restaurantId: item._id })}>
+          <View style={styles.restaurantResultCard}>
+            <View style={styles.restaurantResultDetailBox}>
+              <View style={styles.Rating}>
+                <Text
+                  numberOfLines={1}
+                  ellipsizeMode="tail"
+                  style={[styles.resultName, { maxWidth: width * 0.8 }]}>
+                  {item.name}
+                </Text>
+
+                <Text>
+                  {item.average_rating?.toFixed(1) || 'N/A'} <Ionicons name="star" size={16} color="gold" />
+                </Text>
+              </View>
+            </View>
+
+            <View style={{ flex: 1, marginLeft: 5 }}>
+              <Text
+                numberOfLines={1}
+                ellipsizeMode="tail"
+                style={[styles.fullName, { flexShrink: 1 }]}>
+                {item.location}
+              </Text>
+            </View>
           </View>
-          <Text style={styles.fullName}>{item.location}</Text>
-        </View>
+        </TouchableOpacity>
       </View>
-    </TouchableOpacity>
   );
 
   const renderPostItem = (item) => { // Changed to block body {}
@@ -146,11 +168,9 @@ export default function Explore() {
         } : {})
       };
 
-      console.log(process.env.EXPO_PUBLIC_API_URL + endpoint);
       const response = await axios.get(process.env.EXPO_PUBLIC_API_URL + endpoint, { params });
 
       setResults(response.data.restaurants || response.data.users || response.data.posts);
-      console.log("results.length:", response.data.posts.length);
       Keyboard.dismiss();
       flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
     } catch (error) {
@@ -421,8 +441,30 @@ const styles = StyleSheet.create({
     borderWidth: 1, 
     borderColor: '#ccc',
   },
-  resultCard: { 
-    flexDirection: 'row', 
+  userResultCard: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    padding: 10,
+    borderBottomWidth: 1,
+    borderColor: '#eee',
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    marginVertical: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 1
+  },
+  userResultDetailBox: {
+    alignItems: 'flex-start',
+    justifyContent: 'center',
+    borderRadius: 10,
+    flex: 1,
+    flexWrap: 'wrap',
+  },
+  restaurantResultCard: {
+    flexDirection: 'column',
     alignItems: 'flex-start', 
     padding: 10, 
     borderBottomWidth: 1, 
@@ -436,7 +478,8 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
     elevation: 1
   },
-  resultDetailBox: {
+  restaurantResultDetailBox: {
+    flexDirection: 'row',
     alignItems: 'flex-start',
     justifyContent: 'center',
     borderRadius: 10,
