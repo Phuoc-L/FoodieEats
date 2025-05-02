@@ -44,7 +44,7 @@ export default function AuthScreen(props) {
       Keyboard.dismiss();
       // Navigate based on owner status? For now, just Explore.
       // We might refine navigation later based on owner status.
-      props.navigation.reset({ index: 0, routes: [{ name: 'Explore' }] }); // Use reset to clear auth stack
+      props.navigation.reset({ index: 0, routes: [{ name: 'UserFeed' }] }); // Use reset to clear auth stack
     } catch (error) {
       console.error('Login error:', error.response ? error.response.data : error.message);
       Alert.alert("Login Error", error.response?.data?.error || "Something went wrong");

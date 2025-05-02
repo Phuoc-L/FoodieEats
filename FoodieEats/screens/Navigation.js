@@ -1,14 +1,19 @@
 import React, { useEffect, useState } from 'react';
 import { View, TouchableOpacity, StyleSheet } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import { FontAwesome } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+
 
 export default function NavigationBar() {
   const [userID, setUserID] = useState(null); // Default to null
   const [isOwner, setIsOwner] = useState(false);
   const [restaurantId, setRestaurantId] = useState(null); // Add state for restaurantId
+
   const navigation = useNavigation();
+  const route = useRoute();
+  const currentRoute = route.name;
+
 
   // Remove DEFAULT_LOGGED_IN_USER_ID as we fetch the actual ID
 
@@ -59,7 +64,7 @@ export default function NavigationBar() {
           index: 0,
           routes: [{ name: 'RestaurantPage', params: { restaurantId: restaurantId } }],
         })}>
-          <FontAwesome name="user" size={24} color="black" />
+          <FontAwesome name="user" size={24} color={currentRoute === 'RestaurantPage' ? '#0080F0' : 'black'} />
         </TouchableOpacity>
       );
     } else if (!isOwner) {
@@ -69,7 +74,7 @@ export default function NavigationBar() {
           index: 0,
           routes: [{ name: 'Profile', params: { displayUserID: userID } }], // Use fetched userID
         })}>
-          <FontAwesome name="user" size={24} color="black" />
+          <FontAwesome name="user" size={24} color={currentRoute === 'Profile' ? '#0080F0' : 'black'} />
         </TouchableOpacity>
       );
     } else {
@@ -81,7 +86,7 @@ export default function NavigationBar() {
           index: 0,
           routes: [{ name: 'Profile', params: { displayUserID: userID } }],
         })}>
-          <FontAwesome name="user" size={24} color="black" />
+          <FontAwesome name="user" size={24} color={currentRoute === 'Profile' ? '#0080F0' : 'black'} />
         </TouchableOpacity>
       );
     }
@@ -95,19 +100,19 @@ export default function NavigationBar() {
             index: 0,
             routes: [{name: 'UserFeed'}],
             })}>
-            <FontAwesome name="home" size={24} color="black" />
+            <FontAwesome name="home" size={24} color={currentRoute === 'UserFeed' ? '#0080F0' : 'black'} />
           </TouchableOpacity>}
           <TouchableOpacity onPress={() => navigation.reset({
             index: 0,
             routes: [{name: 'Explore'}],
             })}>
-            <FontAwesome name="globe" size={24} color="black" />
+            <FontAwesome name="globe" size={24} color={currentRoute === 'Explore' ? '#0080F0' : 'black'} />
           </TouchableOpacity>
           {isOwner === true ? null : <TouchableOpacity onPress={() => navigation.reset({
             index: 0,
             routes: [{name: 'NewPost'}],
             })}>
-            <FontAwesome name="plus-circle" size={24} color="black"/>
+            <FontAwesome name="plus-circle" size={24} color={currentRoute === 'NewPost' ? '#0080F0' : 'black'}/>
           </TouchableOpacity>}
           {DisplayProfileIcon()}
         </View>
