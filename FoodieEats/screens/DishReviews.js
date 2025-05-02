@@ -10,8 +10,8 @@ import { Dimensions } from 'react-native';
 const { width } = Dimensions.get('window');
 
 export default function DishReviews({ route }) {
-    const { dish } = route.params || {};
-    console.log("dish:", dish);
+    const { dish_id } = route.params || {};
+    console.log("dish_id:", dish_id);
 
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -24,7 +24,7 @@ export default function DishReviews({ route }) {
             setError(null);
 
             try {
-                const response = await axios.get(`${process.env.EXPO_PUBLIC_API_URL}/api/restaurants/${dish._id}/reviews`);
+                const response = await axios.get(`${process.env.EXPO_PUBLIC_API_URL}/api/restaurants/${dish_id}/reviews`);
 
                 if (response.status === 200) {
                     const responseData = response.data || [];
