@@ -128,7 +128,12 @@ export default function ProfilePostFeed() {
 
   const renderFullPostItem = ({ item }) => {
     return (
-      <PostComponent post={item} />
+      <PostComponent
+        post={item}
+        onDeleteSuccess={(deletedPostId) => {
+          setPosts(current => current.filter(post => post._id !== deletedPostId));
+        }}
+      />
     );
   };
 

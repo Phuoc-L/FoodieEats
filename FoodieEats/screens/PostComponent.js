@@ -10,7 +10,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const { width } = Dimensions.get('window');
 
-const PostComponent = ({ post }) => {
+const PostComponent = ({ post, onDeleteSuccess }) => {
   const [likes, setLikes] = useState(post.like_list.length);
   const [isLiked, setIsLiked] = useState(false);
   const [userData, setUserData] = useState({});
@@ -61,6 +61,7 @@ const PostComponent = ({ post }) => {
             style: "destructive",
             onPress: async () => {
               try {
+                console.log(`${process.env.EXPO_PUBLIC_API_URL}/api/posts/${userData.id}/posts/${post._id}`);
                 const res = await axios.delete(
                   `${process.env.EXPO_PUBLIC_API_URL}/api/posts/${userData.id}/posts/${post._id}`
                 );
