@@ -77,7 +77,7 @@ export default function RestaurantPage({ route }) {
     const renderMenuItem = ({ item }) => {
         return (
             <TouchableOpacity
-                onPress={() => navigation.navigate("DishReviews", { dish: item })}
+                onPress={() => navigation.navigate("DishReviews", { dish_id: item._id })}
                 style={styles.menuItemContainer}
             >
                 <View style={styles.dishHeader}>
