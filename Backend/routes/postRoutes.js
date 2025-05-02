@@ -168,6 +168,17 @@ router.post("/:user_id/create", async (req, res) => {
       $inc: { posts_count: 1 }
     });
 
+    const restaurant = await Restaurant.findById(restaurant_id);
+    if (restaurant) {
+      const dish = restaurant.menu.id(dish_id);
+      if (dish) {
+        dish.average_rating = (dish.average_rating * dish.num_ratings + ratings) / (dish.num_ratings + 1);
+        dish.num_ratings += 1;
+        restaurant.average_rating = calculateAverageRating(restaurant.menu);
+        await restaurant.save();
+      }
+    }
+
     res.status(201).json({ 
       message: "Post created successfully", 
       post: newPost 
@@ -265,7 +276,21 @@ router.put("/:user_id/posts/:post_id", verifyPostOwnership, async (req, res) => 
     // Update only provided fields
     if (title) req.post.title = title;
     if (description) req.post.description = description;
-    if (ratings) req.post.ratings = ratings;
+
+    if (ratings && ratings !== req.post.ratings) {
+      const oldRating = req.post.ratings;
+
+      const restaurant = await Restaurant.findById(req.post.restaurant_id);
+      if (restaurant) {
+        const dish = restaurant.menu.id(req.post.dish_id);
+        if (dish && dish.num_ratings > 0) {
+          dish.average_rating = (dish.average_rating * dish.num_ratings - oldRating + ratings) / dish.num_ratings;
+          restaurant.average_rating = calculateAverageRating(restaurant.menu);
+          await restaurant.save();
+        }
+      }
+      req.post.ratings = ratings;
+    }
 
     await req.post.save();
     res.status(200).json({ 
@@ -292,6 +317,22 @@ router.delete("/:user_id/posts/:post_id", verifyPostOwnership, async (req, res) 
       $pull: { posts: req.params.post_id },
       $inc: { posts_count: -1 }
     });
+
+    const deletedPost = req.post;
+    const restaurant = await Restaurant.findById(deletedPost.restaurant_id);
+    if (restaurant) {
+      const dish = restaurant.menu.id(deletedPost.dish_id);
+      if (dish && dish.num_ratings > 0) {
+        dish.num_ratings -= 1;
+        if (dish.num_ratings === 0) {
+          dish.average_rating = 0;
+        } else {
+          dish.average_rating = (dish.average_rating * (dish.num_ratings + 1) - deletedPost.ratings) / dish.num_ratings;
+        }
+        restaurant.average_rating = calculateAverageRating(restaurant.menu);
+        await restaurant.save();
+      }
+    }
 
     res.status(200).json({ message: "Post deleted successfully" });
   } catch (error) {
