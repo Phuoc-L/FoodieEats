@@ -27,7 +27,7 @@ export default function App() {
         <Stack.Screen name="RestaurantPage" component={RestaurantPage} options={{ headerShown: true, title: "" }} />
         <Stack.Screen name="DishReviews" component={DishReviews} options={{ headerShown: true, title: "Reviews" }} />
         <Stack.Screen name="CommentsPage" component={CommentsPage} options={{ title: "Comments" }}/>
-        <Stack.Screen name="EditRestaurant" component={EditRestaurant} options={{ title: "Edit" }}/>
+        <Stack.Screen name="EditRestaurant" component={EditRestaurant} options={{ headerShown: false }}/>
         <Stack.Screen name="ProfilePostFeed" component={ProfilePostFeed} options={{ title: "Post Feed" }}/>
       </Stack.Navigator>
     </NavigationContainer>

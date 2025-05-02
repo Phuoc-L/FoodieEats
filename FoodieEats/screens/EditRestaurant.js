@@ -78,32 +78,45 @@ export default function EditRestaurant({ route }) {
     };
 
     const cleanRestaurant = () => {
-        const location          = (restaurant.location        ?? "").trim();
-        const operating_hours   = (restaurant.operating_hours ?? "").trim();
+      const name             = (restaurant.name ?? "").trim();
+      const location         = (restaurant.location ?? "").trim();
+      const operating_hours  = (restaurant.operating_hours ?? "").trim();
 
-        if (location === "" || operating_hours === "") {
-            Alert.alert(
-                "Missing Required Info",
-                "Please fill in both Location and Operating Hours before saving."
-            );
-            return null;
+      if (!name) {
+        Alert.alert("Missing Name", "Restaurant name is required.");
+        return null;
+      }
+
+      // Menu item validation
+      for (let i = 0; i < restaurant.menu.length; i++) {
+        const item = restaurant.menu[i];
+        if (!item.name?.trim() || !item.description?.trim() || !item.price) {
+          Alert.alert(
+            "Incomplete Menu Item",
+            `Menu item #${i + 1} is missing required fields (name, description, or price).`
+          );
+          return null;
         }
+      }
 
-
-        return {
-            ...restaurant,
-            location,
-            operating_hours,
-            contact_info: {
-                phone : (restaurant.contact_info?.phone  ?? "").trim(),
-                email : (restaurant.contact_info?.email  ?? "").trim(),
-            },
-            menu: restaurant.menu.map((m) => ({
-                ...m,
-                price: parseFloat(m.price) || 0,
-            })),
-        };
+      return {
+        ...restaurant,
+        name,
+        location,
+        operating_hours,
+        contact_info: {
+          phone : (restaurant.contact_info?.phone  ?? "").trim(),
+          email : (restaurant.contact_info?.email  ?? "").trim(),
+        },
+        menu: restaurant.menu.map((m) => ({
+          ...m,
+          name: m.name.trim(),
+          description: m.description.trim(),
+          price: parseFloat(m.price) || 0,
+        })),
+      };
     };
+
 
     const saveChanges = async () => {
         const payload = cleanRestaurant();
@@ -126,7 +139,10 @@ export default function EditRestaurant({ route }) {
         <View style={styles.container}>
             <ScrollView contentContainerStyle={styles.scrollContent}>
                 <Text style={styles.header}>Edit Restaurant Info</Text>
-                <Text style={styles.subheader}>Name</Text>
+                <View style={{ flexDirection: 'row' }}>
+                    <Text style={styles.subheader}>Name </Text>
+                    <Text style={[styles.subheader, { fontWeight: 500, color: '#ababab', fontSize: 17 }]}>(required)</Text>
+                </View>
 
                 <TextInput
                     style={styles.input}
@@ -211,10 +227,16 @@ export default function EditRestaurant({ route }) {
             </ScrollView>
 
             <View style={styles.footer}>
-                <TouchableOpacity style={styles.saveButton} onPress={saveChanges}>
-                    <Text style={styles.saveButtonText}>SAVE CHANGES</Text>
-                </TouchableOpacity>
+                <View style={styles.footerButtons}>
+                    <TouchableOpacity style={[styles.saveButton, { backgroundColor: '#ccc' }]} onPress={() => navigation.goBack()}>
+                        <Text style={styles.cancelButtonText}>CANCEL</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.saveButton} onPress={saveChanges}>
+                        <Text style={styles.saveButtonText}>SAVE CHANGES</Text>
+                    </TouchableOpacity>
+                </View>
             </View>
+
         </View>
     );
 };
@@ -269,5 +291,22 @@ const styles = StyleSheet.create({
         padding: 10,
         borderRadius: 6,
         marginBottom: 10,
+    },
+    footerButtons: {
+        flexDirection: 'column',
+        justifyContent: 'space-between',
+        gap: 10,
+    },
+    cancelButton: {
+        flex: 1,
+        backgroundColor: '#ccc',
+        paddingVertical: 14,
+        borderRadius: 8,
+        alignItems: 'center',
+    },
+    cancelButtonText: {
+        color: '#333',
+        fontWeight: 'bold',
+        fontSize: 16,
     },
 });
