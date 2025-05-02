@@ -16,7 +16,7 @@ const PostComponent = ({ post }) => {
   const [userData, setUserData] = useState({});
 
   const navigation = useNavigation();
-  const isCurrentUserPost = userData.id === post.user_id._id
+  const isCurrentUserPost = userData.id === post.user_id._id;
 
   useEffect(() => {
     const getData = async () => {
@@ -206,11 +206,19 @@ const PostComponent = ({ post }) => {
 
       {renderStars(post.ratings)}
 
-      <TouchableOpacity onPress={() => navigation.navigate("DishReviews", { dish: post })}>
-        <Text style={styles.dishName}>{post.dish_name}</Text>
+      <TouchableOpacity onPress={() => navigation.navigate("DishReviews", { dish_id: post.dish_id })}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
+          <Text style={styles.dishName}>{post.dish_name}</Text>
+          <AntDesign name="right" size={17} color="#555" style={{ marginLeft: 5, marginTop: 5 }} />
+        </View>
       </TouchableOpacity>
 
-      <Text style={styles.restaurantName}>{post.restaurant_id.name}</Text>
+      <TouchableOpacity onPress={() => navigation.navigate("RestaurantPage", { restaurantId: post.restaurant_id._id })}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
+          <Text style={styles.restaurantName}>{post.restaurant_id.name}</Text>
+          <AntDesign name="right" size={15} color="#555" style={{ marginLeft: 5, marginTop: 5 }} />
+        </View>
+      </TouchableOpacity>
 
       <View style={styles.descriptionContainer}>
         <Text style={styles.description}>
@@ -285,9 +293,8 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   media: {
-    width: width-50,
-    height: width-50,
-    alignItems: 'center',
+    width: '100%',
+    aspectRatio: 1,
     marginVertical: 5,
   },
   deleteButton: {
