@@ -171,12 +171,14 @@ const PostComponent = ({ post, onDeleteSuccess }) => {
     );
   };
 
+  const avatarUrl = post?.user_id?.profile?.avatar_url?.trim() || null;
+
   return (
     <View style={styles.postContainer}>
       <View style={styles.header}>
         <View style={styles.userInfo}>
           <Image
-            source={{ uri: post.user_id.profile.avatar_url }}
+            source={avatarUrl ? { uri: avatarUrl} : require('../assets/defaultUserIcon.png')}
             style={styles.avatar}
           />
           <TouchableOpacity
