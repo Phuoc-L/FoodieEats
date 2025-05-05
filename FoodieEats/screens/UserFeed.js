@@ -25,7 +25,7 @@ export default function UserFeed() {
             return;
           }
           setUserData({ id, owner });
-          const user = await axios.get(`${process.env.EXPO_PUBLIC_API_URL}/api/users/${id}`);
+          const user = await axios.get(`${process.env.EXPO_PUBLIC_API_URL}/api/users/${id}`, {validateStatus: () => true});
           setCurrentUser(user.data);
         } catch (e) {
           console.error(e);
@@ -40,7 +40,7 @@ export default function UserFeed() {
 
     const fetchPosts = async () => {
       try {
-        const response = await axios.get(`${process.env.EXPO_PUBLIC_API_URL}/api/posts/${userData.id}/user_feed`);
+        const response = await axios.get(`${process.env.EXPO_PUBLIC_API_URL}/api/posts/${userData.id}/user_feed`, {validateStatus: () => true});
 
         if (response.status === 200) {
           const postsData = response.data || [];
