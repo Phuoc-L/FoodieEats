@@ -407,11 +407,11 @@ router.post("/:user_id/like/:post_id", async (req, res) => {
       { $push: { likes: post._id } },
       { new: true }
     );
-    // update post's like list and count
-    await Post.findOneAndUpdate(
-      { _id: post._id },
-      { $push: { like_list: user._id }, $inc: { num_likes: 1 } }
-    );
+    // // update post's like list and count
+    // await Post.findOneAndUpdate(
+    //   { _id: post._id },
+    //   { $push: { like_list: user._id }, $inc: { num_likes: 1 } }
+    // );
     res.status(200).json({ message: "User successfully liked the post", user: updated });
   } catch (error) {
     console.error(error);
@@ -437,11 +437,11 @@ router.post("/:user_id/unlike/:post_id", async (req, res) => {
       { $pull: { likes: post._id } },
       { new: true }
     );
-    // update post's like list and count
-    await Post.findOneAndUpdate(
-      { _id: post._id },
-      { $pull: { like_list: user._id }, $inc: { num_likes: -1 } }
-    );
+    // // update post's like list and count
+    // await Post.findOneAndUpdate(
+    //   { _id: post._id },
+    //   { $pull: { like_list: user._id }, $inc: { num_likes: -1 } }
+    // );
     res.status(200).json({ message: "User successfully unliked the post", user: updated });
   } catch (error) {
     console.error(error);
