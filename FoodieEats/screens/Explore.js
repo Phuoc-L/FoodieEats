@@ -373,7 +373,7 @@ export default function Explore() {
 
         <View style={styles.navbar}>
           <NavigationBar />
-        </View>
+        <NavigationBar/>
       </SafeAreaView>
     </TouchableWithoutFeedback>
   );
@@ -383,7 +383,7 @@ const styles = StyleSheet.create({
   container: { 
     flex: 1, 
     backgroundColor: '#fff', 
-    padding: 10 
+    paddingTop: 10 
   },
   header: { 
     flexDirection: 'row', 
