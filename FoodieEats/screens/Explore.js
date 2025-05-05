@@ -371,8 +371,6 @@ export default function Explore() {
           </TouchableWithoutFeedback>
         </Modal>
 
-        <View style={styles.navbar}>
-          <NavigationBar />
         <NavigationBar/>
       </SafeAreaView>
     </TouchableWithoutFeedback>
