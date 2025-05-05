@@ -9,9 +9,11 @@ import NavigationBar from './Navigation';
 import { ALERT_TYPE, Dialog, AlertNotificationRoot } from 'react-native-alert-notification';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import {SafeAreaView, SafeAreaProvider} from 'react-native-safe-area-context';
+import * as ImagePicker from "expo-image-picker";
 
 export default function Profile({route}) {
-  const [userId, setUserId]  = useState();
+  const [userId, setUserId] = useState("");
+  const [isOwner, setIsOwner] = useState(false);
   const [user, setUser] = useState("");
   const [displayedUser, setDisplayedUser] = useState("");
   const [btnTxt, setBtnTxt] = useState("");
@@ -51,15 +53,23 @@ export default function Profile({route}) {
       }
       setUserId(userIdResponse);
 
+      // Get logged-in isOwner
+      const isOwnerResponse = await AsyncStorage.getItem('owner');
+      if (isOwnerResponse == null) {
+        console.error('Error getting isOwner');
+        return;
+      }
+      setIsOwner(isOwnerResponse === 'true');
+
       const displayedUserId = route.params.displayUserID;    
       // Get passed-in displayed user ID
-      if (displayedUserId=== null || typeof(displayedUserId) === 'undefined') {
+      if (displayedUserId === null || typeof(displayedUserId) === 'undefined') {
         console.error('Error getting displayedUserId');
         return;
       }
 
       // Get logged-in user data
-      const userDataResponse = await axios.get(`${process.env.EXPO_PUBLIC_API_URL}/api/users/${userIdResponse}`);
+      const userDataResponse = await axios.get(`${process.env.EXPO_PUBLIC_API_URL}/api/users/${userIdResponse}`, {validateStatus: () => true});
       setUser(userDataResponse.data);
 
       if (userIdResponse === displayedUserId || displayedUserId === DEFAULT_LOGGED_IN_USER_ID) {
@@ -69,7 +79,7 @@ export default function Profile({route}) {
         setIsPostPrivate(!(userDataResponse.data?.privacy_settings?.post_visibility ?? true));
 
         // Get logged-in user's posts
-        const displayedUserPostResponse = await axios.get(`${process.env.EXPO_PUBLIC_API_URL}/api/posts/${userIdResponse}/posts`);
+        const displayedUserPostResponse = await axios.get(`${process.env.EXPO_PUBLIC_API_URL}/api/posts/${userIdResponse}/posts`, {validateStatus: () => true});
         // console.log("Fetched Posts Data (Self):", JSON.stringify(displayedUserPostResponse.data, null, 2)); // Removed logging
         setPosts([...displayedUserPostResponse.data]);
 
@@ -77,16 +87,18 @@ export default function Profile({route}) {
         setBtnTxt(EDIT_PROFILE_MSG);
       } else {
         // Get displayed user's data
-        const displayedUserDataResponse = await axios.get(`${process.env.EXPO_PUBLIC_API_URL}/api/users/${displayedUserId}`);
+        const displayedUserDataResponse = await axios.get(`${process.env.EXPO_PUBLIC_API_URL}/api/users/${displayedUserId}`, {validateStatus: () => true});
         setDisplayedUser(displayedUserDataResponse.data);
 
         // Get displayed user's posts
-        const displayedUserPostResponse = await axios.get(`${process.env.EXPO_PUBLIC_API_URL}/api/posts/${displayedUserId}/posts`);
+        const displayedUserPostResponse = await axios.get(`${process.env.EXPO_PUBLIC_API_URL}/api/posts/${displayedUserId}/posts`, {validateStatus: () => true});
         // console.log(`Fetched Posts Data (User ${displayedUserId}):`, JSON.stringify(displayedUserPostResponse.data, null, 2)); // Removed logging
         setPosts([...displayedUserPostResponse.data]);
 
         // Set button text to either 'follow' or 'unfollow'
-        SetDisplayButtonText(userDataResponse.data, displayedUserDataResponse.data._id);
+        if (isOwnerResponse === 'false') {
+          SetDisplayButtonText(userDataResponse.data, displayedUserDataResponse.data._id);
+        }
       }
     } catch (error) {
         console.error('Error getting user info', error);
@@ -115,7 +127,6 @@ export default function Profile({route}) {
       Alert.alert("Logout Error", "Could not clear session data.");
     }
   };
-
 
   const LogoutDisplay = () => {
     // If logged-in user ID and displayed user ID is the same, display a logout button
@@ -178,15 +189,21 @@ export default function Profile({route}) {
             <TextInput style={styles.inputMultiline} placeholder={'Description'} placeholderTextColor={'#A0A0A0'} defaultValue={user?.profile?.bio} scrollEnabled={true}
               multiline={true} maxLength={500} onChangeText={description => setProfileInfo({...profileInfo, bio: description})}/>
             <TouchableOpacity style={styles.changeImgButton}>
-              <Text style={styles.buttonText}>Change Profile Picture</Text>
+              <Text style={styles.buttonText} onPress={ChooseImage}>Change Profile Picture</Text>
             </TouchableOpacity>
+
+            {profileInfo.profilePic ? (
+              <View>
+                <Image source={{uri: profileInfo.profilePic}} style={styles.avatar}/>
+              </View>
+            ) : <View></View>}
 
             <View style={styles.editProfileBtnContainer}>
               <TouchableOpacity style={styles.profileButton} onPress={() => UpdateUserInfo()}>
                 <Text style={styles.buttonText}>Save</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.profileButton} onPress={() => setModalVisible(!modalVisible)}>
-                <Text style={styles.buttonText}>Close</Text>
+              <TouchableOpacity style={styles.profileButton} onPress={() => CancelUserUpdate()}>
+                <Text style={styles.buttonText}>Cancel</Text>
               </TouchableOpacity>
             </View>
 
@@ -196,13 +213,31 @@ export default function Profile({route}) {
     )
   }
 
+  const ChooseImage = async () => {
+    try {
+      const { permission } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+      if (permission !== 'granted') {
+        Alert.alert('Permission Denied', 'Please grant permission to the camera roll to upload images');
+      } else {
+        const result = await ImagePicker.launchImageLibraryAsync();
+        if (!result.canceled) {
+          setProfileInfo({...profileInfo, profilePic: result.uri});
+        }
+      }
+    } catch (err) {
+      console.error('ImagePicker Error:', err);
+      Alert.alert("Image Picker Error", err.message);
+    }
+  };
+
   const UpdateUserInfo = async () => {
     try {
       let changeMsgs = '';
       let errorMsgs = '';
 
       if (profileInfo?.username !== '' && user?.username !== profileInfo?.username) {
-        const response = await axios.post(`${process.env.EXPO_PUBLIC_API_URL}/api/users/${userId}/username/${profileInfo?.username}`);
+        const response = await axios.post(`${process.env.EXPO_PUBLIC_API_URL}/api/users/${userId}/username/${profileInfo?.username}`, {validateStatus: () => true});
         if (response.status === 200) {
           changeMsgs += "- Username to " + profileInfo.username + "\n";
         } else {
@@ -211,7 +246,7 @@ export default function Profile({route}) {
       }
 
       if (profileInfo?.firstName !== '' && user?.first_name !== profileInfo?.firstName) {
-        const response = await axios.post(`${process.env.EXPO_PUBLIC_API_URL}/api/users/${userId}/first_name/${profileInfo?.firstName}`);
+        const response = await axios.post(`${process.env.EXPO_PUBLIC_API_URL}/api/users/${userId}/first_name/${profileInfo?.firstName}`, {validateStatus: () => true});
         if (response.status === 200) {
           changeMsgs += "- First name to " + profileInfo.firstName + "\n";
         } else {
@@ -220,7 +255,7 @@ export default function Profile({route}) {
       }
 
       if (profileInfo?.lastName !== '' && user?.last_name !== profileInfo?.lastName) {
-        const response = await axios.post(`${process.env.EXPO_PUBLIC_API_URL}/api/users/${userId}/last_name/${profileInfo?.lastName}`);
+        const response = await axios.post(`${process.env.EXPO_PUBLIC_API_URL}/api/users/${userId}/last_name/${profileInfo?.lastName}`, {validateStatus: () => true});
         if (response.status === 200) {
           changeMsgs += "- Last name to " + profileInfo.lastName + "\n";
         } else {
@@ -229,11 +264,27 @@ export default function Profile({route}) {
       }
 
       if (profileInfo?.bio !== "" && user?.profile?.bio !== profileInfo?.bio) {
-        const response = await axios.post(`${process.env.EXPO_PUBLIC_API_URL}/api/users/${userId}/bio/${profileInfo?.bio}`);
+        const response = await axios.post(`${process.env.EXPO_PUBLIC_API_URL}/api/users/${userId}/bio/${profileInfo?.bio}`, {validateStatus: () => true});
         if (response.status === 200) {
           changeMsgs += "- Profile description\n";
         } else {
           errorMsgs += "- Profile description\n";
+        }
+      }
+
+      if (profileInfo?.profilePic !== "" && user?.profile?.profilePic !== profileInfo?.profilePic) {
+        const fileName = profileInfo?.profilePic.split('/').pop() ?? 'image.jpg';
+
+        let fileType = profileInfo?.profilePic?.mimeType || 'image/jpeg';
+        if (!fileType.startsWith('image/')) {
+          fileType = 'image/jpeg'; 
+        }
+
+        const response = await axios.post(`${process.env.EXPO_PUBLIC_API_URL}/api/users/${userId}/profilePicture`, { fileName, fileType }, {validateStatus: () => true});
+        if (response.status === 200) {
+          changeMsgs += "- Profile picture\n";
+        } else {
+          errorMsgs += "- Profile picture\n";
         }
       }
 
@@ -243,7 +294,7 @@ export default function Profile({route}) {
           try {
               const response = await axios.post(`${process.env.EXPO_PUBLIC_API_URL}/api/users/${userId}/privacy/post_visibility`, {
                   post_visibility: !isPostPrivate // Send the actual visibility value (inverted from the 'private' toggle)
-              });
+              }, {validateStatus: () => true});
               if (response.status === 200) {
                   changeMsgs += "- Post visibility setting\n";
               } else {
@@ -257,18 +308,29 @@ export default function Profile({route}) {
 
 
       if (errorMsgs !== "") {
-        Alert.alert("Error Updating", errorMsgs);
+        Dialog.show({
+          type: ALERT_TYPE.WARNING,
+          title: 'Error Updating',
+          textBody: errorMsgs,
+          button: 'Close',
+        })
       }
 
       if (changeMsgs !== "") {
-        Alert.alert("Successfully Updated", changeMsgs);
+        Dialog.show({
+          type: ALERT_TYPE.SUCCESS,
+          title: 'Successfully Updated',
+          textBody: changeMsgs,
+          button: 'Close',
+        })
 
         setState(state + 1);
       } 
 
     } catch (error) {
-      console.error('Error updating user info', error);
-      Alert.alert('Error updating user info', error);
+      let errMsg = error + ' ';
+      console.error('Error updating user info', errMsg);
+      Alert.alert('Error updating user info', errMsg);
     }
     finally {
       setProfileInfo({
@@ -276,14 +338,25 @@ export default function Profile({route}) {
         firstName: '',
         lastName: '',
         bio: '',
-        profilePic: '',
       });
     }
   };
 
+  const CancelUserUpdate = async () => {
+    setProfileInfo({
+      username: '',
+      firstName: '',
+      lastName: '',
+      bio: '',
+      profilePic: '',
+    });
+
+    setModalVisible(!modalVisible);
+  };
+
   const UnfollowUser = async () => {
     try {
-      const response = await axios.delete(`${process.env.EXPO_PUBLIC_API_URL}/api/users/${userId}/unfollow/${displayedUser._id}`);
+      const response = await axios.delete(`${process.env.EXPO_PUBLIC_API_URL}/api/users/${userId}/unfollow/${displayedUser._id}`, {validateStatus: () => true});
       if (response.status === 200) {
         Dialog.show({
           type: ALERT_TYPE.SUCCESS,
@@ -303,11 +376,11 @@ export default function Profile({route}) {
         button: 'Close',
       })
     }
-  }
+  };
 
   const FollowUser = async () => {
     try {
-      const response = await axios.post(`${process.env.EXPO_PUBLIC_API_URL}/api/users/${userId}/follow/${displayedUser._id}`);
+      const response = await axios.post(`${process.env.EXPO_PUBLIC_API_URL}/api/users/${userId}/follow/${displayedUser._id}`, {validateStatus: () => true});
       if (response.status === 200) {
         Dialog.show({
           type: ALERT_TYPE.SUCCESS,
@@ -384,7 +457,6 @@ export default function Profile({route}) {
       return require('../assets/defaultFoodIcon.png');
     }
   };
-  
 
   return (
     <SafeAreaProvider>
@@ -401,20 +473,23 @@ export default function Profile({route}) {
         <View style={styles.profileHeaderContainer}>
           <Image source={GetUserImage()} style={styles.avatar}/>
           <View>
-            <Text style={styles.text}>Followers: {displayedUser?.followers_count || 0}</Text>
-            <Text style={styles.text}>Following: {displayedUser?.following_count || 0}</Text>
-            <Text style={styles.text}>Posts: {displayedUser?.posts_count || 0}</Text>
+            <Text style={styles.text}>Followers: {displayedUser?.followers?.length || 0}</Text>
+            <Text style={styles.text}>Following: {displayedUser?.following?.length || 0}</Text>
+            <Text style={styles.text}>Posts: {displayedUser?.posts?.length || 0}</Text>
           </View>
         </View>
         
         {/* Display Edit Profile/Follow/Unfollow button and enable alert popup modal response */}
+        {isOwner ? <View></View> : 
         <AlertNotificationRoot>
           <View style={styles.headerContainer}>
             <TouchableOpacity style={styles.profileButton} onPress={() => HandleProfileButtonPress()}>
               <Text style={styles.buttonText}>{btnTxt}</Text>
             </TouchableOpacity>
           </View>
-        </AlertNotificationRoot>
+        </AlertNotificationRoot>}
+
+        {/*visible={isOwner ? isOwner : false}*/}
 
         {/* Display displayed user's name and description */}
         <View style={styles.marginContainer}>
@@ -611,21 +686,21 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     width: 300,
   },
+
   inputMultiline: {
     borderWidth: 1,
     borderColor: '#000',
     padding: 15,
+    borderRadius: 5,
+    width: 300,
+    height: 100,
+  },
+
   toggleContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between', // Pushes label and switch apart
     width: '100%', // Ensure it takes full width within modal padding
-    marginBottom: 15, // Add some space below
-    paddingHorizontal: 5, // Optional padding
-  },
-
-    borderRadius: 5,
-    width: 300,
-    height: 100,
+    padding: 5, // Optional padding
   },
 });

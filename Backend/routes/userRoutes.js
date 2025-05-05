@@ -453,29 +453,6 @@ router.post("/:user_id/unlike/:post_id", async (req, res) => {
 // User Profile 
 // -----------------------------------------
 
-// upload user profile picture
-router.post("/:user_id/profile", async (req, res) => {
-  try {
-    // Find the user
-    const user = await User.findById(req.params.user_id);
-    if (!user) return res.status(404).json({ error: "User not found" });
-    // Get the file name and file type
-    const { fileName, fileType } = req.body;
-    const uploadDir = "profile_pictures";
-    // Get the presigned URL
-    const presignedURL = await getPresignedURL(fileName, fileType, uploadDir);
-    console.log(presignedURL);
-    // update user with the profile picture url - use the correct S3 URL format without region in the hostname
-    const image_url = "https://" + process.env.BUCKET_NAME + ".s3.amazonaws.com/" + uploadDir + "/" + fileName;
-    user.profile.avatar_url = image_url;
-    await user.save();
-    res.status(200).json({ image_url });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Error uploading profile picture" });
-  }
-});
-
 // Get user profile picture
 router.get("/:user_id/profile", async (req, res) => {
   try {
@@ -486,6 +463,33 @@ router.get("/:user_id/profile", async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Error getting profile picture" });
+  }
+});
+
+// upload user profile picture
+router.post("/:user_id/profilePicture", async (req, res) => {
+  try {
+    // Find the user
+    const user = await User.findById(req.params.user_id);
+    if (!user) return res.status(404).json({ error: "User not found" });
+    // Get the file name and file type
+    const { fileName, fileType } = req.body;
+    const uploadDir = "profile_pictures";
+    // Get the presigned URL
+    const presignedURL = await getPresignedURL(fileName, fileType, uploadDir);
+    console.log(presignedURL);
+    if (presignedURL.error !== '') {
+      res.status(409).json({ error: "Error generating pre-signed URL" });
+      return;
+    };
+    // update user with the profile picture url - use the correct S3 URL format without region in the hostname
+    const image_url = "https://" + process.env.BUCKET_NAME + ".s3.amazonaws.com/" + uploadDir + "/" + fileName;
+    user.profile.avatar_url = image_url;
+    await user.save();
+    res.status(200).json({ image_url });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Error uploading profile picture" });
   }
 });
 
