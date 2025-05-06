@@ -22,11 +22,12 @@ export default function NavigationBar() {
 
   const FetchAsyncData = async () => {
     try {
-      const storedUserID = await AsyncStorage.getItem('userID');
-      const storedIsOwner = await AsyncStorage.getItem('owner'); // Returns 'true' or 'false' string
-      const storedRestaurantId = await AsyncStorage.getItem('restaurantId'); // Returns ID or null
+      // Use the correct keys as saved in AuthScreen.js
+      const storedUserID = await AsyncStorage.getItem('userId'); 
+      const storedIsOwner = await AsyncStorage.getItem('isOwner'); // Use 'isOwner' key
+      const storedRestaurantId = await AsyncStorage.getItem('restaurantId'); 
 
-      setUserID(storedUserID); // Can be null if not logged in
+      setUserID(storedUserID); // Set state with the fetched user ID
       
       const ownerBool = storedIsOwner === 'true'; // Convert to boolean
       setIsOwner(ownerBool);
@@ -67,21 +68,23 @@ export default function NavigationBar() {
       return (
         <TouchableOpacity onPress={() => navigation.reset({
           index: 0,
-          routes: [{ name: 'Profile', params: { displayUserID: userID } }], // Use fetched userID
+          // Ensure Profile screen expects 'displayUserId' param
+          routes: [{ name: 'Profile', params: { displayUserId: userID } }], 
         })}>
-          <FontAwesome name="user" size={24} color="black" />
+          <FontAwesome name="user" size={24} color={currentRoute === 'Profile' ? '#0080F0' : 'black'} />
         </TouchableOpacity>
       );
     } else {
       // Edge case: Owner but no restaurantId? Maybe show Profile or a specific message/screen.
       // For now, fallback to Profile, but this might need refinement.
       console.warn("Owner user detected but no restaurantId found in state.");
+       // Ensure Profile screen expects 'displayUserId' param
        return (
         <TouchableOpacity onPress={() => navigation.reset({
           index: 0,
-          routes: [{ name: 'Profile', params: { displayUserID: userID } }],
+          routes: [{ name: 'Profile', params: { displayUserId: userID } }],
         })}>
-          <FontAwesome name="user" size={24} color="black" />
+          <FontAwesome name="user" size={24} color={currentRoute === 'Profile' ? '#0080F0' : 'black'} />
         </TouchableOpacity>
       );
     }

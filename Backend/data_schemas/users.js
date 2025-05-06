@@ -6,8 +6,6 @@ const userSchema = new mongoose.Schema({
   username: { type: String, required: true, unique: true },
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
-  isOwner: { type: Boolean, default: false },
-  ownedRestaurantId: { type: mongoose.Schema.Types.ObjectId, ref: 'Restaurant', required: false },
 
 
   profile: {

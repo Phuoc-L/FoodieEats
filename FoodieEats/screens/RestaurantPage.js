@@ -51,8 +51,9 @@ export default function RestaurantPage({ route }) {
     useEffect(() => {
         const readUserData = async () => {
             try {
-                const userId = await AsyncStorage.getItem('userID');
-                const ownerStatus = await AsyncStorage.getItem('owner'); // Stored as string 'true'/'false'
+                // Use correct AsyncStorage keys
+                const userId = await AsyncStorage.getItem('userId'); 
+                const ownerStatus = await AsyncStorage.getItem('isOwner'); // Stored as string 'true'/'false'
                 const ownedRestId = await AsyncStorage.getItem('restaurantId'); // May be null
 
                 setLoggedInUserId(userId);
@@ -91,8 +92,9 @@ export default function RestaurantPage({ route }) {
     // Placeholder for logout button (Task 6.1)
     const handleLogout = async () => {
         try {
-            await AsyncStorage.removeItem('userID');
-            await AsyncStorage.removeItem('owner');
+            // Use consistent keys for removal
+            await AsyncStorage.removeItem('userId'); 
+            await AsyncStorage.removeItem('isOwner');
             await AsyncStorage.removeItem('restaurantId');
             await AsyncStorage.removeItem('token');
             navigation.reset({ index: 0, routes: [{ name: 'Auth' }] });

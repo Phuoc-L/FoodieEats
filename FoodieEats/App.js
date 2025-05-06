@@ -9,6 +9,8 @@ import NewPost from './screens/NewPost';
 import CommentsPage from './screens/CommentsPage';
 import RestaurantPage from './screens/RestaurantPage'; // Import RestaurantPage
 import ProfilePostFeed from './screens/ProfilePostFeed'; // Import the new screen
+import EditRestaurant from './screens/EditRestaurant'; // Added EditRestaurant import
+import NavigationBar from './screens/Navigation'; // Import NavigationBar
 
 
 const Stack = createNativeStackNavigator();
@@ -24,9 +26,10 @@ export default function App() {
         <Stack.Screen name="NewPost" component={NewPost} />
         <Stack.Screen name="CommentsPage" component={CommentsPage} options={{ title: "Comments" }}/>
         <Stack.Screen name="RestaurantPage" component={RestaurantPage} options={{ title: "Restaurant Profile" }}/>
-
         <Stack.Screen name="ProfilePostFeed" component={ProfilePostFeed} options={{ title: "Post Feed" }}/>
+        <Stack.Screen name="EditRestaurant" component={EditRestaurant} options={{ headerShown: false }}/> 
       </Stack.Navigator>
+      {/*<NavigationBar />*/} {/* Add NavigationBar here */}
     </NavigationContainer>
   );
 }
