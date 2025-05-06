@@ -10,6 +10,8 @@ import { ALERT_TYPE, Dialog, AlertNotificationRoot } from 'react-native-alert-no
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import {SafeAreaView, SafeAreaProvider} from 'react-native-safe-area-context';
 import * as ImagePicker from "expo-image-picker";
+import * as FileSystem from 'expo-file-system';
+import { Buffer } from 'buffer';
 
 export default function Profile({route}) {
   const [userId, setUserId] = useState("");
@@ -215,15 +217,13 @@ export default function Profile({route}) {
 
   const ChooseImage = async () => {
     try {
-      const { permission } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-
-      if (permission !== 'granted') {
-        Alert.alert('Permission Denied', 'Please grant permission to the camera roll to upload images');
-      } else {
-        const result = await ImagePicker.launchImageLibraryAsync();
-        if (!result.canceled) {
-          setProfileInfo({...profileInfo, profilePic: result.uri});
-        }
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        quality: 1,
+      });
+      if (!result.canceled) {
+        setProfileInfo({...profileInfo, profilePic: result.assets[0].uri, fileSize: result.assets[0].fileSize});
       }
     } catch (err) {
       console.error('ImagePicker Error:', err);
@@ -281,6 +281,26 @@ export default function Profile({route}) {
         }
 
         const response = await axios.post(`${process.env.EXPO_PUBLIC_API_URL}/api/users/${userId}/profilePicture`, { fileName, fileType }, {validateStatus: () => true});
+        
+        const presignedUrl = response.data.presignedURL;
+        // console.log('Status:', response.status);
+        // console.log('Presigned URL:', presignedUrl);
+        // console.log('File Type:', fileType);
+        // console.log('File Size:', profileInfo.fileSize);
+        // console.log('File Name:', fileName);
+        // console.log('File URI:', profileInfo.profilePic);
+        const fileBinary = await FileSystem.readAsStringAsync(profileInfo.profilePic, {
+          encoding: FileSystem.EncodingType.Base64,
+        });
+        const fileBuffer = Buffer.from(fileBinary, 'base64');
+  
+        // Upload the image to the presigned URL
+        const uploadResponse = await axios.put(presignedUrl, fileBuffer, {
+          headers: {
+            'Content-Type': fileType,
+            'Content-Length': profileInfo.fileSize,
+          },
+        });
         if (response.status === 200) {
           changeMsgs += "- Profile picture\n";
         } else {
