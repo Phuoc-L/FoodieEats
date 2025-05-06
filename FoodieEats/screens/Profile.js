@@ -283,12 +283,12 @@ export default function Profile({route}) {
         const response = await axios.post(`${process.env.EXPO_PUBLIC_API_URL}/api/users/${userId}/profilePicture`, { fileName, fileType }, {validateStatus: () => true});
         
         const presignedUrl = response.data.presignedURL;
-        console.log('Status:', response.status);
-        console.log('Presigned URL:', presignedUrl);
-        console.log('File Type:', fileType);
-        console.log('File Size:', profileInfo.fileSize);
-        console.log('File Name:', fileName);
-        console.log('File URI:', profileInfo.profilePic);
+        // console.log('Status:', response.status);
+        // console.log('Presigned URL:', presignedUrl);
+        // console.log('File Type:', fileType);
+        // console.log('File Size:', profileInfo.fileSize);
+        // console.log('File Name:', fileName);
+        // console.log('File URI:', profileInfo.profilePic);
         const fileBinary = await FileSystem.readAsStringAsync(profileInfo.profilePic, {
           encoding: FileSystem.EncodingType.Base64,
         });
