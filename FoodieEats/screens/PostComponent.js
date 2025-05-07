@@ -171,6 +171,31 @@ const PostComponent = ({ post, onDeleteSuccess }) => {
     );
   };
 
+  const getRelativeTime = (timestamp) => {
+    const postDate = new Date(timestamp);
+    const now = new Date();
+    const diffMs = now - postDate;
+    const diffMinutes = Math.floor(diffMs / (1000 * 60));
+    const diffHours = Math.floor(diffMinutes / 60);
+
+    if (diffMinutes < 1) return "just now";
+    if (diffMinutes < 60) return `${diffMinutes} minute${diffMinutes > 1 ? 's' : ''} ago`;
+    if (
+      postDate.getDate() === now.getDate() &&
+      postDate.getMonth() === now.getMonth() &&
+      postDate.getFullYear() === now.getFullYear()
+    ) {
+      return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+    } else {
+      return postDate.toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+      });
+    }
+  };
+
+
   const avatarUrl = post?.user_id?.profile?.avatar_url?.trim() || null;
 
   return (
@@ -228,6 +253,12 @@ const PostComponent = ({ post, onDeleteSuccess }) => {
           <Text style={styles.title}>{post.title}  </Text>
           {post.description}
         </Text>
+
+        <View style={{ marginLeft: 2, marginTop: 5 }}>
+          <Text style={{ color: '#555', fontSize: width / 26 }}>
+            {getRelativeTime(post.timestamp)}
+          </Text>
+        </View>
       </View>
 
       <View style={styles.footer}>
