@@ -47,24 +47,36 @@ export default function Profile({route}) {
 
   const FetchUserInfo = async () => {
     try {
-      // Get logged-in user ID
-      const userIdResponse = await AsyncStorage.getItem('userID');
+      // Get logged-in user ID using 'userID'
+      const userIdResponse = await AsyncStorage.getItem('userID'); 
+      console.log("Profile.js - Fetched loggedIn userID:", userIdResponse);
       if (userIdResponse == null) {
-        console.error('Error getting userId');
+        console.error('Profile.js - Error getting loggedIn userID from AsyncStorage');
+        // navigation.navigate('Auth'); // Optionally navigate to Auth if critical data missing
         return;
       }
-      setUserId(userIdResponse);
+      setUserId(userIdResponse); // This is the ID of the person viewing the profile
 
-      // Get logged-in isOwner
-      const isOwnerResponse = await AsyncStorage.getItem('owner');
-      if (isOwnerResponse == null) {
-        console.error('Error getting isOwner');
+      // Get logged-in user's owner status using 'owner'
+      const ownerString = await AsyncStorage.getItem('owner'); 
+      console.log("Profile.js - Fetched loggedIn ownerString:", ownerString);
+      if (ownerString == null) {
+        console.error('Profile.js - Error getting owner status from AsyncStorage');
+        // setIsOwner(false); // Default or handle error
         return;
       }
-      setIsOwner(isOwnerResponse === 'true');
+      setIsOwner(ownerString === 'true'); // Convert to boolean for internal state
 
-      const displayedUserId = route.params.displayUserID;    
-      // Get passed-in displayed user ID
+      // This is the ID of the profile being viewed, passed via navigation
+      const displayedUserId = route.params.displayUserID; 
+      console.log("Profile.js - displayUserID from route params:", displayedUserId);   
+      if (displayedUserId === null || typeof(displayedUserId) === 'undefined') {
+        console.error('Profile.js - Error getting displayedUserId from route params');
+        // Potentially navigate back or show an error if this is critical
+        return;
+      }
+
+      // Get logged-in user data (using userIdResponse)
       if (displayedUserId === null || typeof(displayedUserId) === 'undefined') {
         console.error('Error getting displayedUserId');
         return;
@@ -118,9 +130,10 @@ export default function Profile({route}) {
   // Add logout handler
   const handleLogout = async () => {
     try {
-      await AsyncStorage.removeItem('userID');
-      await AsyncStorage.removeItem('owner');
-      await AsyncStorage.removeItem('restaurantId'); // Attempt removal even if not owner
+      // Use correct keys for removal
+      await AsyncStorage.removeItem('userID'); 
+      await AsyncStorage.removeItem('owner'); 
+      await AsyncStorage.removeItem('restaurantId'); 
       await AsyncStorage.removeItem('token');
       navigation.reset({ index: 0, routes: [{ name: 'Auth' }] });
     } catch (e) {

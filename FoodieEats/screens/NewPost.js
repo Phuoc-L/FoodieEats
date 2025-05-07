@@ -70,8 +70,9 @@ export default function CreatePostScreen({ navigation }) {
   useEffect(() => {
     const fetchUserParams = async () => {
       try {
-        const userId = await AsyncStorage.getItem('userID');
+        const userId = await AsyncStorage.getItem('userID'); 
         const authToken = await AsyncStorage.getItem('token');
+        console.log("NewPost.js - Fetched from AsyncStorage:", { userId, authToken });
 
         if (!userId || !authToken) {
           Alert.alert('Error', 'User not found, please log in again');
@@ -340,7 +341,7 @@ export default function CreatePostScreen({ navigation }) {
         imageAsset: selectedImage,
       });
       Alert.alert('Success', 'Post created!');
-      navigation.navigate('Profile', { displayUserId: user._id });
+      navigation.navigate('Profile', { displayUserID: user._id });
     } catch (error) {
       Alert.alert('Error Creating Post', error.message || 'Could not create post');
     }

@@ -18,17 +18,26 @@ export default function UserFeed() {
     useCallback(() => {
       const getData = async () => {
         try {
-          const id = await AsyncStorage.getItem('user');
-          const owner = await AsyncStorage.getItem('owner');
+          console.log("UserFeed: Attempting to get data from AsyncStorage...");
+          const id = await AsyncStorage.getItem('userID'); // Use 'userID'
+          const ownerString = await AsyncStorage.getItem('owner'); // Use 'owner'
+          
+          console.log("UserFeed: Fetched from AsyncStorage - id:", id, "ownerString:", ownerString);
+
           if (!id) {
-            console.error('User ID not found in AsyncStorage');
+            console.error('UserFeed: User ID (userID) not found in AsyncStorage');
+            setPosts([]); // Clear posts if no user ID
             return;
           }
-          setUserData({ id, owner });
-          const user = await axios.get(`${process.env.EXPO_PUBLIC_API_URL}/api/users/${id}`, {validateStatus: () => true});
-          setCurrentUser(user.data);
+          const ownerBool = ownerString === 'true'; // Convert to boolean
+          setUserData({ id, owner: ownerBool }); // Set state
+
+          // Fetch full user details if needed by PostComponent or other logic
+          // const user = await axios.get(`${process.env.EXPO_PUBLIC_API_URL}/api/users/${id}`, {validateStatus: () => true});
+          // setCurrentUser(user.data);
+
         } catch (e) {
-          console.error(e);
+          console.error("UserFeed: Error in getData", e);
         }
       };
       getData();
@@ -36,10 +45,15 @@ export default function UserFeed() {
   );
 
   useEffect(() => {
-    if (!userData) return;
+    // Ensure userData and specifically userData.id is available
+    if (!userData || !userData.id) {
+        console.log("UserFeed: Skipping fetchPosts because userData.id is not set.");
+        return;
+    }
 
     const fetchPosts = async () => {
       try {
+        console.log(`UserFeed: Fetching posts for user ID: ${userData.id}`);
         const response = await axios.get(`${process.env.EXPO_PUBLIC_API_URL}/api/posts/${userData.id}/user_feed`, {validateStatus: () => true});
 
         if (response.status === 200) {
