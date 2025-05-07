@@ -5,6 +5,7 @@ const User = require("../data_schemas/users");
 const Restaurant = require("../data_schemas/restaurant");
 const getPresignedURL = require("../functions/s3PresignedURL.js");
 const router = express.Router();
+const calculateAverageRating = require("../functions/calculateAverageRating.js");
 
 // Middleware to verify post ownership
 const verifyPostOwnership = async (req, res, next) => {
@@ -174,6 +175,8 @@ router.post("/:user_id/create", async (req, res) => {
       if (dish) {
         dish.average_rating = (dish.average_rating * dish.num_ratings + ratings) / (dish.num_ratings + 1);
         dish.num_ratings += 1;
+
+        restaurant.num_reviews = restaurant.num_reviews + 1;
         restaurant.average_rating = calculateAverageRating(restaurant.menu);
         await restaurant.save();
       }
@@ -329,6 +332,7 @@ router.delete("/:user_id/posts/:post_id", verifyPostOwnership, async (req, res) 
         } else {
           dish.average_rating = (dish.average_rating * (dish.num_ratings + 1) - deletedPost.ratings) / dish.num_ratings;
         }
+        restaurant.num_reviews = Math.max(restaurant.num_reviews - 1, 0);
         restaurant.average_rating = calculateAverageRating(restaurant.menu);
         await restaurant.save();
       }

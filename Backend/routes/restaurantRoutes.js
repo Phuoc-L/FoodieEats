@@ -4,6 +4,7 @@ const Restaurant = require("../data_schemas/restaurant");
 const Posts = require("../data_schemas/post");
 const Owner = require("../data_schemas/restaurant_owner");
 const router = express.Router();
+const calculateAverageRating = require("../functions/calculateAverageRating.js");
 
 router.get("/", async (req, res) => {
   try {
@@ -327,17 +328,5 @@ router.get("/owner/:user_id", async (req, res) => {
     res.status(500).json({ error: "Error getting user by ID" });
   }
 });
-
-const calculateAverageRating = (menu) => {
-  let totalRatingSum = 0;
-  let totalRatingCount = 0;
-
-  menu.forEach((item) => {
-    totalRatingSum += item.average_rating * item.num_ratings;
-    totalRatingCount += item.num_ratings;
-  });
-
-  return totalRatingCount > 0 ? totalRatingSum / totalRatingCount : 0;
-};
 
 module.exports = router;
