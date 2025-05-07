@@ -48,7 +48,7 @@ export default function RestaurantPage({ route }) {
         const readUser = async () => {
             const id = await AsyncStorage.getItem('userID');
             const owner_string = await AsyncStorage.getItem('owner');
-            const restaurant_id = await AsyncStorage.getItem('restaurantID');
+            const restaurant_id = await AsyncStorage.getItem('restaurantId');
 
             const owner = (owner_string.toLowerCase() === "true");
 
