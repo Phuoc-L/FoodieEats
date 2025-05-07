@@ -29,7 +29,6 @@ export default function App() {
         <Stack.Screen name="ProfilePostFeed" component={ProfilePostFeed} options={{ title: "Post Feed" }}/>
         <Stack.Screen name="EditRestaurant" component={EditRestaurant} options={{ headerShown: false }}/> 
       </Stack.Navigator>
-      {/*<NavigationBar />*/} {/* Add NavigationBar here */}
     </NavigationContainer>
   );
 }
