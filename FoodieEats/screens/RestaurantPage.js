@@ -6,6 +6,7 @@ import { useNavigation } from "@react-navigation/native";
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
+import NavigationBar from './Navigation';
 
 
 const { width } = Dimensions.get('window');
@@ -84,7 +85,11 @@ export default function RestaurantPage({ route }) {
                     <Text style={styles.dishTitle}>{item.name}</Text>
                     <View style={styles.rating}>
                         <View style={styles.starRating}>
-                            <Text style={styles.dishRatingValue}>{parseFloat(item.average_rating).toFixed(1)}</Text>
+                            <Text style={styles.dishRatingValue}>
+                                {item.num_ratings === 0
+                                    ? "N/A"
+                                    : parseFloat(item.average_rating).toFixed(1)}
+                            </Text>
                             <FontAwesome
                                 name={"star"}
                                 size={width / 18}
@@ -181,7 +186,9 @@ export default function RestaurantPage({ route }) {
                     <View style={{ alignItems: 'center', padding: 20 }}>
                         <View style={styles.starRating}>
                             <Text style={[styles.restaurantRatingValue, { fontSize: width / 15 }]}>
-                                {parseFloat(restaurant.average_rating).toFixed(1)}
+                                {restaurant.num_reviews === 0
+                                    ? "N/A"
+                                    : parseFloat(restaurant.average_rating).toFixed(1)}
                             </Text>
                             <FontAwesome
                                 name="star"
@@ -191,10 +198,8 @@ export default function RestaurantPage({ route }) {
                             />
                         </View>
                         <Text style={[styles.restaurantNumRatings, { fontSize: width / 26 }]}>
-                            ({
-                                restaurant.num_posts ?? restaurant.posts?.length ?? 0
-                            }
-                            {(restaurant.num_posts ?? restaurant.posts?.length ?? 0) === 1 ? " review" : " reviews"})
+                            ({restaurant.num_reviews}
+                            {restaurant.num_reviews === 1 ? " review" : " reviews"})
                         </Text>
                     </View>
                 ) : (
@@ -231,7 +236,11 @@ export default function RestaurantPage({ route }) {
                         </View>
                         <View style={styles.rating}>
                             <View style={styles.starRating}>
-                                <Text style={styles.restaurantRatingValue}>{parseFloat(restaurant.average_rating).toFixed(1)}</Text>
+                                <Text style={styles.restaurantRatingValue}>
+                                    {restaurant.num_reviews === 0
+                                        ? "N/A"
+                                        : parseFloat(restaurant.average_rating).toFixed(1)}
+                                </Text>
                                 <FontAwesome
                                     name={"star"}
                                     size={width / 13}
@@ -241,10 +250,8 @@ export default function RestaurantPage({ route }) {
                             </View>
 
                             <Text style={styles.restaurantNumRatings}>
-                                ({
-                                    restaurant.num_posts ?? restaurant.posts?.length ?? 0
-                                }
-                                {(restaurant.num_posts ?? restaurant.posts?.length ?? 0) === 1 ? " review" : " reviews"})
+                                ({restaurant.num_reviews}
+                                {restaurant.num_reviews === 1 ? " review" : " reviews"})
                             </Text>
                         </View>
                     </View>
@@ -257,8 +264,8 @@ export default function RestaurantPage({ route }) {
                 renderItem={renderMenuItem}
                 contentContainerStyle={
                     restaurant.menu.length === 0
-                    ? [styles.emptyContainer, { paddingBottom: isOwner ? 100 : 0 }]
-                    : { paddingBottom: isOwner ? 100 : 0 }
+                    ? [styles.emptyContainer, { paddingHorizontal: 20, paddingBottom: isOwner ? 100 : 0 }]
+                    : { paddingHorizontal: 20, paddingBottom: isOwner ? 100 : 0 }
                 }
                 ListEmptyComponent={<Text style={styles.emptyText}>No menu items to show.</Text>}
             />
@@ -272,6 +279,8 @@ export default function RestaurantPage({ route }) {
                     </TouchableOpacity>
                 </View>
             )}
+
+            <NavigationBar />
         </View>
     );
 }
@@ -280,13 +289,13 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#fff',
-        padding: 20,
     },
     titleContainer: {
         backgroundColor: "fff",
         alignItems: 'center',
         borderBottomWidth: 1,
         borderBottomColor: "#ccc",
+        padding: 20,
     },
     ownerTitleRow: {
         flexDirection: 'row',
