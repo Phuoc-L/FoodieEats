@@ -353,7 +353,7 @@ export default function CreatePostScreen({ navigation }) {
         imageAsset: selectedImage,
       });
       Alert.alert('Success', 'Post created!');
-      navigation.navigate('Profile', { displayUserId: user._id });
+      navigation.navigate('Profile', { displayUserID: user._id });
     } catch (error) {
       Alert.alert('Error Creating Post', error.message || 'Could not create post');
     }
