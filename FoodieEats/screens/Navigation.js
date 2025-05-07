@@ -1,60 +1,59 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { View, TouchableOpacity, StyleSheet } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { FontAwesome } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function NavigationBar() {
-  const [userID, setUserID] = useState(null); // Default to null
-  const [isOwner, setIsOwner] = useState(false);
-  const [restaurantId, setRestaurantId] = useState(null); // Add state for restaurantId
+  const [userID, setUserID] = useState(null); 
+  const [isOwner, setIsOwner] = useState(false); // Internal state will be boolean
+  const [restaurantId, setRestaurantId] = useState(null); 
   const navigation = useNavigation();
 
-  // Remove DEFAULT_LOGGED_IN_USER_ID as we fetch the actual ID
-
-   useEffect(() => {
-      FetchAsyncData();
-      // Optional: Add listener for focus to refetch if needed,
-      // though AsyncStorage changes should ideally trigger re-renders if managed globally.
-      // const unsubscribe = navigation.addListener('focus', FetchAsyncData);
-      // return unsubscribe;
-    }, []); // Run once on mount
-
-  const FetchAsyncData = async () => {
+  const FetchAsyncData = useCallback(async () => {
     try {
-      // Use the correct keys as saved in AuthScreen.js
-      const storedUserID = await AsyncStorage.getItem('userId'); 
-      const storedIsOwner = await AsyncStorage.getItem('isOwner'); // Use 'isOwner' key
+      // Read using 'userID' and 'owner' keys
+      const storedUserID = await AsyncStorage.getItem('userID'); 
+      const storedOwnerString = await AsyncStorage.getItem('owner'); // This will be "true" or "false" string
       const storedRestaurantId = await AsyncStorage.getItem('restaurantId'); 
 
-      setUserID(storedUserID); // Set state with the fetched user ID
+      console.log("Navigation.js - Fetched from AsyncStorage:", { storedUserID, storedOwnerString, storedRestaurantId });
+
+      setUserID(storedUserID); 
       
-      const ownerBool = storedIsOwner === 'true'; // Convert to boolean
-      setIsOwner(ownerBool);
+      const ownerBool = storedOwnerString === 'true'; // Convert string from AsyncStorage to boolean
+      setIsOwner(ownerBool); // Set boolean state
 
       if (ownerBool && storedRestaurantId) {
         setRestaurantId(storedRestaurantId);
       } else {
-        setRestaurantId(null); // Ensure it's null if not owner or no ID stored
+        setRestaurantId(null); 
       }
 
     } catch (e) {
-      console.error("Failed to fetch auth data from storage", e);
-      // Reset state on error
+      console.error("Navigation.js - Failed to fetch auth data from storage", e);
       setUserID(null);
       setIsOwner(false);
       setRestaurantId(null);
     }
-  };
+  }, []); 
 
-  const DisplayProfileIcon = () => {
-    // Only show profile icon if logged in (userID is not null)
+  useFocusEffect(
+    useCallback(() => {
+      async function performFetch() {
+        await FetchAsyncData();
+      }
+      performFetch();
+    }, [FetchAsyncData])
+  );
+
+  const DisplayProfileIcon = () => { 
     if (!userID) {
-      return null; // Or maybe a login icon? For now, hide if not logged in.
+      return null; 
     }
 
+    // Logic uses the boolean isOwner state
     if (isOwner && restaurantId) {
-      // Navigate to RestaurantPage if owner and restaurantId is available
       return (
         <TouchableOpacity onPress={() => navigation.reset({
           index: 0,
@@ -64,37 +63,33 @@ export default function NavigationBar() {
         </TouchableOpacity>
       );
     } else if (!isOwner) {
-      // Navigate to Profile if not owner
       return (
         <TouchableOpacity onPress={() => navigation.reset({
           index: 0,
-          // Ensure Profile screen expects 'displayUserId' param
           routes: [{ name: 'Profile', params: { displayUserID: userID } }], 
         })}>
-          <FontAwesome name="user" size={24} color={currentRoute === 'Profile' ? '#0080F0' : 'black'} />
+          <FontAwesome name="user" size={24} color="black" />
         </TouchableOpacity>
       );
     } else {
-      // Edge case: Owner but no restaurantId? Maybe show Profile or a specific message/screen.
-      // For now, fallback to Profile, but this might need refinement.
       console.warn("Owner user detected but no restaurantId found in state.");
-       // Ensure Profile screen expects 'displayUserId' param
        return (
         <TouchableOpacity onPress={() => navigation.reset({
           index: 0,
           routes: [{ name: 'Profile', params: { displayUserID: userID } }],
         })}>
-          <FontAwesome name="user" size={24} color={currentRoute === 'Profile' ? '#0080F0' : 'black'} />
+          <FontAwesome name="user" size={24} color="black" />
         </TouchableOpacity>
       );
     }
   };
 
   const DisplayNavBar = () => {
-    if (userID !== null && typeof(userID) !== 'undefined' && isOwner !== null || typeof(isOwner) !== 'undefined') {
+    // Logic uses the boolean isOwner state
+    if (userID !== null && typeof(userID) !== 'undefined' && isOwner !== null /* isOwner is boolean, no typeof needed */) {
       return (
         <View style={styles.navBar}>
-          {isOwner === true ? null : <TouchableOpacity onPress={() => navigation.reset({
+          {isOwner ? null : <TouchableOpacity onPress={() => navigation.reset({
             index: 0,
             routes: [{name: 'UserFeed'}],
             })}>
@@ -105,24 +100,25 @@ export default function NavigationBar() {
             routes: [{name: 'Explore'}],
             })}>
             <FontAwesome name="globe" size={24} color="black" />
-          </TouchableOpacity>
-          {isOwner === true ? null : <TouchableOpacity onPress={() => navigation.reset({
+          </TouchableOpacity>  
+          {isOwner ? null : <TouchableOpacity onPress={() => navigation.reset({
             index: 0,
             routes: [{name: 'NewPost'}],
             })}>
             <FontAwesome name="plus-circle" size={24} color="black"/>
-          </TouchableOpacity>}
+          </TouchableOpacity>} 
           {DisplayProfileIcon()}
         </View>
       );
     }
+    return null; 
   };
 
   return (
-    <View>
-      {DisplayNavBar()}
-    </View>
-  );
+     <View>
+       {DisplayNavBar()}
+     </View>
+   );
 }
 
 const styles = StyleSheet.create({
