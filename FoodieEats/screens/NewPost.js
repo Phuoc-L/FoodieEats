@@ -70,8 +70,9 @@ export default function CreatePostScreen({ navigation }) {
   useEffect(() => {
     const fetchUserParams = async () => {
       try {
-        const userId = await AsyncStorage.getItem('userID');
+        const userId = await AsyncStorage.getItem('userID'); 
         const authToken = await AsyncStorage.getItem('token');
+        console.log("NewPost.js - Fetched from AsyncStorage:", { userId, authToken });
 
         if (!userId || !authToken) {
           Alert.alert('Error', 'User not found, please log in again');

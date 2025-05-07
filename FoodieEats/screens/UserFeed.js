@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, FlatList, StyleSheet, Text, Dimensions, SafeAreaView, ActivityIndicator } from 'react-native';
+import { View, FlatList, StyleSheet, Text, Dimensions } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import NavigationBar from './Navigation';
@@ -25,14 +25,15 @@ export default function UserFeed() {
           const owner = await AsyncStorage.getItem('owner');
           const isOwner = (owner.toLowerCase() === "true");
           if (!id) {
-            console.error('User ID not found in AsyncStorage');
+            console.error('UserFeed: User ID (userID) not found in AsyncStorage');
+            setPosts([]); // Clear posts if no user ID
             return;
           }
           setUserData({ id, isOwner });
           const user = await axios.get(`${process.env.EXPO_PUBLIC_API_URL}/api/users/${id}`);
           setCurrentUser(user.data);
         } catch (e) {
-          console.error(e);
+          console.error("UserFeed: Error in getData", e);
         }
       };
       getData();
@@ -40,7 +41,11 @@ export default function UserFeed() {
   );
 
   useEffect(() => {
-    if (!userData.id) return;
+    // Ensure userData and specifically userData.id is available
+    if (!userData || !userData.id) {
+        console.log("UserFeed: Skipping fetchPosts because userData.id is not set.");
+        return;
+    }
 
     const fetchPosts = async () => {
       setLoading(true);
@@ -63,7 +68,8 @@ export default function UserFeed() {
       }
     };
     fetchPosts();
-  }, [userData.id]);
+  }, [userData]);
+
 
   return (
     <SafeAreaView style={styles.container}>

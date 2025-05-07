@@ -10,6 +10,8 @@ import { ALERT_TYPE, Dialog, AlertNotificationRoot } from 'react-native-alert-no
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import {SafeAreaView, SafeAreaProvider} from 'react-native-safe-area-context';
 import * as ImagePicker from "expo-image-picker";
+import * as FileSystem from 'expo-file-system';
+import { Buffer } from 'buffer';
 
 export default function Profile({route}) {
   const [userId, setUserId] = useState("");
@@ -45,24 +47,36 @@ export default function Profile({route}) {
 
   const FetchUserInfo = async () => {
     try {
-      // Get logged-in user ID
-      const userIdResponse = await AsyncStorage.getItem('userID');
+      // Get logged-in user ID using 'userID'
+      const userIdResponse = await AsyncStorage.getItem('userID'); 
+      console.log("Profile.js - Fetched loggedIn userID:", userIdResponse);
       if (userIdResponse == null) {
-        console.error('Error getting userId');
+        console.error('Profile.js - Error getting loggedIn userID from AsyncStorage');
+        // navigation.navigate('Auth'); // Optionally navigate to Auth if critical data missing
         return;
       }
-      setUserId(userIdResponse);
+      setUserId(userIdResponse); // This is the ID of the person viewing the profile
 
-      // Get logged-in isOwner
-      const isOwnerResponse = await AsyncStorage.getItem('owner');
-      if (isOwnerResponse == null) {
-        console.error('Error getting isOwner');
+      // Get logged-in user's owner status using 'owner'
+      const ownerString = await AsyncStorage.getItem('owner'); 
+      console.log("Profile.js - Fetched loggedIn ownerString:", ownerString);
+      if (ownerString == null) {
+        console.error('Profile.js - Error getting owner status from AsyncStorage');
+        // setIsOwner(false); // Default or handle error
         return;
       }
-      setIsOwner(isOwnerResponse === 'true');
+      setIsOwner(ownerString === 'true'); // Convert to boolean for internal state
 
-      const displayedUserId = route.params.displayUserID;    
-      // Get passed-in displayed user ID
+      // This is the ID of the profile being viewed, passed via navigation
+      const displayedUserId = route.params.displayUserID; 
+      console.log("Profile.js - displayUserID from route params:", displayedUserId);   
+      if (displayedUserId === null || typeof(displayedUserId) === 'undefined') {
+        console.error('Profile.js - Error getting displayedUserId from route params');
+        // Potentially navigate back or show an error if this is critical
+        return;
+      }
+
+      // Get logged-in user data (using userIdResponse)
       if (displayedUserId === null || typeof(displayedUserId) === 'undefined') {
         console.error('Error getting displayedUserId');
         return;
@@ -116,9 +130,10 @@ export default function Profile({route}) {
   // Add logout handler
   const handleLogout = async () => {
     try {
-      await AsyncStorage.removeItem('userID');
-      await AsyncStorage.removeItem('owner');
-      await AsyncStorage.removeItem('restaurantId'); // Attempt removal even if not owner
+      // Use correct keys for removal
+      await AsyncStorage.removeItem('userID'); 
+      await AsyncStorage.removeItem('owner'); 
+      await AsyncStorage.removeItem('restaurantId'); 
       await AsyncStorage.removeItem('token');
       navigation.reset({ index: 0, routes: [{ name: 'Auth' }] });
     } catch (e) {
@@ -215,15 +230,13 @@ export default function Profile({route}) {
 
   const ChooseImage = async () => {
     try {
-      const { permission } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-
-      if (permission !== 'granted') {
-        Alert.alert('Permission Denied', 'Please grant permission to the camera roll to upload images');
-      } else {
-        const result = await ImagePicker.launchImageLibraryAsync();
-        if (!result.canceled) {
-          setProfileInfo({...profileInfo, profilePic: result.uri});
-        }
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        quality: 1,
+      });
+      if (!result.canceled) {
+        setProfileInfo({...profileInfo, profilePic: result.assets[0].uri, fileSize: result.assets[0].fileSize});
       }
     } catch (err) {
       console.error('ImagePicker Error:', err);
@@ -281,6 +294,26 @@ export default function Profile({route}) {
         }
 
         const response = await axios.post(`${process.env.EXPO_PUBLIC_API_URL}/api/users/${userId}/profilePicture`, { fileName, fileType }, {validateStatus: () => true});
+        
+        const presignedUrl = response.data.presignedURL;
+        // console.log('Status:', response.status);
+        // console.log('Presigned URL:', presignedUrl);
+        // console.log('File Type:', fileType);
+        // console.log('File Size:', profileInfo.fileSize);
+        // console.log('File Name:', fileName);
+        // console.log('File URI:', profileInfo.profilePic);
+        const fileBinary = await FileSystem.readAsStringAsync(profileInfo.profilePic, {
+          encoding: FileSystem.EncodingType.Base64,
+        });
+        const fileBuffer = Buffer.from(fileBinary, 'base64');
+  
+        // Upload the image to the presigned URL
+        const uploadResponse = await axios.put(presignedUrl, fileBuffer, {
+          headers: {
+            'Content-Type': fileType,
+            'Content-Length': profileInfo.fileSize,
+          },
+        });
         if (response.status === 200) {
           changeMsgs += "- Profile picture\n";
         } else {

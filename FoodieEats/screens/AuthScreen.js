@@ -7,7 +7,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 export default function AuthScreen(props) {
   const [isLogin, setIsLogin] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
-  const [isOwnerMode, setIsOwnerMode] = useState(false);
+  // Revert to isOwnerMode to match "original" code structure
+  const [isOwnerMode, setIsOwnerMode] = useState(false); 
 
   const [formData, setFormData] = useState({
     firstName: '',
@@ -17,83 +18,114 @@ export default function AuthScreen(props) {
     password: '',
   });
 
-  // Save data
   const saveData = async (dataName, data) => {
     try {
+        if (data === null || data === undefined) {
+            return; 
+        }
         await AsyncStorage.setItem(dataName, data);
     } catch (e) {
-        console.error(e);
+        console.error(`Error saving ${dataName}:`, e);
     }
   };
 
   const loginUser = async (credentials) => {
+    // Determine API endpoint based on isOwnerMode
+    const loginUrl = isOwnerMode
+      ? `${process.env.EXPO_PUBLIC_API_URL}/api/restaurant-owners/login`
+      : `${process.env.EXPO_PUBLIC_API_URL}/api/users/login`;
+      
     try {
-      const response = await axios.post(process.env.EXPO_PUBLIC_API_URL + '/api/users/login', credentials);
-      const { user, token } = response.data;
-      // Save user/owner data
-      await saveData("userID", user._id); // Use userID key
-      await saveData("owner", user.isOwner.toString()); // Save boolean as string
-      if (user.isOwner && user.ownedRestaurantId) {
-        await saveData("restaurantId", user.ownedRestaurantId);
-      } else {
-        // Ensure restaurantId is removed for non-owners
-        await AsyncStorage.removeItem("restaurantId");
+      console.log(`Attempting ${isOwnerMode ? 'Owner' : 'Personal'} login to: ${loginUrl}`);
+      const response = await axios.post(loginUrl, credentials);
+      
+      const { token } = response.data;
+      // Backend returns 'user' for personal and 'owner' for restaurant owner
+      const responseData = isOwnerMode ? response.data.owner : response.data.user; 
+
+      if (!responseData || !responseData._id || !token) {
+          Alert.alert("Login Error", "Invalid response from server.");
+          return; 
       }
+
+      // Clear previous keys
+      await AsyncStorage.multiRemove(['userID', 'owner', 'restaurantId', 'token']);
+
+      // Save data using "original" keys
       await saveData("token", token);
+      await saveData("owner", isOwnerMode.toString()); // Save "true" or "false"
+      await saveData("userID", responseData._id);    // Save as userID (uppercase D)
+
+      let targetScreen = 'UserFeed';
+      let params = {};
+
+      if (isOwnerMode) {
+        if (responseData.restaurant_id) {
+          await saveData("restaurantId", responseData.restaurant_id);
+          targetScreen = 'RestaurantPage'; 
+          params = { restaurantId: responseData.restaurant_id };
+        } else {
+          Alert.alert("Login Error", "Owner account error: Restaurant ID missing.");
+          return; 
+        }
+      }
       
       Keyboard.dismiss();
-      // Navigate based on owner status? For now, just Explore.
-      // We might refine navigation later based on owner status.
-      props.navigation.reset({ index: 0, routes: [{ name: 'UserFeed' }] }); // Use reset to clear auth stack
+      props.navigation.reset({ 
+          index: 0, 
+          routes: [{ name: targetScreen, params: params }] 
+      });
+
     } catch (error) {
-      console.error('Login error:', error.response ? error.response.data : error.message);
-      Alert.alert("Login Error", error.response?.data?.error || "Something went wrong");
+      console.error(`${isOwnerMode ? 'Owner' : 'Personal'} Login error:`, error.response ? error.response.data : error.message);
+      Alert.alert("Login Error", error.response?.data?.error || `Failed to log in.`);
     }
   };
 
-  const signupUser = async (userData) => {
+  const signupUser = async (currentFormState) => {
+    // Data for both user types
+    const commonData = {
+      first_name: currentFormState.firstName,
+      last_name: currentFormState.lastName,
+      email: currentFormState.email,
+      username: currentFormState.username,
+      password: currentFormState.password,
+    };
+
+    // Determine URL and payload based on isOwnerMode
+    let signupUrl;
+    let payload;
+
+    if (isOwnerMode) {
+      signupUrl = `${process.env.EXPO_PUBLIC_API_URL}/api/restaurant-owners/signup`;
+      payload = commonData; // Backend /api/restaurant-owners/signup handles restaurant creation
+    } else {
+      signupUrl = `${process.env.EXPO_PUBLIC_API_URL}/api/users/signup`;
+      // Original user signup didn't send an isOwner flag, backend users schema is clean
+      payload = commonData; 
+    }
+      
     try {
-      // Ensure keys match the backend schema
-      const formattedData = {
-        first_name: userData.firstName,
-        last_name: userData.lastName,
-        email: userData.email,
-        username: userData.username,
-        password: userData.password,
-        isOwner: isOwnerMode, // Add the owner flag
-      };
-  
-      const response = await axios.post(process.env.EXPO_PUBLIC_API_URL + '/api/users/signup', formattedData);
+      console.log(`Attempting ${isOwnerMode ? 'Owner' : 'Personal'} signup to: ${signupUrl}`);
+      const response = await axios.post(signupUrl, payload); 
+      
       Keyboard.dismiss();
-      const { user, token } = response.data;
-      console.log('Signup successful:', user);
-      console.log('Token:', token);
+      console.log(`${isOwnerMode ? 'Owner' : 'Personal'} Signup successful:`, response.data);
 
-      // Save user/owner data after successful signup
-      await saveData("userID", user._id); // Use userID key
-      await saveData("owner", user.isOwner.toString()); // Save boolean as string
-      if (user.isOwner && user.ownedRestaurantId) {
-        await saveData("restaurantId", user.ownedRestaurantId);
-      } else {
-        // Ensure restaurantId is removed for non-owners
-        await AsyncStorage.removeItem("restaurantId");
-      }
-      await saveData("token", token);
-
-      Alert.alert("Success", "Signed up successfully! Please log in.");
-      // Optionally, switch to login view after successful signup
-      setIsLogin(true);
+      Alert.alert("Success", `${isOwnerMode ? 'Restaurant Owner' : 'User'} account created successfully! Please log in.`);
+      setIsLogin(true); 
+      // setIsOwnerMode(isOwnerMode); // Keep the selected mode for login convenience
     } catch (error) {
       console.error('Signup error:', error.response ? error.response.data : error.message);
-      Alert.alert("Signup Error", error.response?.data?.error || "Something went wrong");
+      Alert.alert("Signup Error", error.response?.data?.error || "Something went wrong during signup.");
     }
   };
   
   const handleSubmit = () => {
     if (isLogin) {
-      loginUser({ email: formData.email, password: formData.password });
+      loginUser({ email: formData.email, password: formData.password }); 
     } else {
-      signupUser(formData);
+      signupUser(formData); 
     }
   };
 
@@ -130,7 +162,6 @@ export default function AuthScreen(props) {
             </TouchableOpacity>
           </View>
 
-          {/* Moved Switch Container Here */}
           <View style={styles.switchContainer}>
             <Text style={styles.switchLabel}>Account Type:</Text>
             <Text style={styles.switchText}>Personal</Text>
@@ -138,7 +169,7 @@ export default function AuthScreen(props) {
               trackColor={{ false: "#767577", true: "#81b0ff" }}
               thumbColor={isOwnerMode ? "#007AFF" : "#f4f3f4"}
               ios_backgroundColor="#3e3e3e"
-              onValueChange={() => setIsOwnerMode(previousState => !previousState)}
+              onValueChange={() => setIsOwnerMode(prev => !prev)}
               value={isOwnerMode}
             />
             <Text style={styles.switchText}>Owner</Text>
@@ -269,8 +300,12 @@ const styles = StyleSheet.create({
   switchText: {
     fontSize: 16,
     marginHorizontal: 5,
+    // color: '#aaa', // Dim inactive text - keeping original style
   },
-
+  // switchTextActive: { // Not used with isOwnerMode boolean directly for text style
+  //     color: '#000', 
+  //     fontWeight: 'bold',
+  // },
   form: {
     width: '100%',
     gap: 15,

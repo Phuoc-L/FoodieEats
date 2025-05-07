@@ -127,7 +127,11 @@ export default function EditRestaurant({ route }) {
                 `${process.env.EXPO_PUBLIC_API_URL}/api/restaurants/${restaurantId}`,
                 payload
             );
-            navigation.navigate("RestaurantPage", { restaurantId });
+            // navigation.navigate("RestaurantPage", { restaurantId });
+            navigation.reset({
+                index: 0,
+                routes: [{ name: 'RestaurantPage', params: { restaurantId: restaurantId } }],
+              });
         } catch (err) {
             Alert.alert('Error saving changes', err.message);
         }

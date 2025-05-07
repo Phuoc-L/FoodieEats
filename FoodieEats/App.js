@@ -11,6 +11,7 @@ import DishReviews from './screens/DishReviews';
 import CommentsPage from './screens/CommentsPage';
 import EditRestaurant from './screens/EditRestaurant';
 import ProfilePostFeed from './screens/ProfilePostFeed'; // Import the new screen
+import NavigationBar from './screens/Navigation'; // Import NavigationBar
 
 
 const Stack = createNativeStackNavigator();

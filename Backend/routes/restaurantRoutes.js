@@ -259,7 +259,7 @@ router.get("/:dish_id/reviews", async (req, res) => {
 
 router.put("/:id", async (req, res) => {
   const { id } = req.params;
-  const { name, operating_hours, contact_info, reservation_link, location } = req.body;
+  const { name, operating_hours, contact_info, reservation_link, location, menu} = req.body;
   try {
     const restaurant = await Restaurant.findById(id);
     if (!restaurant) return res.status(404).send({ error: "Restaurant not found" });
@@ -268,6 +268,7 @@ router.put("/:id", async (req, res) => {
     if (contact_info) restaurant.contact_info = contact_info;
     if (reservation_link) restaurant.reservation_link = reservation_link;
     if (location) restaurant.location = location;
+    if (menu) restaurant.menu = menu;
     await restaurant.save();
     res.status(200).send({ message: "Restaurant page updated successfully" });
   } catch (error) {
