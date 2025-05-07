@@ -74,7 +74,7 @@ export default function NavigationBar() {
           index: 0,
           routes: [{ name: 'Profile', params: { displayUserID: userID } }], // Use fetched userID
         })}>
-          <FontAwesome name="user" size={24} color={currentRoute === 'Profile' ? '#0080F0' : 'black'} />
+          <FontAwesome name="user" size={24} color="black" />
         </TouchableOpacity>
       );
     } else {
@@ -86,7 +86,7 @@ export default function NavigationBar() {
           index: 0,
           routes: [{ name: 'Profile', params: { displayUserID: userID } }],
         })}>
-          <FontAwesome name="user" size={24} color={currentRoute === 'Profile' ? '#0080F0' : 'black'} />
+          <FontAwesome name="user" size={24} color="black" />
         </TouchableOpacity>
       );
     }
@@ -100,19 +100,19 @@ export default function NavigationBar() {
             index: 0,
             routes: [{name: 'UserFeed'}],
             })}>
-            <FontAwesome name="home" size={24} color={currentRoute === 'UserFeed' ? '#0080F0' : 'black'} />
+            <FontAwesome name="home" size={24} color="black" />
           </TouchableOpacity>}
           <TouchableOpacity onPress={() => navigation.reset({
             index: 0,
             routes: [{name: 'Explore'}],
             })}>
-            <FontAwesome name="globe" size={24} color={currentRoute === 'Explore' ? '#0080F0' : 'black'} />
+            <FontAwesome name="globe" size={24} color="black" />
           </TouchableOpacity>
           {isOwner === true ? null : <TouchableOpacity onPress={() => navigation.reset({
             index: 0,
             routes: [{name: 'NewPost'}],
             })}>
-            <FontAwesome name="plus-circle" size={24} color={currentRoute === 'NewPost' ? '#0080F0' : 'black'}/>
+            <FontAwesome name="plus-circle" size={24} color="black"/>
           </TouchableOpacity>}
           {DisplayProfileIcon()}
         </View>
