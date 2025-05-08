@@ -32,19 +32,9 @@ router.post("/signup", async (req, res) => {
     // 1. Create placeholder Restaurant document first
     try {
       const newRestaurant = new Restaurant({
-        name: `Restaurant for ${username} (Pending Setup)`,
-        location: "Pending Setup", // Placeholder
-        operating_hours: "Mon-Sun: 9 AM - 9 PM", // Placeholder
-        contact_info: {
-          phone: "000-000-0000", // Placeholder
-          email: email // Use owner's email as placeholder for restaurant contact
-        },
-        coordinates: {
-          latitude: 0.0, // Placeholder
-          longitude: 0.0 // Placeholder
-        },
-        // average_rating, reviews, num_reviews, menu will use schema defaults
+        contact_info: { email }, // optional: prefill restaurant email if you want
       });
+
       const savedRestaurant = await newRestaurant.save();
       createdRestaurantId = savedRestaurant._id;
       console.log(`Created placeholder restaurant with ID: ${createdRestaurantId} for owner ${username}`);
