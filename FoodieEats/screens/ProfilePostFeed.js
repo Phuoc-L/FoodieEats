@@ -142,19 +142,24 @@ export default function ProfilePostFeed() {
   useEffect(() => {
     if (!loading && posts.length > 0 && initialPostId && flatListRef.current && !initialScrollDone) {
       const index = posts.findIndex(post => post._id === initialPostId);
-      console.log(`Attempting initial scroll to index: ${index} for post ID: ${initialPostId}`);
       if (index !== -1) {
+        console.log(`ProfilePostFeed: Attempting initial scroll to index: ${index} for post ID: ${initialPostId}`);
         setTimeout(() => {
-          flatListRef.current?.scrollToIndex({ animated: true, index: index, viewPosition: 0.5 });
-          setInitialScrollDone(true); // Mark initial scroll as done
-          console.log(`Initial scroll performed to index: ${index}`);
-        }, 150);
+          if (flatListRef.current) { // Check ref again before using
+            flatListRef.current.scrollToIndex({
+              index,
+              animated: true,
+              // viewPosition: 0.5, // Keeping this commented for now to test if it simplifies things
+            });
+          }
+          setInitialScrollDone(true);
+        }, 350); // Increased delay further (e.g., to 350ms)
       } else {
-         console.log(`Initial post ID ${initialPostId} not found in fetched posts.`);
-         setInitialScrollDone(true); // Mark as done even if not found
+        console.log(`ProfilePostFeed: Initial post ID ${initialPostId} not found in fetched posts.`);
+        setInitialScrollDone(true);
       }
     }
-  }, [loading, posts, initialPostId, initialScrollDone]);
+  }, [loading, posts, initialPostId, flatListRef, initialScrollDone]); // Added flatListRef to dependency array
 
 
   if (loading) {
@@ -181,9 +186,19 @@ export default function ProfilePostFeed() {
           initialNumToRender={5}
           maxToRenderPerBatch={10}
           windowSize={10}
-          getItemLayout={(data, index) => (
-            { length: 500, offset: 500 * index, index } // Estimate height
-          )}
+          onScrollToIndexFailed={(errorInfo) => {
+            console.warn(`onScrollToIndexFailed for index ${errorInfo.index}. Trying to scroll to offset first.`);
+            const offset = errorInfo.averageItemLength * errorInfo.index;
+            // Attempt to scroll to offset immediately (non-animated might be quicker for a fallback)
+            flatListRef.current?.scrollToOffset({ offset, animated: false }); 
+            
+            // Then, after a short delay, try to refine with scrollToIndex if the item is likely rendered
+            setTimeout(() => {
+              if (flatListRef.current && posts.length > errorInfo.index && errorInfo.index >= 0) { // Check bounds
+                flatListRef.current?.scrollToIndex({ index: errorInfo.index, animated: true, viewPosition: 0.5 }); // Can add viewPosition back if desired
+              }
+            }, 100); // Short delay for the refinement
+          }}
         />
       </SafeAreaView>
     </AlertNotificationRoot>

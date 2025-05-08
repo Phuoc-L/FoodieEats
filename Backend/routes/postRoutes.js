@@ -39,22 +39,18 @@ router.get('/search', async (req, res) => {
       } else {
         sortOptions.timestamp = -1; // Default sort by latest posts
       }
-      const rawPosts = await Post.find().sort(sortOptions)
+      const allDefaultPosts = await Post.find().sort(sortOptions)
       .populate({
         path: 'user_id',
         match: { 
           'privacy_settings.profile_visibility': true, 
           'privacy_settings.post_visibility': true 
-        }
+        },
+        select: 'username profile.avatar_url privacy_settings'
       })
       .populate('restaurant_id');
-
-      const postsWithoutObjectIdRestaurantId = rawPosts.filter(post => typeof post.restaurant_id !== 'object')
-      console.log("Posts without object ID for restaurant_id:", postsWithoutObjectIdRestaurantId);
-
-      const posts = rawPosts.filter(post => post.user_id !== null);
-
-      return res.status(200).send({ total: posts.length, posts });
+      const visiblePostsFromDefault = allDefaultPosts.filter(post => post.user_id !== null);
+      return res.status(200).json({ total: visiblePostsFromDefault.length, posts: visiblePostsFromDefault });
     }
 
     const filter = {
@@ -119,19 +115,19 @@ router.get('/search', async (req, res) => {
       sortOptions.timestamp = -1; // Default sort by latest posts
     }
 
-    const rawPosts = await Post.find(filter).sort(sortOptions)
+    const allPostsMatchingQuery = await Post.find(filter).sort(sortOptions)
     .populate({
       path: 'user_id',
       match: { 
         'privacy_settings.profile_visibility': true, 
         'privacy_settings.post_visibility': true 
-      }
+      },
+      select: 'username profile.avatar_url privacy_settings'
     })
     .populate('restaurant_id');
 
-    const posts = rawPosts.filter(post => post.user_id !== null);
-
-    res.status(200).send({ total: posts.length, posts });
+    const visiblePostsFromQuery = allPostsMatchingQuery.filter(post => post.user_id !== null);
+    res.status(200).json({ total: visiblePostsFromQuery.length, posts: visiblePostsFromQuery });
 
   } catch (err) {
     res.status(500).json({ error: 'Internal server error', details: err.message });
