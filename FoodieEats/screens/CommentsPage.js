@@ -153,11 +153,16 @@ const CommentsPage = ({ route }) => {
         const hasLiked = item.like_list.includes(loggedInUserId); // Use loggedInUserId state
         const isCurrentUser = item.user_id._id === loggedInUserId; // Use loggedInUserId state
 
+        const avatarUrl = item?.user_id?.profile?.avatar_url?.trim() || null;
+
         return (
             <View style={styles.commentContainer}>
                 <View style={styles.header}>
                     <View style={styles.userInfo}>
-                        <Image source={{ uri: item.user_id.profile.avatar_url }} style={styles.avatar} />
+                        <Image
+                            source={avatarUrl ? { uri: avatarUrl} : require('../assets/defaultUserIcon.png')}
+                            style={styles.avatar}
+                        />
                         <Text style={styles.username}>@{item.user_id.username}</Text>
                     </View>
 
