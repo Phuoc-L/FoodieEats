@@ -110,7 +110,7 @@ export default function Profile({route}) {
         setPosts([...displayedUserPostResponse.data]);
 
         // Set button text to either 'follow' or 'unfollow'
-        if (isOwner === 'false') {
+        if (!isOwner) {
           SetDisplayButtonText(userDataResponse.data, displayedUserDataResponse.data._id);
         }
       }
