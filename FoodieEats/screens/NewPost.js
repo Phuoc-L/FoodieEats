@@ -308,8 +308,9 @@ export default function CreatePostScreen({ navigation }) {
   const pickImage = async () => {
     try {
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        mediaTypes: 'Images',
         allowsEditing: true,
+        aspect: [1, 1],
         quality: 1,
       });
       if (!result.canceled) {
@@ -433,7 +434,7 @@ export default function CreatePostScreen({ navigation }) {
         <TextInput style={styles.input} placeholder="Start typing restaurant name..." value={restaurantSearch} onChangeText={handleRestaurantSearch} editable={!selectedRestaurantObj || restaurantSearch !== selectedRestaurantObj.name} />
         {isRestaurantLoading && <ActivityIndicator size="small" />}
         {restaurantSuggestions.length > 0 && (
-          <FlatList data={restaurantSuggestions} keyExtractor={(item) => item._id} renderItem={({ item }) => (<SuggestionItem item={item} onPress={() => selectRestaurant(item)} />)} style={styles.suggestionsList} />
+          <FlatList data={restaurantSuggestions} keyExtractor={(item) => item._id} renderItem={({ item }) => (<SuggestionItem item={item} onPress={() => selectRestaurant(item)} />)} style={styles.suggestionsList} scrollEnabled={false} />
         )}
 
         {/* Dish Search */}
@@ -443,7 +444,7 @@ export default function CreatePostScreen({ navigation }) {
             <TextInput style={styles.input} placeholder="Start typing dish name..." value={dishSearch} onChangeText={handleDishSearch} editable={!selectedDishObj || dishSearch !== selectedDishObj.name} />
             {isDishLoading && <ActivityIndicator size="small" />}
             {dishSuggestions.length > 0 && (
-              <FlatList data={dishSuggestions} keyExtractor={(item) => item._id} renderItem={({ item }) => (<SuggestionItem item={item} onPress={() => selectDish(item)} />)} style={styles.suggestionsList} />
+              <FlatList data={dishSuggestions} keyExtractor={(item) => item._id} renderItem={({ item }) => (<SuggestionItem item={item} onPress={() => selectDish(item)} />)} style={styles.suggestionsList} scrollEnabled={false} />
             )}
           </>
         )}
@@ -498,7 +499,7 @@ const styles = StyleSheet.create({
   suggestionsList: { maxHeight: 150, borderColor: '#ccc', borderWidth: 1, borderRadius: 5, backgroundColor: '#fff', position: 'relative', marginBottom: 10 },
   suggestionItem: { padding: 10, borderBottomWidth: 1, borderBottomColor: '#eee' },
   imagePlaceholder: { width: '100%', height: 150, backgroundColor: '#eee', justifyContent: 'center', alignItems: 'center', marginVertical: 15, borderRadius: 5, borderWidth: 1, borderColor: '#ccc' },
-  previewImage: { width: '100%', height: '100%', resizeMode: 'cover', borderRadius: 5 },
+  previewImage: { width: '100%', height: '100%', resizeMode: 'contain', borderRadius: 5 },
   reviewContainer: { flexDirection: 'row', alignItems: 'center', marginBottom: 10 },
   reviewInput: { flex: 1, borderWidth: 1, borderColor: '#ccc', padding: 10, borderRadius: 5, fontSize: 16, minHeight: 80, marginRight: 8, textAlignVertical: 'top' }, // Added marginRight and textAlignVertical
   micButton: { backgroundColor: '#007bff', padding: 10, borderRadius: 25, justifyContent: 'center', alignItems: 'center', height: 50, width: 50 }, // Circular button
