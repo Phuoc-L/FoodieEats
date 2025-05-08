@@ -17,6 +17,11 @@ const PostComponent = ({ post, onDeleteSuccess }) => {
 
   const navigation = useNavigation();
   const isCurrentUserPost = userData.id === post.user_id._id;
+  const postUserId =
+    typeof post.user_id === 'string'
+      ? post.user_id
+      : (post.user_id && post.user_id._id) || null;
+
 
   useEffect(() => {
     const getData = async () => {
@@ -24,6 +29,7 @@ const PostComponent = ({ post, onDeleteSuccess }) => {
         const id = await AsyncStorage.getItem('userID');
         const owner = await AsyncStorage.getItem('owner');
         const isOwner = (owner.toLowerCase() === "true");
+
         if (!id) {
           console.error('User ID not found in AsyncStorage');
           return;
@@ -99,15 +105,27 @@ const PostComponent = ({ post, onDeleteSuccess }) => {
 
 
   const handleLike = async () => {
-    if (userData.isOwner) return;
+    if (userData.isOwner) {
+      console.error("Restaurant owners are not permitted to like posts.");
+      return;
+    }
+
+    if (!postUserId || !userData.id) {
+      console.error("Missing user IDs", { postUserId, userId: userData.id });
+      return;
+    }
+    if (postUserId === userData.id) {
+      console.error("Users cannot like their own posts.");
+      return;
+    }
+
     try {
       const updatedLikes = isLiked ? likes - 1 : likes + 1;
       setLikes(updatedLikes);
       setIsLiked(!isLiked);
 
-      const post_user_id = post.user_id._id;
       await axios.post(
-        `${process.env.EXPO_PUBLIC_API_URL}/api/posts/${post_user_id}/posts/${post._id}/like/${userData.id}`
+        `${process.env.EXPO_PUBLIC_API_URL}/api/posts/${postUserId}/posts/${post._id}/like/${userData.id}`
       );
 
       try {
@@ -130,15 +148,17 @@ const PostComponent = ({ post, onDeleteSuccess }) => {
   };
 
   const renderLikeSection = () => {
+    const disallowLike = userData.isOwner || postUserId === userData.id;
+
     const HeartIcon = (
       <FontAwesome
-        name={userData.isOwner ? "heart" : isLiked ? "heart" : "heart-o"}
+        name={disallowLike ? "heart" : isLiked ? "heart" : "heart-o"}
         size={30}
-        color={userData.isOwner ? "#ababab" : "#0080F0"}
+        color={disallowLike ? "#ababab" : "#0080F0"}
       />
     );
 
-    return userData.isOwner ? (
+    return disallowLike ? (
       <View style={styles.likeContainer}>
         {HeartIcon}
         <Text style={styles.likes}>

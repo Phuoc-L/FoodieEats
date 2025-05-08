@@ -76,8 +76,11 @@ const CommentsPage = ({ route }) => {
         }
     };
 
-    const handleLike = async (commentId) => {
-        if (isOwner) return;
+    const handleLike = async (commentId, disallowLike) => {
+        if (disallowLike) {
+            console.error("Logged in user is not permitted to like this comment.");
+            return;
+        }
 
         if (!commentId || !loggedInUserId) {
             console.error("Missing commentId or loggedInUserId", commentId, loggedInUserId);
@@ -113,22 +116,23 @@ const CommentsPage = ({ route }) => {
 
     const renderLikeSection = (item) => {
         const isLiked = item.like_list.includes(loggedInUserId);
+        const disallowLike = isOwner || item.user_id._id === loggedInUserId;
 
         const HeartIcon = (
             <FontAwesome
-                name={isOwner ? "heart" : isLiked ? "heart" : "heart-o"}
+                name={disallowLike ? "heart" : isLiked ? "heart" : "heart-o"}
                 size={20}
-                color={isOwner ? "#ababab" : "#0080F0"}
+                color={disallowLike ? "#ababab" : "#0080F0"}
             />
         );
 
-        return isOwner ? (
+        return disallowLike ? (
             <View style={styles.likeContainer}>
                 <Text style={styles.likeCount}>{item.num_likes}</Text>
                 {HeartIcon}
             </View>
         ) : (
-            <TouchableOpacity onPress={() => handleLike(item._id)} style={styles.likeContainer}>
+            <TouchableOpacity onPress={() => handleLike(item._id, disallowLike)} style={styles.likeContainer}>
                 <Text style={styles.likeCount}>{item.num_likes}</Text>
                 {HeartIcon}
             </TouchableOpacity>
