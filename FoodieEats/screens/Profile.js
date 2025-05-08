@@ -532,7 +532,10 @@ export default function Profile({route}) {
         </View>
 
         {/* Display displayed user's posts */}
-        <ScrollView style={{height: 200}}>
+        <ScrollView 
+          style={{height: 200}}
+          contentContainerStyle={{ paddingBottom: 35 }}
+        >
           <View style={styles.postContainer}>
             {DisplayPosts()}
           </View>
