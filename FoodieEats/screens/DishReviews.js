@@ -11,13 +11,19 @@ import { FontAwesome } from '@expo/vector-icons';
 const { width } = Dimensions.get('window');
 
 export default function DishReviews({ route }) {
-    const { dish_id } = route.params || {};
+    const { dish_id, restaurant_id } = route.params || {};
+
+    if (!dish_id || !restaurant_id) {
+        console.error("Missing IDs", {dish_id, restaurant_id});
+        return;
+    }
 
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
     const [posts, setPosts] = useState([]);
     const [dish, setDish] = useState(null);
+    const [restaurant, setRestaurant] = useState(null);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -28,10 +34,16 @@ export default function DishReviews({ route }) {
                 const postRes = await axios.get(`${process.env.EXPO_PUBLIC_API_URL}/api/restaurants/${dish_id}/reviews`);
                 setPosts(postRes.data?.posts || []);
 
-                const restaurantId = postRes.data?.posts?.[0]?.restaurant_id?._id;
-                if (restaurantId) {
-                    const dishRes = await axios.get(`${process.env.EXPO_PUBLIC_API_URL}/api/restaurants/${restaurantId}/menu/${dish_id}`);
-                    setDish(dishRes.data || null);
+                if (restaurant_id) {
+                    const restaurantRes = await axios.get(
+                        `${process.env.EXPO_PUBLIC_API_URL}/api/restaurants/${restaurant_id}`
+                    );
+                    setRestaurant(restaurantRes.data || null);
+
+                    if (dish_id) {
+                        const dishRes = await axios.get(`${process.env.EXPO_PUBLIC_API_URL}/api/restaurants/${restaurant_id}/menu/${dish_id}`);
+                        setDish(dishRes.data || null);
+                    }
                 }
 
             } catch (e) {
@@ -58,14 +70,14 @@ export default function DishReviews({ route }) {
                     <Text style={styles.errorText}>{error}</Text>
                 </View>
             ) : (
-                <View>
+                <>
                     <View style={styles.header}>
-                        <View style={{ flex: 1, flexShrink: 1 }}>
+                        <View style={{ flex: 1, flexShrink: 1, paddingBottom: 10 }}>
                             <Text style={styles.dishTitle} numberOfLines={2}>
                                 {dish?.name}
                             </Text>
                             <Text style={styles.restaurantName} numberOfLines={1}>
-                                {posts?.[0]?.restaurant_id?.name}
+                                {restaurant?.name}
                             </Text>
                         </View>
                         <View style={styles.rating}>
@@ -90,9 +102,10 @@ export default function DishReviews({ route }) {
                         data={posts}
                         keyExtractor={(item) => item._id}
                         renderItem={({ item }) => <PostComponent post={item} onDeleteSuccess={(deletedPostId) => {setPosts(current => current.filter(post => post._id !== deletedPostId));}}/>}
-                        contentContainerStyle={styles.feed}
+                        contentContainerStyle={posts.length === 0 ? styles.emptyContainer : styles.feed}
+                        ListEmptyComponent={<Text style={styles.emptyText}>No posts to show.</Text>}
                     />
-                </View>
+                </>
             )}
         </SafeAreaView>
   );
@@ -106,6 +119,8 @@ const styles = StyleSheet.create({
         flexWrap: 'wrap',
         marginBottom: 12,
         paddingHorizontal: 20,
+        borderBottomWidth: 1,
+        borderBottomColor: "#ccc",
     },
     dishTitle: {
         fontSize: width / 16,
@@ -116,7 +131,8 @@ const styles = StyleSheet.create({
     restaurantName: {
         fontSize: width / 25,
         color: '#555',
-        marginTop: 2,
+        marginTop: 2
+
     },
     rating: {
         alignItems: 'center',
@@ -153,5 +169,16 @@ const styles = StyleSheet.create({
     errorText: {
         color: 'red',
         fontSize: 16,
+    },
+    emptyContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    emptyText: {
+        textAlign: 'center',
+        fontSize: 18,
+        color: 'gray',
+        marginBottom: 60,
     },
 });

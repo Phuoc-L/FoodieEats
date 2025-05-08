@@ -78,7 +78,7 @@ export default function RestaurantPage({ route }) {
     const renderMenuItem = ({ item }) => {
         return (
             <TouchableOpacity
-                onPress={() => navigation.navigate("DishReviews", { dish_id: item._id })}
+                onPress={() => navigation.navigate("DishReviews", { dish_id: item._id, restaurant_id: restaurant._id })}
                 style={styles.menuItemContainer}
             >
                 <View style={styles.dishHeader}>
@@ -264,8 +264,8 @@ export default function RestaurantPage({ route }) {
                 renderItem={renderMenuItem}
                 contentContainerStyle={
                     restaurant.menu.length === 0
-                    ? [styles.emptyContainer, { paddingHorizontal: 20, paddingBottom: isOwner ? 100 : 0 }]
-                    : { paddingHorizontal: 20, paddingBottom: isOwner ? 100 : 0 }
+                    ? [styles.emptyContainer, { paddingHorizontal: 20, paddingBottom: isOwner ? 130 : 0 }]
+                    : { paddingHorizontal: 20, paddingBottom: isOwner ? 130 : 0 }
                 }
                 ListEmptyComponent={<Text style={styles.emptyText}>No menu items to show.</Text>}
             />
@@ -279,6 +279,7 @@ export default function RestaurantPage({ route }) {
                     </TouchableOpacity>
                 </View>
             )}
+
 
             <NavigationBar />
         </View>
@@ -399,7 +400,7 @@ const styles = StyleSheet.create({
     },
     editButtonContainer: {
         position: 'absolute',
-        bottom: 20,
+        bottom: 60,
         left: 20,
         right: 20,
         alignItems: 'center',

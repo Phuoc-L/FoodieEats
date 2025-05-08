@@ -258,7 +258,7 @@ const PostComponent = ({ post, onDeleteSuccess }) => {
 
       {renderStars(post.ratings)}
 
-      <TouchableOpacity onPress={() => navigation.navigate("DishReviews", { dish_id: post.dish_id })}>
+      <TouchableOpacity onPress={() => navigation.navigate("DishReviews", { dish_id: post.dish_id, restaurant_id: post.restaurant_id._id })}>
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
           <Text style={styles.dishName}>{post.dish_name}</Text>
           <AntDesign name="right" size={17} color="#555" style={{ marginLeft: 5, marginTop: 5 }} />
