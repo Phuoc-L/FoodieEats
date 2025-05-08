@@ -49,7 +49,7 @@ export default function RestaurantPage({ route }) {
         const readUser = async () => {
             const id = await AsyncStorage.getItem('userID');
             const owner_string = await AsyncStorage.getItem('owner');
-            const restaurant_id = await AsyncStorage.getItem('restaurantID');
+            const restaurant_id = await AsyncStorage.getItem('restaurantId');
 
             const owner = (owner_string.toLowerCase() === "true");
 
@@ -132,26 +132,38 @@ export default function RestaurantPage({ route }) {
 
     if (loading || (restaurant?.name === "" && isOwner === null)) {
         return (
-            <View style={styles.center}>
-                <ActivityIndicator size="large" />
+            <View style={{ flex: 1 }}>
+                <View style={styles.center}>
+                    <ActivityIndicator size="large" />
+                </View>
+
+                <NavigationBar />
             </View>
         );
     }
 
     if (error) {
         return (
-            <View style={styles.center}>
-                <Text style={styles.errorText}>{error}</Text>
+            <View style={{ flex: 1 }}>
+                <View style={styles.center}>
+                    <Text style={styles.errorText}>{error}</Text>
+                </View>
+
+                <NavigationBar />
             </View>
         );
     }
 
     if (restaurant.name === "" && isOwner === false) {
         return (
-            <View style={styles.center}>
-                <Text style={styles.errorText}>
-                    You are not permitted to view this restaurant.
-                </Text>
+            <View style={{ flex: 1 }}>
+                <View style={styles.center}>
+                    <Text style={styles.errorText}>
+                        You are not permitted to view this restaurant.
+                    </Text>
+                </View>
+
+                <NavigationBar />
             </View>
         );
     }
@@ -426,6 +438,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         padding: 20,
+        paddingBottom: 60,
     },
     errorText: {
         color: 'red',
