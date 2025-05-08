@@ -106,8 +106,15 @@ router.delete("/:post_id/comment/:comment_id/user/:user_id", verifyCommentOwners
 
 // Like or unlike a comment
 router.post("/:comment_id/like/:user_id", async (req, res) => {
+  console.log("Incoming like for comment:", req.params.comment_id, "by user:", req.params.user_id);
+
   try {
 	const { comment_id, user_id } = req.params;
+
+	if (!mongoose.Types.ObjectId.isValid(comment_id)) {
+      return res.status(400).json({ error: "Invalid comment ID" });
+    }
+
 	const comment = await Comment.findById(comment_id);
 
 	if (!comment) {

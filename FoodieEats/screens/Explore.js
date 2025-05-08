@@ -1,12 +1,16 @@
-import { useState, useRef } from 'react';
-import { View, Text, TextInput, TouchableOpacity, FlatList, Image, StyleSheet, Modal, TouchableWithoutFeedback, Keyboard, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import { useState, useRef, useEffect } from 'react';
+import { View, Text, TextInput, TouchableOpacity, FlatList, Image, StyleSheet, Modal, TouchableWithoutFeedback, Keyboard, KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import axios from 'axios';
 import NavigationBar from './Navigation';
 import DropDownPicker from 'react-native-dropdown-picker';
-import { useEffect } from 'react';
+import PostComponent from './PostComponent';
+import { Dimensions } from 'react-native';
+
+
+const { width } = Dimensions.get('window');
 
 export default function Explore() {
   // const user = props.route.params.user;
@@ -44,6 +48,9 @@ export default function Explore() {
   const [restaurantSearchResults, setRestaurantSearchResults] = useState([]);
   const [postSearchResults, setPostSearchResults] = useState([]);
 
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
   const flatListRef = useRef(null);
 
   useEffect(() => {
@@ -63,87 +70,83 @@ export default function Explore() {
   };
 
   const renderUserItem = (item) => { // Changed to block body {}
-    console.log('Rendering User Item:', JSON.stringify(item)); // Log user item data
     // Added optional chaining for safety
     const avatarUrl = item?.profile?.avatar_url;
     const bio = item?.profile?.bio;
 
     return ( // Added explicit return
-      <TouchableOpacity onPress={() => navigation.push('Profile', { displayUserID: item?._id })}>
-        <View style={styles.resultCard}>
-          <Image source={avatarUrl ? { uri: avatarUrl} : require('../assets/defaultUserIcon.png')} style={styles.avatar} />
-          <View style={styles.resultDetailBox}>
-            <Text style={styles.resultName}>@{item?.username}</Text>
-            <Text style={styles.fullName}>{item?.first_name} {item?.last_name}</Text>
-            <Text style={styles.resultDetails}>{bio}</Text>
-          </View>
-        </View>
-      </TouchableOpacity>
+      <View style={{paddingHorizontal: 10}}>
+          <TouchableOpacity onPress={() => navigation.push('Profile', { displayUserID: item?._id })}>
+            <View style={styles.userResultCard}>
+              <Image source={avatarUrl ? { uri: avatarUrl} : require('../assets/defaultUserIcon.png')} style={styles.avatar} />
+              <View style={styles.userResultDetailBox}>
+                <Text style={styles.resultName}>@{item?.username}</Text>
+                <Text style={styles.fullName}>{item?.first_name} {item?.last_name}</Text>
+                <Text style={styles.resultDetails}>{bio}</Text>
+              </View>
+            </View>
+          </TouchableOpacity>
+      </View>
     ); // Closing parenthesis for return
   }; // Closing brace for function body
   
   const renderRestaurantItem = (item) => (
-    <TouchableOpacity onPress={() => navigation.navigate('RestaurantPage', { restaurantId: item._id })}>
-      <View style={styles.resultCard}>
-        <View style={styles.resultDetailBox}>
-          <View style={styles.Rating}>
-            <Text style={styles.resultName}>{item.name}</Text>
-            <Text>
-              {item.average_rating?.toFixed(1) || 'N/A'} <Ionicons name="star" size={16} color="gold" /> 
-            </Text>
+      <View style={{paddingHorizontal: 10}}>
+        <TouchableOpacity onPress={() => navigation.navigate('RestaurantPage', { restaurantId: item._id })}>
+          <View style={styles.restaurantResultCard}>
+            <View style={styles.restaurantResultDetailBox}>
+              <View style={styles.Rating}>
+                <Text
+                  numberOfLines={1}
+                  ellipsizeMode="tail"
+                  style={[styles.resultName, { maxWidth: width * 0.8 }]}>
+                  {item.name}
+                </Text>
+
+                <Text>
+                  {item.average_rating?.toFixed(1) || 'N/A'} <Ionicons name="star" size={16} color="gold" />
+                </Text>
+              </View>
+            </View>
+
+            <View style={{ flex: 1, marginLeft: 5 }}>
+              <Text
+                numberOfLines={1}
+                ellipsizeMode="tail"
+                style={[styles.fullName, { flexShrink: 1 }]}>
+                {item.location}
+              </Text>
+            </View>
           </View>
-          <Text style={styles.fullName}>{item.location}</Text>
-        </View>
+        </TouchableOpacity>
       </View>
-    </TouchableOpacity>
   );
 
   const renderPostItem = (item) => { // Changed to block body {}
-    console.log('Rendering Post Item:', JSON.stringify(item)); // Log post item data
     // Added optional chaining for safety
     const avatarUrl = item?.user_id?.profile?.avatar_url;
-    const restaurantName = item?.restaurant_id?.name;
+    const restaurantName = item?.restaurant_id?.name ? item.restaurant_id.name : item?.restaurant_id ? item.restaurant_id : "No restaurantID.";
     const dishName = item?.restaurant_id && item?.dish_id ? getDishNameByDishId(item.restaurant_id, item.dish_id) : "N/A";
-  
-    return ( // Added explicit return
-      <TouchableOpacity onPress={() => navigation.navigate('Post', { postID: item._id })}>
-        <View style={styles.resultCard}>
-          <View>
-            <View style={{flexDirection: 'row', alignItems: 'center'}}>
-              <Image source={avatarUrl ? {uri: avatarUrl} : require('../assets/defaultUserIcon.png')} style={styles.avatar} />
-              <Text style={styles.resultName}>@{item?.user_id?.username || 'Unknown User'}</Text>
-            </View>
-            <View style={styles.resultDetailBox}>
-              <View style={styles.Rating}>
-                <Text style={styles.resultName}>Location:</Text>
-                <Text style={styles.resultDetails}>{restaurantName || "N/A"}</Text>
-                <Text style={styles.resultName}>Dish:</Text>
-                <Text style={styles.resultDetails}>{dishName}</Text>
-              </View>
-              <View style={styles.Rating}>
-                <Text style={styles.resultName}>{item?.title}</Text>
-                <Text> {item?.ratings?.toFixed(1) || 'N/A'} <Ionicons name="star" size={16} color="gold" /> </Text>
-              </View>
-              <Text style={styles.resultDetails}>{item?.description?.length > 100 ? item.description.slice(0, 100) + '...' : item.description}</Text>
-              {item?.media_url && <Image source={{ uri: item.media_url }} style={styles.menuMedia} />}
-              <View style={styles.actionContainer}>
-                <TouchableOpacity style={styles.actionButton} onPress={() => console.log('Liked!')}>
-                  <Ionicons name="heart" size={16} color="red" />
-                  <Text style={styles.actionText}>{item?.num_like}</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.actionButton} onPress={() => console.log('Commented!')}>
-                  <Ionicons name="chatbubble" size={16} color="blue" />
-                  <Text style={styles.actionText}>{item?.num_comments}</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </View>
-        </View>
-      </TouchableOpacity>
-    ); // Closing parenthesis for return
+    const username = item?.user_id?.username;
+
+    const restaurantExists = item?.restaurant_id?.name ? true : item?.restaurant_id ? true : false;
+
+    const enrichedPost = restaurantExists ? {...item, dish_name: dishName} : {...item, dish_name: dishName, restaurant_id: {name: "No name."}};
+
+    return (
+      <PostComponent
+        post={enrichedPost}
+        onDeleteSuccess={(deletedPostId) => {
+          setPosts(current => current.filter(post => post._id !== deletedPostId));
+        }}
+      />
+    );
   }; // Closing brace for function body
 
   const handleSearch = async () => {
+    setLoading(true);
+    setError(null);
+
     try {
       const endpoint = searchMode === 'users' ? '/api/users/search' : searchMode === 'restaurants' ? '/api/restaurants/search' : '/api/posts/search';
       const params = {
@@ -171,11 +174,15 @@ export default function Explore() {
       };
 
       const response = await axios.get(process.env.EXPO_PUBLIC_API_URL + endpoint, { params });
+
       setResults(response.data.restaurants || response.data.users || response.data.posts);
       Keyboard.dismiss();
       flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
     } catch (error) {
       console.error(`Error fetching ${searchMode}:`, error.response?.data || error.message);
+      setError("Something went wrong while searching.");
+    } finally {
+        setLoading(false);
     }
   };
 
@@ -209,7 +216,7 @@ export default function Explore() {
   };
 
   return (
-    <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+//    <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
       <SafeAreaView style={styles.container}>
         <View style={styles.header}> 
           <Text style={styles.title}>Explore</Text>
@@ -226,28 +233,43 @@ export default function Explore() {
           </View>
         </View>
 
-        <View style={styles.searchContainer}>
-          <TextInput style={styles.searchInput} placeholder={`Search ${searchMode}...`} value={searchQuery} onChangeText={setSearchQuery}/>
-          <TouchableOpacity onPress={() => { setFiltersVisible(true); Keyboard.dismiss(); }}>
-            <Ionicons name="options" size={30} color="black" />
-          </TouchableOpacity>
-          <TouchableOpacity onPress={handleSearch}>
-            <Ionicons name="search" size={30} color="black" />
-          </TouchableOpacity>
+        <View style={{ padding: 10 }}>
+          <View style={styles.searchContainer}>
+            <TextInput style={styles.searchInput} placeholder={`Search ${searchMode}...`} value={searchQuery} onChangeText={setSearchQuery}/>
+            <TouchableOpacity onPress={() => { setFiltersVisible(true); Keyboard.dismiss(); }}>
+              <Ionicons name="options" size={30} color="black" />
+            </TouchableOpacity>
+            <TouchableOpacity onPress={handleSearch}>
+              <Ionicons name="search" size={30} color="black" />
+            </TouchableOpacity>
+          </View>
         </View>
 
-        <FlatList 
-          ref={flatListRef}
-          data={results}
-          keyExtractor={(item) => item._id}
-          renderItem={({ item }) => 
-            searchMode === 'users' 
-              ? renderUserItem(item) 
-              : searchMode === 'restaurants' 
-                ? renderRestaurantItem(item)
-                : renderPostItem(item)
-          }
-        />
+        {loading ? (
+          <View style={styles.center}>
+            <ActivityIndicator size="large" />
+          </View>
+        ) : error ? (
+          <View style={styles.center}>
+            <Text style={styles.errorText}>{error}</Text>
+          </View>
+        ) : (
+          <FlatList
+            ref={flatListRef}
+            data={results}
+            keyExtractor={(item) => item._id}
+            renderItem={({ item }) =>
+              searchMode === 'users'
+                ? renderUserItem(item)
+                : searchMode === 'restaurants'
+                  ? renderRestaurantItem(item)
+                  : renderPostItem(item)
+            }
+            ListEmptyComponent={<Text style={styles.emptyText}>No results to show.</Text>}
+            contentContainerStyle={results.length === 0 ? styles.emptyContainer : null}
+          />
+        )}
+
 
         <Modal visible={filtersVisible && searchMode === 'restaurants'} animationType="slide">
           <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
@@ -371,9 +393,11 @@ export default function Explore() {
           </TouchableWithoutFeedback>
         </Modal>
 
-        <NavigationBar/>
+        <View style={{ paddingBottom: 60 }}></View>
+
+        <NavigationBar />
       </SafeAreaView>
-    </TouchableWithoutFeedback>
+//    </TouchableWithoutFeedback>
   );
 }
 
@@ -381,7 +405,7 @@ const styles = StyleSheet.create({
   container: { 
     flex: 1, 
     backgroundColor: '#fff', 
-    paddingTop: 10 
+//    padding: 10,
   },
   header: { 
     flexDirection: 'row', 
@@ -421,7 +445,7 @@ const styles = StyleSheet.create({
   searchContainer: { 
     flexDirection: 'row', 
     alignItems: 'center', 
-    padding: 10, 
+    padding: 10,
     borderRadius: 10, 
     backgroundColor: '#f9f9f9',
     marginVertical: 10,
@@ -440,8 +464,30 @@ const styles = StyleSheet.create({
     borderWidth: 1, 
     borderColor: '#ccc',
   },
-  resultCard: { 
-    flexDirection: 'row', 
+  userResultCard: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    padding: 10,
+    borderBottomWidth: 1,
+    borderColor: '#eee',
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    marginVertical: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 1
+  },
+  userResultDetailBox: {
+    alignItems: 'flex-start',
+    justifyContent: 'center',
+    borderRadius: 10,
+    flex: 1,
+    flexWrap: 'wrap',
+  },
+  restaurantResultCard: {
+    flexDirection: 'column',
     alignItems: 'flex-start', 
     padding: 10, 
     borderBottomWidth: 1, 
@@ -455,7 +501,8 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
     elevation: 1
   },
-  resultDetailBox: {
+  restaurantResultDetailBox: {
+    flexDirection: 'row',
     alignItems: 'flex-start',
     justifyContent: 'center',
     borderRadius: 10,
@@ -588,15 +635,25 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
   },
-  navbar: { 
-    height: 60, 
-    borderTopWidth: 1, 
-    borderTopColor: '#ccc', 
-    backgroundColor: '#fff',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    elevation: 5
+  center: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  errorText: {
+    color: 'red',
+    fontSize: 16,
+  },
+  emptyText: {
+    textAlign: 'center',
+    fontSize: 18,
+    color: 'gray',
+    marginBottom: 60,
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });

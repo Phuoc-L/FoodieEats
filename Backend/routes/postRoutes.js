@@ -5,6 +5,7 @@ const User = require("../data_schemas/users");
 const Restaurant = require("../data_schemas/restaurant");
 const getPresignedURL = require("../functions/s3PresignedURL.js");
 const router = express.Router();
+const calculateAverageRating = require("../functions/calculateAverageRating.js");
 
 // Middleware to verify post ownership
 const verifyPostOwnership = async (req, res, next) => {
@@ -164,6 +165,19 @@ router.post("/:user_id/create", async (req, res) => {
       $inc: { posts_count: 1 }
     });
 
+    const restaurant = await Restaurant.findById(restaurant_id);
+    if (restaurant) {
+      const dish = restaurant.menu.id(dish_id);
+      if (dish) {
+        dish.average_rating = (dish.average_rating * dish.num_ratings + ratings) / (dish.num_ratings + 1);
+        dish.num_ratings += 1;
+
+        restaurant.num_reviews = restaurant.num_reviews + 1;
+        restaurant.average_rating = calculateAverageRating(restaurant.menu);
+        await restaurant.save();
+      }
+    }
+
     res.status(201).json({ 
       message: "Post created successfully", 
       post: newPost 
@@ -210,9 +224,23 @@ router.post("/:user_id/posts/:post_id/image", verifyPostOwnership, async (req, r
 router.get("/:user_id/posts", async (req, res) => {
   try {
     const posts = await Post.find({ user_id: req.params.user_id })
+      .populate("user_id", "username profile.avatar_url")
       .populate('restaurant_id', 'name') // Populate restaurant name
       .sort({ timestamp: -1 });
-    res.status(200).json(posts);
+
+    const enrichedPosts = await Promise.all(posts.map(async (post) => {
+      const postObj = post.toObject();
+      try {
+        const restaurant = await Restaurant.findById(post.restaurant_id);
+        const dish = restaurant?.menu?.find(d => d._id.toString() === post.dish_id.toString());
+        postObj.dish_name = dish?.name || null;
+      } catch (e) {
+        postObj.dish_name = null;
+      }
+      return postObj;
+    }));
+
+    res.status(200).send(enrichedPosts);
   } catch (error) {
     console.error("Get posts error:", error);
     res.status(500).json({ 
@@ -247,7 +275,21 @@ router.put("/:user_id/posts/:post_id", verifyPostOwnership, async (req, res) => 
     // Update only provided fields
     if (title) req.post.title = title;
     if (description) req.post.description = description;
-    if (ratings) req.post.ratings = ratings;
+
+    if (ratings && ratings !== req.post.ratings) {
+      const oldRating = req.post.ratings;
+
+      const restaurant = await Restaurant.findById(req.post.restaurant_id);
+      if (restaurant) {
+        const dish = restaurant.menu.id(req.post.dish_id);
+        if (dish && dish.num_ratings > 0) {
+          dish.average_rating = (dish.average_rating * dish.num_ratings - oldRating + ratings) / dish.num_ratings;
+          restaurant.average_rating = calculateAverageRating(restaurant.menu);
+          await restaurant.save();
+        }
+      }
+      req.post.ratings = ratings;
+    }
 
     await req.post.save();
     res.status(200).json({ 
@@ -274,6 +316,23 @@ router.delete("/:user_id/posts/:post_id", verifyPostOwnership, async (req, res) 
       $pull: { posts: req.params.post_id },
       $inc: { posts_count: -1 }
     });
+
+    const deletedPost = req.post;
+    const restaurant = await Restaurant.findById(deletedPost.restaurant_id);
+    if (restaurant) {
+      const dish = restaurant.menu.id(deletedPost.dish_id);
+      if (dish && dish.num_ratings > 0) {
+        dish.num_ratings -= 1;
+        if (dish.num_ratings === 0) {
+          dish.average_rating = 0;
+        } else {
+          dish.average_rating = (dish.average_rating * (dish.num_ratings + 1) - deletedPost.ratings) / dish.num_ratings;
+        }
+        restaurant.num_reviews = Math.max(restaurant.num_reviews - 1, 0);
+        restaurant.average_rating = calculateAverageRating(restaurant.menu);
+        await restaurant.save();
+      }
+    }
 
     res.status(200).json({ message: "Post deleted successfully" });
   } catch (error) {

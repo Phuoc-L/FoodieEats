@@ -1,37 +1,141 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, Image, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
 import { useNavigation } from "@react-navigation/native";
-import { FontAwesome } from '@expo/vector-icons';
+import { FontAwesome, AntDesign } from '@expo/vector-icons';
+import { Alert } from 'react-native';
 import axios from 'axios';
+import { ALERT_TYPE, Dialog } from 'react-native-alert-notification';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 
 const { width } = Dimensions.get('window');
 
-const PostComponent = ({ userId, owner, dish }) => {
-  const [likes, setLikes] = useState(dish.like_list.length);
-  const [isLiked, setIsLiked] = useState(dish.like_list.includes(userId));
+const PostComponent = ({ post, onDeleteSuccess }) => {
+  const [likes, setLikes] = useState(post.like_list.length);
+  const [isLiked, setIsLiked] = useState(false);
+  const [userData, setUserData] = useState({});
+
   const navigation = useNavigation();
+  const isCurrentUserPost = userData.id === post.user_id._id;
+  const postUserId =
+    typeof post.user_id === 'string'
+      ? post.user_id
+      : (post.user_id && post.user_id._id) || null;
+
+
+  useEffect(() => {
+    const getData = async () => {
+      try {
+        const id = await AsyncStorage.getItem('userID');
+        const owner = await AsyncStorage.getItem('owner');
+        const isOwner = (owner.toLowerCase() === "true");
+
+        if (!id) {
+          console.error('User ID not found in AsyncStorage');
+          return;
+        }
+
+        setIsLiked(post.like_list.includes(id));
+        setUserData({ id, isOwner });
+
+      } catch (e) {
+        console.error(e);
+      }
+    };
+    getData();
+  }, []);
+
+  const handleDeletePost = async () => {
+    try {
+      if (!userData.id || userData.id !== post.user_id._id) {
+        Dialog.show({
+          type: ALERT_TYPE.WARNING,
+          title: 'Unauthorized',
+          textBody: 'You can only delete your own posts.',
+          button: 'Close',
+        });
+        return;
+      }
+
+      Alert.alert(
+        "Delete Post",
+        "Are you sure you want to delete this post? This action cannot be undone.",
+        [
+          { text: "Cancel", style: "cancel" },
+          {
+            text: "Delete",
+            style: "destructive",
+            onPress: async () => {
+              try {
+                console.log(`${process.env.EXPO_PUBLIC_API_URL}/api/posts/${userData.id}/posts/${post._id}`);
+                const res = await axios.delete(
+                  `${process.env.EXPO_PUBLIC_API_URL}/api/posts/${userData.id}/posts/${post._id}`
+                );
+
+                if (res.status === 200) {
+                  Dialog.show({
+                    type: ALERT_TYPE.SUCCESS,
+                    title: 'Deleted',
+                    textBody: 'Post deleted successfully.',
+                    button: 'Close',
+                  });
+
+                  // Optional: Let parent know to remove this post from the feed
+                  if (onDeleteSuccess) onDeleteSuccess(post._id);
+                } else {
+                  throw new Error('Delete failed');
+                }
+              } catch (err) {
+                console.error("Delete failed:", err);
+                Dialog.show({
+                  type: ALERT_TYPE.DANGER,
+                  title: 'Error',
+                  textBody: 'Something went wrong while deleting.',
+                  button: 'Close',
+                });
+              }
+            },
+          },
+        ]
+      );
+    } catch (e) {
+      console.error("Error deleting post:", e);
+    }
+  };
+
 
   const handleLike = async () => {
-    if (owner) return;
+    if (userData.isOwner) {
+      console.error("Restaurant owners are not permitted to like posts.");
+      return;
+    }
+
+    if (!postUserId || !userData.id) {
+      console.error("Missing user IDs", { postUserId, userId: userData.id });
+      return;
+    }
+    if (postUserId === userData.id) {
+      console.error("Users cannot like their own posts.");
+      return;
+    }
+
     try {
       const updatedLikes = isLiked ? likes - 1 : likes + 1;
       setLikes(updatedLikes);
       setIsLiked(!isLiked);
 
-      const post_user_id = dish.user_id._id;
       await axios.post(
-        `${process.env.EXPO_PUBLIC_API_URL}/api/posts/${post_user_id}/posts/${dish._id}/like/${userId}`
+        `${process.env.EXPO_PUBLIC_API_URL}/api/posts/${postUserId}/posts/${post._id}/like/${userData.id}`
       );
 
       try {
         if(!isLiked) {
           await axios.post(
-            `${process.env.EXPO_PUBLIC_API_URL}/api/users/${userId}/like/${dish._id}`
+            `${process.env.EXPO_PUBLIC_API_URL}/api/users/${userData.id}/like/${post._id}`
           );
         } else {
           await axios.post(
-            `${process.env.EXPO_PUBLIC_API_URL}/api/users/${userId}/unlike/${dish._id}`
+            `${process.env.EXPO_PUBLIC_API_URL}/api/users/${userData.id}/unlike/${post._id}`
           );
         }
       } catch (error) {
@@ -44,15 +148,17 @@ const PostComponent = ({ userId, owner, dish }) => {
   };
 
   const renderLikeSection = () => {
+    const disallowLike = userData.isOwner || postUserId === userData.id;
+
     const HeartIcon = (
       <FontAwesome
-        name={owner ? "heart" : isLiked ? "heart" : "heart-o"}
+        name={disallowLike ? "heart" : isLiked ? "heart" : "heart-o"}
         size={30}
-        color={owner ? "#ababab" : "#0080F0"}
+        color={disallowLike ? "#ababab" : "#0080F0"}
       />
     );
 
-    return owner ? (
+    return disallowLike ? (
       <View style={styles.likeContainer}>
         {HeartIcon}
         <Text style={styles.likes}>
@@ -85,33 +191,108 @@ const PostComponent = ({ userId, owner, dish }) => {
     );
   };
 
+  const getRelativeTime = (timestamp) => {
+    const postDate = new Date(timestamp);
+    const now = new Date();
+    const diffMs = now - postDate;
+    const diffMinutes = Math.floor(diffMs / (1000 * 60));
+    const diffHours = Math.floor(diffMinutes / 60);
+    const diffDays = Math.floor(diffHours / 24);
+    const diffWeeks = Math.floor(diffDays / 7);
+
+    if (diffMinutes < 1) return "just now";
+    if (diffMinutes < 60) return `${diffMinutes} minute${diffMinutes > 1 ? 's' : ''} ago`;
+    if (diffDays < 7) return `${diffDays} day${diffDays !== 1 ? 's' : ''} ago`;
+    if (diffDays < 30) return `${diffWeeks} week${diffWeeks !== 1 ? 's' : ''} ago`;
+    if (
+      postDate.getDate() === now.getDate() &&
+      postDate.getMonth() === now.getMonth() &&
+      postDate.getFullYear() === now.getFullYear()
+    ) {
+      return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+    } else {
+      return postDate.toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+      });
+    }
+  };
+
+
+  const avatarUrl = post?.user_id?.profile?.avatar_url?.trim() || null;
+
   return (
     <View style={styles.postContainer}>
       <View style={styles.header}>
-        <Image
-          source={{ uri: dish.user_id.profile.avatar_url }}
-          style={styles.avatar}
-        />
-        <Text style={styles.username}>@{dish.user_id.username}</Text>
+        <View style={styles.userInfo}>
+          <Image
+            source={avatarUrl ? { uri: avatarUrl} : require('../assets/defaultUserIcon.png')}
+            style={styles.avatar}
+          />
+          <TouchableOpacity
+            onPress={() => navigation.navigate("Profile", { displayUserID: post.user_id._id })}
+            style={styles.usernameContainer}
+          >
+            <Text
+              style={styles.username}
+              numberOfLines={1}
+              ellipsizeMode="tail"
+            >
+              @{post.user_id.username}
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {isCurrentUserPost && (
+          <TouchableOpacity
+            onPress={handleDeletePost}
+            style={styles.deleteButton}
+          >
+            <AntDesign name="delete" size={30} color="red" />
+          </TouchableOpacity>
+        )}
       </View>
-      <Image source={{ uri: dish.media_url }} style={styles.media} />
-      {renderStars(dish.ratings)}
-      <Text style={styles.dishName}>{dish.dish_name}</Text>
-      <Text style={styles.restaurantName}>{dish.restaurant_id.name}</Text>
+
+      <Image source={{ uri: post.media_url }} style={styles.media} />
+
+      {renderStars(post.ratings)}
+
+      <TouchableOpacity onPress={() => navigation.navigate("DishReviews", { dish_id: post.dish_id, restaurant_id: post.restaurant_id._id })}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
+          <Text style={styles.dishName}>{post.dish_name}</Text>
+          <AntDesign name="right" size={17} color="#555" style={{ marginLeft: 5, marginTop: 5 }} />
+        </View>
+      </TouchableOpacity>
+
+      <TouchableOpacity onPress={() => navigation.navigate("RestaurantPage", { restaurantId: post.restaurant_id._id })}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
+          <Text style={styles.restaurantName}>{post.restaurant_id.name}</Text>
+          <AntDesign name="right" size={15} color="#555" style={{ marginLeft: 5, marginTop: 5 }} />
+        </View>
+      </TouchableOpacity>
+
       <View style={styles.descriptionContainer}>
         <Text style={styles.description}>
-          <Text style={styles.title}>{dish.title}  </Text>
-          {dish.description}
+          <Text style={styles.title}>{post.title}  </Text>
+          {post.description}
         </Text>
+
+        <View style={{ marginLeft: 2, marginTop: 5 }}>
+          <Text style={{ color: '#555', fontSize: width / 26 }}>
+            {getRelativeTime(post.timestamp)}
+          </Text>
+        </View>
       </View>
+
       <View style={styles.footer}>
         {renderLikeSection()}
         <TouchableOpacity
-          onPress={() => navigation.navigate("CommentsPage", { postId: dish._id, userId: userId })}
+          onPress={() => navigation.navigate("CommentsPage", { postId: post._id })}
           style={styles.commentsButton}
         >
           <Text style={styles.commentsText}>
-            {dish.comment_list.length} {dish.comment_list.length === 1 ? "Comment" : "Comments"}
+            {post.comment_list.length} {post.comment_list.length === 1 ? "Comment" : "Comments"}
           </Text>
         </TouchableOpacity>
       </View>
@@ -123,6 +304,15 @@ const styles = StyleSheet.create({
   postContainer: {
     marginTop: 10,
     marginBottom: 25,
+    marginHorizontal: 15,
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3, // for Android shadow
   },
   descriptionContainer: {
     padding: 10,
@@ -133,26 +323,43 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
+    paddingHorizontal: 10,
     marginBottom: 5,
+    justifyContent: 'space-between',
+    position: 'relative',
+    paddingRight: 45,
+  },
+  userInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  usernameContainer: {
+    flex: 1,
+    marginLeft: width / 40,
   },
   avatar: {
     width: width / 7,
     height: width / 7,
     borderRadius: 100,
-    marginRight: width / 40,
-    marginLeft: 10
   },
   username: {
+    flexShrink: 1,
     color: "#000",
     fontSize: width / 20,
-    fontWeight: 700,
+    fontWeight: "700",
     letterSpacing: 0.5,
+    overflow: "hidden",
   },
   media: {
-    width: width,
-    height: width,
-    alignItems: 'center',
+    width: '100%',
+    aspectRatio: 1,
     marginVertical: 5,
+  },
+  deleteButton: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    zIndex: 2,
   },
   dishName: {
     fontSize: width / 16,
@@ -160,7 +367,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   restaurantName: {
-    fontSize: width / 25,
+    fontSize: width / 18,
     color: '#555',
     textAlign: 'center',
   },

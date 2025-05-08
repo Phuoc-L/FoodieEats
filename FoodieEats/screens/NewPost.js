@@ -324,10 +324,23 @@ export default function CreatePostScreen({ navigation }) {
 
   // Submit post function
   const submitPost = async () => {
-    if (!selectedRestaurantObj || !selectedDishObj || !selectedImage) {
-      Alert.alert('Missing Fields', 'Please search and select a restaurant, search and select a dish, and pick an image.');
+    if (
+      !selectedRestaurantObj ||
+      !selectedRestaurantObj._id ||
+      typeof selectedRestaurantObj._id !== 'string' ||
+      !selectedDishObj ||
+      !selectedDishObj._id ||
+      typeof selectedDishObj._id !== 'string'
+    ) {
+      Alert.alert('Missing Fields', 'Please search and select a valid restaurant and dish from those listed.');
       return;
     }
+
+    if(!selectedImage) {
+      Alert.alert('Missing Fields', 'Please select an image.')
+      return;
+    }
+
     if (!user || !token) {
       Alert.alert('Error', 'User not found, please log in again');
       return;
@@ -431,21 +444,68 @@ export default function CreatePostScreen({ navigation }) {
 
         {/* Restaurant Search */}
         <Text style={styles.label}>Search Restaurant:</Text>
-        <TextInput style={styles.input} placeholder="Start typing restaurant name..." value={restaurantSearch} onChangeText={handleRestaurantSearch} editable={!selectedRestaurantObj || restaurantSearch !== selectedRestaurantObj.name} />
-        {isRestaurantLoading && <ActivityIndicator size="small" />}
-        {restaurantSuggestions.length > 0 && (
-          <FlatList data={restaurantSuggestions} keyExtractor={(item) => item._id} renderItem={({ item }) => (<SuggestionItem item={item} onPress={() => selectRestaurant(item)} />)} style={styles.suggestionsList} scrollEnabled={false} />
+        {selectedRestaurantObj ? (
+          <View style={styles.selectedItemRow}>
+            <Text style={styles.selectedText}>{selectedRestaurantObj.name}</Text>
+            <TouchableOpacity onPress={() => {
+              setSelectedRestaurantObj(null);
+              setRestaurantSearch('');
+              setDishSearch('');
+              setSelectedDishObj(null);
+              setDishSuggestions([]);
+            }}>
+              <Text style={styles.changeButton}>X</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <>
+            <TextInput
+              style={styles.input}
+              placeholder="Start typing restaurant name..."
+              value={restaurantSearch}
+              onChangeText={handleRestaurantSearch}
+            />
+            {isRestaurantLoading && <ActivityIndicator size="small" />}
+            {restaurantSuggestions.length > 0 && (
+              restaurantSuggestions.map(item => (
+                <SuggestionItem key={item._id} item={item} onPress={() => selectRestaurant(item)} />
+              ))
+            )}
+          </>
         )}
 
         {/* Dish Search */}
         {selectedRestaurantObj && (
           <>
             <Text style={styles.label}>Search Dish:</Text>
-            <TextInput style={styles.input} placeholder="Start typing dish name..." value={dishSearch} onChangeText={handleDishSearch} editable={!selectedDishObj || dishSearch !== selectedDishObj.name} />
-            {isDishLoading && <ActivityIndicator size="small" />}
-            {dishSuggestions.length > 0 && (
-              <FlatList data={dishSuggestions} keyExtractor={(item) => item._id} renderItem={({ item }) => (<SuggestionItem item={item} onPress={() => selectDish(item)} />)} style={styles.suggestionsList} scrollEnabled={false} />
+            {selectedDishObj ? (
+              <View style={styles.selectedItemRow}>
+                <Text style={styles.selectedText}>{selectedDishObj.name}</Text>
+                <TouchableOpacity onPress={() => {
+                  setSelectedDishObj(null);
+                  setDishSearch('');
+                  setDishSuggestions([]);
+                }}>
+                  <Text style={styles.changeButton}>X</Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Start typing dish name..."
+                  value={dishSearch}
+                  onChangeText={handleDishSearch}
+                />
+                {isDishLoading && <ActivityIndicator size="small" />}
+                {dishSuggestions.length > 0 && (
+                  dishSuggestions.map(item => (
+                    <SuggestionItem key={item._id} item={item} onPress={() => selectDish(item)} />
+                  ))
+                )}
+              </>
             )}
+
           </>
         )}
 
@@ -505,7 +565,19 @@ const styles = StyleSheet.create({
   micButton: { backgroundColor: '#007bff', padding: 10, borderRadius: 25, justifyContent: 'center', alignItems: 'center', height: 50, width: 50 }, // Circular button
   star: (isActive) => ({ // Function to return style object
     fontSize: 30,
-    color: isActive ? 'gold' : 'lightgray',
+    color: isActive ? '#FF8000' : 'lightgray',
     marginHorizontal: 4,
   }),
+  selectedItemRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderWidth: 1,
+    borderColor: '#ccc',
+    padding: 10,
+    borderRadius: 5,
+    marginBottom: 10,
+  },
+  selectedText: { fontSize: 16 },
+  changeButton: { color: '#007bff', fontWeight: '600' },
 });

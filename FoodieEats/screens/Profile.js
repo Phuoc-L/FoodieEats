@@ -110,12 +110,17 @@ export default function Profile({route}) {
         setPosts([...displayedUserPostResponse.data]);
 
         // Set button text to either 'follow' or 'unfollow'
+
+        if (!isOwner) {
+          SetDisplayButtonText(userDataResponse.data, displayedUserDataResponse.data._id);
+
         // Check if the logged-in user is following the displayed user
         // Note: Assuming userDataResponse.data contains the logged-in user's details including 'following' array
         if (userDataResponse.data && userDataResponse.data.following && userDataResponse.data.following.includes(displayedUserId)) {
             setBtnTxt(UNFOLLOW_MSG);
         } else {
             setBtnTxt(FOLLOW_MSG);
+
         }
       }
     } catch (error) {

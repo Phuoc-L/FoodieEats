@@ -1,7 +1,10 @@
 const express = require("express");
 const mongoose = require("mongoose");
 const Restaurant = require("../data_schemas/restaurant");
+const Posts = require("../data_schemas/post");
+const Owner = require("../data_schemas/restaurant_owner");
 const router = express.Router();
+const calculateAverageRating = require("../functions/calculateAverageRating.js");
 
 router.get("/", async (req, res) => {
   try {
@@ -28,12 +31,13 @@ router.get('/search', async (req, res) => {
         sortOptions.average_rating = -1;
       }
       // if no query return highest rated restaurants
-      const restaurants = await Restaurant.find().sort(sortOptions);
+      const restaurants = await Restaurant.find({ name: { $ne: "" } }).sort(sortOptions);
       return res.status(200).json({ total: restaurants.length, restaurants });
     }
 
     // Build the filter
     const filter = {
+      name: { $ne: "" }, // Exclude restaurants with empty names
       $or: [
         { name: { $regex: query, $options: 'i' } },
         { location: { $regex: query, $options: 'i' } },
@@ -212,6 +216,47 @@ router.delete("/:id/menu/:dishId", async (req, res) => {
   }
 });
 
+router.put('/:restaurantId', async (req, res) => {
+    const updated = await Restaurant.findByIdAndUpdate(
+        req.params.restaurantId,
+        req.body,
+        { new: true }
+    );
+    res.json(updated);
+});
+
+router.get("/:dish_id/reviews", async (req, res) => {
+    const { dish_id } = req.params;
+
+    try {
+        const rawPosts = await Posts.find({ dish_id: dish_id} )
+            .sort({ timestamp: -1 })
+            .populate("user_id", "username profile.avatar_url")
+            .populate("restaurant_id", "name")
+            .exec();
+
+        const enrichedPosts = await Promise.all(rawPosts.map(async (post) => {
+            const postObj = post.toObject();
+            try {
+                const restaurant = await Restaurant.findById(post.restaurant_id);
+                const dish = restaurant?.menu?.find(d => d._id.toString() === post.dish_id.toString());
+                postObj.dish_name = dish?.name || null;
+            } catch (e) {
+                postObj.dish_name = null;
+            }
+            return postObj;
+        }));
+
+        if(!enrichedPosts) {
+            return res.status(404).json({ error: "No reviews found" });
+        }
+
+        res.status(200).json({ message: "Reviews found successfully", posts: enrichedPosts });
+    } catch (error) {
+        res.status(500).json({ error: "Error getting reviews" });
+    }
+});
+
 router.put("/:id", async (req, res) => {
   const { id } = req.params;
   const { name, operating_hours, contact_info, reservation_link, location, menu} = req.body;
@@ -251,16 +296,38 @@ router.put("/:id/menu/:dishId/rating", async (req, res) => {
   }
 });
 
-const calculateAverageRating = (menu) => {
-  let totalRatingSum = 0;
-  let totalRatingCount = 0;
+router.get("/:id/isOwner/:user_id", async (req, res) => {
+  const { id, user_id } = req.params;
 
-  menu.forEach((item) => {
-    totalRatingSum += item.average_rating * item.num_ratings;
-    totalRatingCount += item.num_ratings;
-  });
+  try {
+    const user = await Owner.findById(user_id);
+    if (!user) return res.status(404).send({ error: "Restaurant owner user not found", result: false });
 
-  return totalRatingCount > 0 ? totalRatingSum / totalRatingCount : 0;
-};
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).send({ error: "Invalid restaurant ID", result: false });
+    }
+
+    const isOwner = user.restaurant_id.equals(new mongoose.Types.ObjectId(id));
+    res.status(200).send({ message: "Restaurant owner found successfully.", result: isOwner});
+
+  } catch (error) {
+    console.error("Exception caught:", error);
+    res.status(500).send({ error: error.message || "Internal server error", result: false });
+  }
+});
+
+router.get("/owner/:user_id", async (req, res) => {
+  const { user_id } = req.params;
+
+  try {
+    const user = await Owner.findById(user_id);
+    if (!user) return res.status(404).json({ error: "User not found" });
+    res.json(user);
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Error getting user by ID" });
+  }
+});
 
 module.exports = router;

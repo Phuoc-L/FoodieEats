@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
-import { View, Text, TextInput, Button, FlatList, TouchableOpacity, StyleSheet, Image, Dimensions } from "react-native";
+import { View, Text, TextInput, Button, FlatList, TouchableOpacity, StyleSheet, Image, Dimensions, ActivityIndicator } from "react-native";
 import axios from 'axios';
 import { FontAwesome } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage'; // Import AsyncStorage
@@ -9,38 +9,53 @@ import AsyncStorage from '@react-native-async-storage/async-storage'; // Import 
 const { width } = Dimensions.get('window');
 
 const CommentsPage = ({ route }) => {
-    const { postID: postId } = route.params; // Only get postId from params
- 
+    const { postId } = route.params;
+
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+
     const [comments, setComments] = useState([]);
     const [newComment, setNewComment] = useState("");
-    const [loggedInUserId, setLoggedInUserId] = useState(null); // State for logged-in user
+    const [loggedInUserId, setLoggedInUserId] = useState(null);
+    const [isOwner, setIsOwner] = useState(true);
 
     useFocusEffect(
         useCallback(() => {
-            fetchLoggedInUser(); // Fetch user ID on focus
-            fetchComments();
-        }, [postId]) // Add postId dependency if fetchComments uses it directly
+            const initialize = async () => {
+                try {
+                    const id = await AsyncStorage.getItem('userID');
+                    const owner = await AsyncStorage.getItem('owner');
+                    setLoggedInUserId(id);
+                    setIsOwner(owner.toLowerCase() === "true");
+
+                } catch (e) {
+                    console.error("Initialization error:", e);
+                    setError('Could not find an active user information. Please log in again.');
+                }
+            };
+
+            initialize();
+        }, [postId])
     );
 
-    const fetchLoggedInUser = async () => {
-        try {
-          const id = await AsyncStorage.getItem('userID');
-          setLoggedInUserId(id);
-        } catch (e) {
-          console.error("Failed to fetch logged-in user ID from storage", e);
-        }
-      };
+    useEffect(() => {
+        const fetchComments = async () => {
+            setLoading(true);
+            setError(null);
 
-    const fetchComments = async () => {
-        try {
-            const response = await axios.get(
-                `${process.env.EXPO_PUBLIC_API_URL}/api/comments/${postId}/comments`
-            );
-            setComments(response.data);
-        } catch (error) {
-            console.error("Error fetching comments:", error);
-        }
-    };
+            try {
+                const response = await axios.get(`${process.env.EXPO_PUBLIC_API_URL}/api/comments/${postId}/comments`);
+                setComments(response.data);
+            } catch (e) {
+                console.error("Unable to fetch comments:", e);
+                setError('Could not fetch comments on this post.');
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchComments();
+    }, [loggedInUserId, isOwner]);
 
     const handleCommentSubmit = async () => {
         if (!newComment.trim()) return;
@@ -61,30 +76,73 @@ const CommentsPage = ({ route }) => {
         }
     };
 
-    const handleLike = async (commentId) => {
-        try {
-            const response = await axios.post(
-                `${process.env.EXPO_PUBLIC_API_URL}/api/comments/${commentId}/like/${loggedInUserId}` // Use loggedInUserId state
-            );
-
-            if (response.status === 200) {
-                const updatedComment = response.data.comment;
-
-                setComments(comments.map(comment =>
-                    comment._id === commentId
-                        ? { ...comment, num_likes: updatedComment.num_likes, like_list: updatedComment.like_list }
-                        : comment
-                ));
-            }
-        } catch (error) {
-            console.error('Error updating like on post:', error);
+    const handleLike = async (commentId, disallowLike) => {
+        if (disallowLike) {
+            console.error("Logged in user is not permitted to like this comment.");
+            return;
         }
+
+        if (!commentId || !loggedInUserId) {
+            console.error("Missing commentId or loggedInUserId", commentId, loggedInUserId);
+            return;
+        }
+
+        const targetComment = comments.find(c => c._id === commentId);
+        const alreadyLiked = targetComment?.like_list?.includes(loggedInUserId);
+
+        setComments(prevComments =>
+            prevComments.map(comment =>
+                comment._id === commentId
+                    ? {
+            ...comment,
+                  num_likes: alreadyLiked
+                    ? Math.max(0, comment.num_likes - 1)
+                    : comment.num_likes + 1,
+                  like_list: alreadyLiked
+                    ? comment.like_list.filter(id => id !== loggedInUserId)
+                    : [...comment.like_list, loggedInUserId]
+                }
+              : comment
+          )
+        );
+
+        try {
+            await axios.post(`${process.env.EXPO_PUBLIC_API_URL}/api/comments/${commentId}/like/${loggedInUserId}`);
+        } catch (error) {
+            console.error('Error updating like on comment:', error);
+        }
+    };
+
+
+    const renderLikeSection = (item) => {
+        const isLiked = item.like_list.includes(loggedInUserId);
+        const disallowLike = isOwner || item.user_id._id === loggedInUserId;
+
+        const HeartIcon = (
+            <FontAwesome
+                name={disallowLike ? "heart" : isLiked ? "heart" : "heart-o"}
+                size={20}
+                color={disallowLike ? "#ababab" : "#0080F0"}
+            />
+        );
+
+        return disallowLike ? (
+            <View style={styles.likeContainer}>
+                <Text style={styles.likeCount}>{item.num_likes}</Text>
+                {HeartIcon}
+            </View>
+        ) : (
+            <TouchableOpacity onPress={() => handleLike(item._id, disallowLike)} style={styles.likeContainer}>
+                <Text style={styles.likeCount}>{item.num_likes}</Text>
+                {HeartIcon}
+            </TouchableOpacity>
+        );
     };
 
     const handleDeleteComment = async (commentId) => {
         try {
             const response = await axios.delete(
-                `${process.env.EXPO_PUBLIC_API_URL}/api/comments/${postId}/comment/${commentId}/user/${loggedInUserId}` // Use loggedInUserId state
+                `${process.env.EXPO_PUBLIC_API_URL}/api/comments/${postId}/comment/${commentId}/user/${loggedInUserId}`
             );
 
             if (response.status === 200) {
@@ -99,22 +157,20 @@ const CommentsPage = ({ route }) => {
         const hasLiked = item.like_list.includes(loggedInUserId); // Use loggedInUserId state
         const isCurrentUser = item.user_id._id === loggedInUserId; // Use loggedInUserId state
 
+        const avatarUrl = item?.user_id?.profile?.avatar_url?.trim() || null;
+
         return (
             <View style={styles.commentContainer}>
                 <View style={styles.header}>
                     <View style={styles.userInfo}>
-                        <Image source={{ uri: item.user_id.profile.avatar_url }} style={styles.avatar} />
+                        <Image
+                            source={avatarUrl ? { uri: avatarUrl} : require('../assets/defaultUserIcon.png')}
+                            style={styles.avatar}
+                        />
                         <Text style={styles.username}>@{item.user_id.username}</Text>
                     </View>
 
-                    <TouchableOpacity onPress={() => handleLike(item._id)} style={styles.likeContainer}>
-                        <Text style={styles.likeCount}>{item.num_likes}</Text>
-                        <FontAwesome
-                            name={hasLiked ? "heart" : "heart-o"}
-                            size={20}
-                            color={hasLiked ? 'red' : '#000'}
-                        />
-                    </TouchableOpacity>
+                    {renderLikeSection(item)}
                 </View>
 
                 <View style={styles.commentRow}>
@@ -130,6 +186,22 @@ const CommentsPage = ({ route }) => {
         )
     };
 
+    if (loading) {
+        return (
+            <View style={styles.center}>
+                <ActivityIndicator size="large" />
+            </View>
+        );
+    }
+
+    if (error) {
+        return (
+            <View style={styles.center}>
+                <Text style={styles.errorText}>{error}</Text>
+            </View>
+        );
+    }
+
     return (
         <View style={styles.container}>
             {/* Comments List */}
@@ -137,19 +209,36 @@ const CommentsPage = ({ route }) => {
                 data={comments}
                 keyExtractor={(item) => item._id}
                 renderItem={renderComment}
+                contentContainerStyle={comments.length === 0 ? styles.emptyContainer : styles.feed}
+                ListEmptyComponent={<Text style={styles.emptyText}>No comments to show.</Text>}
             />
 
             <TextInput
-                style={styles.input}
-                placeholder="Add a comment..."
+                style={[
+                    styles.input,
+                    isOwner && styles.disabledInput
+                ]}
+                placeholder={isOwner ? "Commenting unavailable" : "Add a comment..."}
                 value={newComment}
+                editable={!isOwner}
                 onChangeText={setNewComment}
             />
 
 
-            <TouchableOpacity style={styles.button} onPress={handleCommentSubmit}>
-                <Text style={styles.buttonText}>Submit</Text>
-            </TouchableOpacity>
+            {!isOwner && (
+                <TouchableOpacity
+                    style={[
+                        styles.button,
+                        isOwner && styles.disabledButton  // ← visually gray out button too
+                    ]}
+                    onPress={handleCommentSubmit}
+                    disabled={isOwner}                 // ← prevent pressing if owner
+                >
+                    <Text style={styles.buttonText}>
+                        Submit
+                    </Text>
+                </TouchableOpacity>
+            )}
         </View>
     );
 };
@@ -162,6 +251,11 @@ const styles = StyleSheet.create({
     },
     commentContainer: {
         paddingVertical: 8,
+    },
+    emptyContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
     },
     header: {
         flexDirection: "row",
@@ -184,6 +278,10 @@ const styles = StyleSheet.create({
         borderBottomColor: "#ccc",
         paddingVertical: 8,
     },
+    disabledInput: {
+        backgroundColor: "#eee",
+        color: "#aaa",
+    },
     username: {
         fontWeight: "bold",
     },
@@ -203,6 +301,9 @@ const styles = StyleSheet.create({
         borderRadius: 5,
         alignItems: "center",
         marginTop: 10,
+    },
+    disabledButton: {
+        backgroundColor: "#ccc",
     },
     buttonText: {
         color: "#fff",
@@ -238,6 +339,16 @@ const styles = StyleSheet.create({
     deleteButtonText: {
         color: "red",
         fontWeight: "bold",
+    },
+    center: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 20,
+    },
+    errorText: {
+        color: 'red',
+        fontSize: 16,
     },
 });
 

@@ -6,10 +6,11 @@ import UserFeed from './screens/UserFeed';
 import Explore from './screens/Explore';
 import Profile from './screens/Profile';
 import NewPost from './screens/NewPost';
+import RestaurantPage from './screens/RestaurantPage';
+import DishReviews from './screens/DishReviews';
 import CommentsPage from './screens/CommentsPage';
-import RestaurantPage from './screens/RestaurantPage'; // Import RestaurantPage
+import EditRestaurant from './screens/EditRestaurant';
 import ProfilePostFeed from './screens/ProfilePostFeed'; // Import the new screen
-import EditRestaurant from './screens/EditRestaurant'; // Added EditRestaurant import
 import NavigationBar from './screens/Navigation'; // Import NavigationBar
 
 
@@ -24,10 +25,11 @@ export default function App() {
         <Stack.Screen name="Explore" component={Explore} options={{ headerShown: false }} />
         <Stack.Screen name="Profile" component={Profile} options={{ headerShown: true }} />
         <Stack.Screen name="NewPost" component={NewPost} />
+        <Stack.Screen name="RestaurantPage" component={RestaurantPage} options={{ headerShown: true, title: "" }} />
+        <Stack.Screen name="DishReviews" component={DishReviews} options={{ headerShown: true, title: "Reviews" }} />
         <Stack.Screen name="CommentsPage" component={CommentsPage} options={{ title: "Comments" }}/>
-        <Stack.Screen name="RestaurantPage" component={RestaurantPage} options={{ title: "Restaurant Profile" }}/>
+        <Stack.Screen name="EditRestaurant" component={EditRestaurant} options={{ headerShown: false }}/>
         <Stack.Screen name="ProfilePostFeed" component={ProfilePostFeed} options={{ title: "Post Feed" }}/>
-        <Stack.Screen name="EditRestaurant" component={EditRestaurant} options={{ headerShown: false }}/> 
       </Stack.Navigator>
     </NavigationContainer>
   );
