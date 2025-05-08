@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, FlatList, Image, StyleSheet, Modal, TouchableWithoutFeedback, Keyboard, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, FlatList, Image, StyleSheet, Modal, TouchableWithoutFeedback, Keyboard, KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
@@ -48,6 +48,9 @@ export default function Explore() {
   const [restaurantSearchResults, setRestaurantSearchResults] = useState([]);
   const [postSearchResults, setPostSearchResults] = useState([]);
 
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
   const flatListRef = useRef(null);
 
   useEffect(() => {
@@ -67,7 +70,6 @@ export default function Explore() {
   };
 
   const renderUserItem = (item) => { // Changed to block body {}
-    console.log('Rendering User Item:', JSON.stringify(item)); // Log user item data
     // Added optional chaining for safety
     const avatarUrl = item?.profile?.avatar_url;
     const bio = item?.profile?.bio;
@@ -142,6 +144,9 @@ export default function Explore() {
   }; // Closing brace for function body
 
   const handleSearch = async () => {
+    setLoading(true);
+    setError(null);
+
     try {
       const endpoint = searchMode === 'users' ? '/api/users/search' : searchMode === 'restaurants' ? '/api/restaurants/search' : '/api/posts/search';
       const params = {
@@ -175,6 +180,9 @@ export default function Explore() {
       flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
     } catch (error) {
       console.error(`Error fetching ${searchMode}:`, error.response?.data || error.message);
+      setError("Something went wrong while searching.");
+    } finally {
+        setLoading(false);
     }
   };
 
@@ -237,18 +245,31 @@ export default function Explore() {
           </View>
         </View>
 
-        <FlatList 
-          ref={flatListRef}
-          data={results}
-          keyExtractor={(item) => item._id}
-          renderItem={({ item }) => 
-            searchMode === 'users' 
-              ? renderUserItem(item) 
-              : searchMode === 'restaurants' 
-                ? renderRestaurantItem(item)
-                : renderPostItem(item)
-          }
-        />
+        {loading ? (
+          <View style={styles.center}>
+            <ActivityIndicator size="large" />
+          </View>
+        ) : error ? (
+          <View style={styles.center}>
+            <Text style={styles.errorText}>{error}</Text>
+          </View>
+        ) : (
+          <FlatList
+            ref={flatListRef}
+            data={results}
+            keyExtractor={(item) => item._id}
+            renderItem={({ item }) =>
+              searchMode === 'users'
+                ? renderUserItem(item)
+                : searchMode === 'restaurants'
+                  ? renderRestaurantItem(item)
+                  : renderPostItem(item)
+            }
+            ListEmptyComponent={<Text style={styles.emptyText}>No results to show.</Text>}
+            contentContainerStyle={results.length === 0 ? styles.emptyContainer : null}
+          />
+        )}
+
 
         <Modal visible={filtersVisible && searchMode === 'restaurants'} animationType="slide">
           <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
@@ -614,15 +635,25 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
   },
-  navbar: { 
-    height: 60, 
-    borderTopWidth: 1, 
-    borderTopColor: '#ccc', 
-    backgroundColor: '#fff',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    elevation: 5
+  center: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  errorText: {
+    color: 'red',
+    fontSize: 16,
+  },
+  emptyText: {
+    textAlign: 'center',
+    fontSize: 18,
+    color: 'gray',
+    marginBottom: 60,
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
