@@ -48,7 +48,7 @@ export default function Profile({route}) {
   const FetchUserInfo = async () => {
     try {
       // Get logged-in user ID using 'userID'
-      const userIdResponse = await AsyncStorage.getItem('userID'); 
+      const userIdResponse = await AsyncStorage.getItem('userID');
       console.log("Profile.js - Fetched loggedIn userID:", userIdResponse);
       if (userIdResponse == null) {
         console.error('Profile.js - Error getting loggedIn userID from AsyncStorage');
@@ -58,7 +58,7 @@ export default function Profile({route}) {
       setUserId(userIdResponse); // This is the ID of the person viewing the profile
 
       // Get logged-in user's owner status using 'owner'
-      const ownerString = await AsyncStorage.getItem('owner'); 
+      const ownerString = await AsyncStorage.getItem('owner');
       console.log("Profile.js - Fetched loggedIn ownerString:", ownerString);
       if (ownerString == null) {
         console.error('Profile.js - Error getting owner status from AsyncStorage');
@@ -68,8 +68,8 @@ export default function Profile({route}) {
       setIsOwner(ownerString === 'true'); // Convert to boolean for internal state
 
       // This is the ID of the profile being viewed, passed via navigation
-      const displayedUserId = route.params.displayUserID; 
-      console.log("Profile.js - displayUserID from route params:", displayedUserId);   
+      const displayedUserId = route.params.displayUserID;
+      console.log("Profile.js - displayUserID from route params:", displayedUserId);
       if (displayedUserId === null || typeof(displayedUserId) === 'undefined') {
         console.error('Profile.js - Error getting displayedUserId from route params');
         // Potentially navigate back or show an error if this is critical
@@ -110,14 +110,19 @@ export default function Profile({route}) {
         setPosts([...displayedUserPostResponse.data]);
 
         // Set button text to either 'follow' or 'unfollow'
-        if (isOwnerResponse === 'false') {
-          SetDisplayButtonText(userDataResponse.data, displayedUserDataResponse.data._id);
+        // Check if the logged-in user is following the displayed user
+        // Note: Assuming userDataResponse.data contains the logged-in user's details including 'following' array
+        if (userDataResponse.data && userDataResponse.data.following && userDataResponse.data.following.includes(displayedUserId)) {
+            setBtnTxt(UNFOLLOW_MSG);
+        } else {
+            setBtnTxt(FOLLOW_MSG);
         }
       }
     } catch (error) {
         console.error('Error getting user info', error);
     }
   };
+
 
   const SetDisplayButtonText = (loggedInUser, displayedUserId) => {
     if (loggedInUser.following.find(id => id === displayedUserId)) {
@@ -131,9 +136,9 @@ export default function Profile({route}) {
   const handleLogout = async () => {
     try {
       // Use correct keys for removal
-      await AsyncStorage.removeItem('userID'); 
-      await AsyncStorage.removeItem('owner'); 
-      await AsyncStorage.removeItem('restaurantId'); 
+      await AsyncStorage.removeItem('userID');
+      await AsyncStorage.removeItem('owner');
+      await AsyncStorage.removeItem('restaurantId');
       await AsyncStorage.removeItem('token');
       navigation.reset({ index: 0, routes: [{ name: 'Auth' }] });
     } catch (e) {
@@ -179,10 +184,10 @@ export default function Profile({route}) {
       <Modal animationType='slide' transparent={true} visible={modalVisible} onRequestClose={() => {setModalVisible(!modalVisible)}}>
         <View style={styles.centerContainer}>
           <View style={styles.modalContainer}>
-            
+
             <Text style={styles.textLeft}>Username:</Text>
             <TextInput style={styles.input} placeholder={'Username'} placeholderTextColor={'#A0A0A0'} defaultValue={user?.username}
-              inputMode='text' clearButtonMode={'always'} maxLength={100} onChangeText={name => setProfileInfo({...profileInfo, username: name})}/>           
+              inputMode='text' clearButtonMode={'always'} maxLength={100} onChangeText={name => setProfileInfo({...profileInfo, username: name})}/>
             <Text style={styles.textLeft}>First Name:</Text>
             <TextInput style={styles.input} placeholder={'First Name'} placeholderTextColor={'#A0A0A0'} defaultValue={user?.first_name}
               inputMode='text' clearButtonMode={'always'} maxLength={100} onChangeText={name => setProfileInfo({...profileInfo, firstName: name})}/>
@@ -231,8 +236,9 @@ export default function Profile({route}) {
   const ChooseImage = async () => {
     try {
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        mediaTypes: 'Images',
         allowsEditing: true,
+        aspect: [1, 1],
         quality: 1,
       });
       if (!result.canceled) {
@@ -290,11 +296,11 @@ export default function Profile({route}) {
 
         let fileType = profileInfo?.profilePic?.mimeType || 'image/jpeg';
         if (!fileType.startsWith('image/')) {
-          fileType = 'image/jpeg'; 
+          fileType = 'image/jpeg';
         }
 
         const response = await axios.post(`${process.env.EXPO_PUBLIC_API_URL}/api/users/${userId}/profilePicture`, { fileName, fileType }, {validateStatus: () => true});
-        
+
         const presignedUrl = response.data.presignedURL;
         // console.log('Status:', response.status);
         // console.log('Presigned URL:', presignedUrl);
@@ -306,7 +312,7 @@ export default function Profile({route}) {
           encoding: FileSystem.EncodingType.Base64,
         });
         const fileBuffer = Buffer.from(fileBinary, 'base64');
-  
+
         // Upload the image to the presigned URL
         const uploadResponse = await axios.put(presignedUrl, fileBuffer, {
           headers: {
@@ -358,7 +364,7 @@ export default function Profile({route}) {
         })
 
         setState(state + 1);
-      } 
+      }
 
     } catch (error) {
       let errMsg = error + ' ';
@@ -494,7 +500,7 @@ export default function Profile({route}) {
   return (
     <SafeAreaProvider>
       <SafeAreaView style={styles.container}>
-        {/* Display logout button option */}
+       <AlertNotificationRoot>
         {LogoutDisplay()}
 
         {/* Display displayed user's name */}
@@ -511,27 +517,25 @@ export default function Profile({route}) {
             <Text style={styles.text}>Posts: {displayedUser?.posts?.length || 0}</Text>
           </View>
         </View>
+
         
-        {/* Display Edit Profile/Follow/Unfollow button and enable alert popup modal response */}
-        {isOwner ? <View></View> : 
-        <AlertNotificationRoot>
+        {isOwner ? <View></View> :
           <View style={styles.headerContainer}>
             <TouchableOpacity style={styles.profileButton} onPress={() => HandleProfileButtonPress()}>
               <Text style={styles.buttonText}>{btnTxt}</Text>
             </TouchableOpacity>
           </View>
-        </AlertNotificationRoot>}
-
-        {/*visible={isOwner ? isOwner : false}*/}
-
-        {/* Display displayed user's name and description */}
+        }
         <View style={styles.marginContainer}>
           <Text style={styles.bioName}>{displayedUser?.first_name || "First"} {displayedUser?.last_name || "Last"}</Text>
           <Text style={styles.bioParagraph}>{displayedUser?.profile?.bio || "Description"}</Text>
         </View>
 
         {/* Display displayed user's posts */}
-        <ScrollView style={{height: 200}}>
+        <ScrollView 
+          style={{height: 200}}
+          contentContainerStyle={{ paddingBottom: 35 }}
+        >
           <View style={styles.postContainer}>
             {DisplayPosts()}
           </View>
@@ -539,6 +543,7 @@ export default function Profile({route}) {
 
         {DisplayEditProfileForm()}
         <NavigationBar/>
+       </AlertNotificationRoot> 
       </SafeAreaView>
     </SafeAreaProvider>
   );
@@ -553,7 +558,9 @@ const styles = StyleSheet.create({
     alignContent: 'center'
   },
   marginContainer: {
-    margin: 10,
+    marginHorizontal: 10,
+    marginBottom: 10,
+    marginTop: 5, // Use small positive margin
     borderBottomColor: 'black',
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
@@ -562,8 +569,8 @@ const styles = StyleSheet.create({
   },
   profileHeaderContainer: {
     display: 'flex',
-    flexDirection: 'row', 
-    alignItems: 'center', 
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   postContainer: {
     margin: 10,
@@ -596,30 +603,32 @@ const styles = StyleSheet.create({
   },
   editProfileBtnContainer: {
     display: 'flex',
-    flexDirection: 'row', 
-    alignItems: 'center', 
+    flexDirection: 'row',
+    alignItems: 'center',
     alignContent: 'center',
     justifyContent: 'center',
   },
 
-  usernameTitle: { 
-    fontSize: 32, 
+  usernameTitle: {
+    fontSize: 32,
     fontWeight: 'bold',
     color: '#000'
   },
-  avatar: { 
-    width: 100, 
-    height: 100, 
+  avatar: {
+    width: 100,
+    height: 100,
     borderRadius: 50,
     margin: 15,
     marginLeft: 50,
     marginRight: 60,
-    borderWidth: 1, 
+    borderWidth: 1,
     borderColor: '#ccc',
   },
 
   profileButton: {
-    margin: 10,
+    marginHorizontal: 10,
+    marginTop: 10,
+    marginBottom: 0, // Remove bottom margin
     paddingVertical: 15,
     paddingHorizontal: 30,
     backgroundColor: '#007bff',
@@ -679,7 +688,7 @@ const styles = StyleSheet.create({
   postShape: {
     width: 110,
     height: 170,
-    margin: 3, 
+    margin: 3,
   },
   rating: {
     height: 60,
@@ -689,7 +698,7 @@ const styles = StyleSheet.create({
   },
   star: {
     color: '#0080F0',
-    marginHorizontal: 3, 
+    marginHorizontal: 3,
     marginVertical: 7
   },
 
