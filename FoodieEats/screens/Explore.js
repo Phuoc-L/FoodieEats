@@ -372,6 +372,8 @@ export default function Explore() {
           </TouchableWithoutFeedback>
         </Modal>
 
+        <View style={{ paddingBottom: 60 }}></View>
+
         <NavigationBar />
       </SafeAreaView>
 //    </TouchableWithoutFeedback>
