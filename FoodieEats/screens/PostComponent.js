@@ -177,9 +177,13 @@ const PostComponent = ({ post, onDeleteSuccess }) => {
     const diffMs = now - postDate;
     const diffMinutes = Math.floor(diffMs / (1000 * 60));
     const diffHours = Math.floor(diffMinutes / 60);
+    const diffDays = Math.floor(diffHours / 24);
+    const diffWeeks = Math.floor(diffDays / 7);
 
     if (diffMinutes < 1) return "just now";
     if (diffMinutes < 60) return `${diffMinutes} minute${diffMinutes > 1 ? 's' : ''} ago`;
+    if (diffDays < 7) return `${diffDays} day${diffDays !== 1 ? 's' : ''} ago`;
+    if (diffDays < 30) return `${diffWeeks} week${diffWeeks !== 1 ? 's' : ''} ago`;
     if (
       postDate.getDate() === now.getDate() &&
       postDate.getMonth() === now.getMonth() &&
